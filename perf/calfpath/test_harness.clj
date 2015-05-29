@@ -12,7 +12,7 @@
 
 
 (defn make-bench-test-wrapper
-  [bench-chart-filename]
+  [competitor-label project-label bench-chart-filename]
   (fn [f]
     (binding [*bar-chart-data* (atom [])]
       (f)
@@ -20,11 +20,12 @@
                 make-row (fn [k] (reduce (fn [x {:keys [fast-name] :as y}]
                                            (assoc x fast-name (get y k)))
                                    {} raw-data))]
-            [(assoc (make-row :slow-mean) :name "Core")
-             (assoc (make-row :fast-mean) :name "Stringer")])
+            [(assoc (make-row :slow-mean) :name competitor-label)
+             (assoc (make-row :fast-mean) :name project-label)])
         (b/make-category-dataset {:group-key :name})
-        (b/make-bar-chart-3d "Stringer benchmark statistics (lower is better)" {:category-title "Test cases"
-                                                                                :value-title "Latency (lower is better)"})
+        (b/make-bar-chart-3d (str project-label "Stringer benchmark statistics (lower is better)")
+          {:category-title "Test cases"
+           :value-title "Latency (lower is better)"})
         (b/save-chart-as-file bench-chart-filename {:width 1280 :height 800})))))
 
 
