@@ -1,7 +1,9 @@
 (ns calfpath.core
   (:require
     [clojure.string :as str]
-    [calfpath.internal :as i]))
+    [calfpath.internal :as i])
+  (:import
+    [calfpath Util]))
 
 
 (defmacro match-route
@@ -32,7 +34,7 @@
         (if (= 1 (count clauses))
           (first clauses)
           (let [[route dav expr] clauses]
-            `(if-let [{:keys ~dav :as ~params} (i/match-uri (:uri ~request) ~(i/parse-route \: route))]
+            `(if-let [{:keys ~dav :as ~params} (Util/matchURI (:uri ~request) ~(i/parse-route \: route))]
                ;; code commented out below "expensively" merges the URI params to request under the :params key
                ;; (let [~request (assoc ~request :params (merge-with merge (:params ~request) ~params))] ~expr)
                ~expr
