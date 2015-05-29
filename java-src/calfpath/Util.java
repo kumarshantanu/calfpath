@@ -7,7 +7,8 @@ import java.util.Map;
 
 public class Util {
 
-    private static final Map<?, String> EMPTY_PARAMS = Collections.emptyMap();
+    @SuppressWarnings("unchecked")
+    private static final Map<?, String> EMPTY_PARAMS = Collections.unmodifiableMap(Collections.EMPTY_MAP);
 
     public static Map<?, String> matchURI(String uri, List<?> patternTokens) {
         // if length==1, then token must be string
@@ -23,21 +24,21 @@ public class Util {
         int i = 0;
         OUTER:
         for (final Object token: patternTokens) {
-            if (i > n) {
+            if (i >= n) {
                 return null;
             }
             if (token instanceof String) {
                 final String tokenStr = (String) token;
                 if (uri.startsWith(tokenStr, i)) {
-                    i += tokenStr.length();
-                } else {
+                    i += tokenStr.length();  // now i==n if last string token
+                } else {  // 'string token mismatch' implies no match
                     return null;
                 }
             } else {
                 final StringBuilder sb = new StringBuilder();
-                for (int j = i; j < n; j++) {
+                for (int j = i; j < n; j++) {  // capture param chars in one pass
                     final char ch = uri.charAt(j);
-                    if (ch == '/') {
+                    if (ch == '/') {  // separator implies we got param value, now continue
                         params.put(token, sb.toString());
                         i = j;
                         continue OUTER;
@@ -45,9 +46,13 @@ public class Util {
                         sb.append(ch);
                     }
                 }
+                // 'separator not found' implies URI has ended
                 params.put(token, sb.toString());
-                i = Integer.MAX_VALUE;
+                i = n;
             }
+        }
+        if (i < n) {  // 'tokens finished but URI still in progress' implies no match
+            return null;
         }
         return params;
     }
