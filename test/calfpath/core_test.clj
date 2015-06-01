@@ -93,6 +93,49 @@
                            :body   "Updated"})))))))
 
 
+(deftest test-shortcuts
+  (let [request-get     {:request-method :get}
+        request-head    {:request-method :head}
+        request-options {:request-method :options}
+        request-put     {:request-method :put}
+        request-post    {:request-method :post}
+        request-delete  {:request-method :delete}
+        ok        {:status 200
+                   :body   "Data"}
+        not-found {:status 404
+                   :body   "Not found"}]
+    (testing "->get"
+      (is (= 405 (:status (->get request-put ok))))
+      (is (= 404 (:status (->get request-put ok not-found))))
+      (is (= 200 (:status (->get request-get ok))))
+      (is (= 200 (:status (->get request-get ok not-found)))))
+    (testing "->head"
+      (is (= 405 (:status (->head request-put ok))))
+      (is (= 404 (:status (->head request-put ok not-found))))
+      (is (= 200 (:status (->head request-head ok))))
+      (is (= 200 (:status (->head request-head ok not-found)))))
+    (testing "->options"
+      (is (= 405 (:status (->options request-put ok))))
+      (is (= 404 (:status (->options request-put ok not-found))))
+      (is (= 200 (:status (->options request-options ok))))
+      (is (= 200 (:status (->options request-options ok not-found)))))
+    (testing "->put"
+      (is (= 405 (:status (->put request-get ok))))
+      (is (= 404 (:status (->put request-get ok not-found))))
+      (is (= 200 (:status (->put request-put ok))))
+      (is (= 200 (:status (->put request-put ok not-found)))))
+    (testing "->post"
+      (is (= 405 (:status (->post request-put ok))))
+      (is (= 404 (:status (->post request-put ok not-found))))
+      (is (= 200 (:status (->post request-post ok))))
+      (is (= 200 (:status (->post request-post ok not-found)))))
+    (testing "->delete"
+      (is (= 405 (:status (->delete request-put ok))))
+      (is (= 404 (:status (->delete request-put ok not-found))))
+      (is (= 200 (:status (->delete request-delete ok))))
+      (is (= 200 (:status (->delete request-delete ok not-found)))))))
+
+
 (defn composite
   [request]
   (->uri request

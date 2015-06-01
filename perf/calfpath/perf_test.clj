@@ -2,7 +2,7 @@
   (:require
     [clojure.test :refer [deftest testing use-fixtures]]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
-    [calfpath.core  :refer [->uri ->method]]
+    [calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]]
     [citius.core   :as c]))
 
 
@@ -10,7 +10,10 @@
   (context "/user/:id/profile/:type/" [id type]
     (GET "/" request {:status 200
                       :headers {"Content-Type" "text/plain"}
-                      :body "1"})
+                      :body "1.1"})
+    (PUT "/" request {:status 200
+                      :headers {"Content-Type" "text/plain"}
+                      :body "1.2"})
     (ANY "/" request {:status 405
                       :headers {"Allow" "GET"
                                 "Content-Type" "text/plain"}
@@ -18,7 +21,10 @@
   (context "/user/:id/permissions"    [id]
     (GET "/" request {:status 200
                       :headers {"Content-Type" "text/plain"}
-                      :body "2"})
+                      :body "2.1"})
+    (PUT "/" request {:status 200
+                      :headers {"Content-Type" "text/plain"}
+                      :body "2.2"})
     (ANY "/" request {:status 405
                       :headers {"Allow" "GET"
                                 "Content-Type" "text/plain"}
@@ -50,19 +56,25 @@
     "/user/:id/profile/:type/" [id type] (->method request
                                            :get {:status 200
                                                  :headers {"Content-Type" "text/plain"}
-                                                 :body "1"})
+                                                 :body "1.1"}
+                                           :put {:status 200
+                                                 :headers {"Content-Type" "text/plain"}
+                                                 :body "1.2"})
     "/user/:id/permissions/"   [id]      (->method request
                                            :get {:status 200
                                                  :headers {"Content-Type" "text/plain"}
-                                                 :body "2"})
-    "/company/:cid/dept/:did/" [cid did] (->method request
+                                                 :body "2.1"}
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
-                                                 :body "3"})
-    "/this/is/a/static/route"  []        (->method request
-                                           :put {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "4"})))
+                                                 :body "2.2"})
+    "/company/:cid/dept/:did/" [cid did] (->post request
+                                           {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "3"})
+    "/this/is/a/static/route"  []        (->put request
+                                           {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "4"})))
 
 
 (use-fixtures :once (c/make-bench-wrapper ["Compojure" "CalfPath"]
