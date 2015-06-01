@@ -3,7 +3,7 @@
     [clojure.test :refer [deftest testing use-fixtures]]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
     [calfpath.core  :refer [match-route match-method]]
-    [calfpath.test-harness :as h]))
+    [citius.core   :as c]))
 
 
 (defroutes handler-compojure
@@ -65,18 +65,28 @@
                                                  :body "4"})))
 
 
-(use-fixtures :once (h/make-bench-test-wrapper "Compojure" "CalfPath" "bench.png"))
+(use-fixtures :once (c/make-bench-wrapper ["Compojure" "CalfPath"]
+                      {:chart-title "Compojure vs CalfPath"
+                       :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
 
 
 (deftest test-no-match
-  (testing "no route match"
+  (testing "no URI match"
     (let [request {:request-method :get
                    :uri "/hello/joe/"}]
-      (h/compare-perf (handler-compojure request) (handler-calfpath request)))))
+      (c/compare-perf "no URI match" (handler-compojure request) (handler-calfpath request))))
+  (testing "no method match"
+    (let [request {:request-method :put
+                   :uri "/user/1234/profile/compact/"}]
+      (c/compare-perf "no method match" (handler-compojure request) (handler-calfpath request)))))
 
 
 (deftest test-match
-  (testing "no route match"
+  (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (h/compare-perf (handler-compojure request) (handler-calfpath request)))))
+      (c/compare-perf "static route match" (handler-compojure request) (handler-calfpath request))))
+  (testing "pattern route match"
+    (let [request {:request-method :get
+                   :uri "/user/1234/profile/compact/"}]
+      (c/compare-perf "pattern route match" (handler-compojure request) (handler-calfpath request)))))
