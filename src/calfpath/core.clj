@@ -6,11 +6,11 @@
     [calfpath Util]))
 
 
-(defmacro match-route
-  "Given a ring request map and pairs of routes (URI pattern string, e.g. '/user/:id/profile/:type/') and expression
-  clauses, evaluate matching expression after adding URI params as a map to the :params key in the request map. Odd
-  numbered clauses imply the last argument is the default expression invoked on no-match. Even numbered clauses return
-  HTTP 400 by default on no-match. The dispatch happens in linear time based on URI length and number of clauses."
+(defmacro ->uri
+  "Given a ring request map and pairs of URI-templates (e.g. '/user/:id/profile/:type/') and expression clauses,
+  evaluate matching expression after adding URI params as a map to the :params key in the request map. Odd numbered
+  clauses imply the last argument is the default expression invoked on no-match. Even numbered clauses return HTTP 400
+  by default on no-match. The dispatch happens in linear time based on URI length and number of clauses."
   [request & clauses]
   (when-not (symbol? request)
     (throw (IllegalArgumentException.
@@ -18,31 +18,31 @@
   (when-not (#{0 1} (rem (count clauses) 3))
     (throw (IllegalArgumentException.
              (str "Expected clauses in sets of 3 with an optional default expression, but found " (pr-str clauses)))))
-  (doseq [[route dav _] (partition 3 clauses)]
-    (when-not (string? route)
+  (doseq [[uri-template dav _] (partition 3 clauses)]
+    (when-not (string? uri-template)
       (throw (IllegalArgumentException.
-               (str "Expected a route string, but found (" (class route) ") " (pr-str route)))))
+               (str "Expected a uri-template string, but found (" (class uri-template) ") " (pr-str uri-template)))))
     (when-not (and (vector? dav) (every? symbol? dav))
       (throw (IllegalArgumentException.
                (str "Expected destructuring argument vector with symbols, but found (" (class dav) ") "
                  (pr-str dav))))))
   (let [response-400 {:status 400
                       :headers {"Content-Type" "text/plain"}
-                      :body "400 Bad request. URI does not match any available route."}]
+                      :body "400 Bad request. URI does not match any available uri-template."}]
     (if (seq clauses)
       (let [params (gensym "params__")]
         (if (= 1 (count clauses))
           (first clauses)
-          (let [[route dav expr] clauses]
-            `(if-let [{:keys ~dav :as ~params} (Util/matchURI (:uri ~request) ~(i/parse-route \: route))]
+          (let [[uri-template dav expr] clauses]
+            `(if-let [{:keys ~dav :as ~params} (Util/matchURI (:uri ~request) ~(i/parse-uri-template \: uri-template))]
                ;; code commented out below "expensively" merges the URI params to request under the :params key
                ;; (let [~request (assoc ~request :params (merge-with merge (:params ~request) ~params))] ~expr)
                ~expr
-               (match-route ~request ~@(drop 3 clauses))))))
+               (->uri ~request ~@(drop 3 clauses))))))
       response-400)))
 
 
-(defmacro match-method
+(defmacro ->method
   "Like clojure.core/case except that the first argument must be a request map. Odd numbered clauses imply the last
   argument is the default expression invoked on no-match. Even numbered clauses return HTTP 405 (method not supported)
   by default on no-match. The dispatch happens in constant time."

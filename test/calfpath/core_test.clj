@@ -3,27 +3,27 @@
             [calfpath.core :refer :all]))
 
 
-(deftest test-match-route
+(deftest test-->uri
   (testing "No clause"
     (let [request {:uri "/user/1234/profile/compact/"}]
       (is (= 400
-            (:status (match-route request))))))
+            (:status (->uri request))))))
   (testing "One clause (no match)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 400
-            (:status (match-route request
+            (:status (->uri request
                        "/user/:id/profile/:type/" [id type] (do {:status 200
                                                                  :body (format "ID: %s, Type: %s" id type)})))))))
   (testing "One clause (with match)"
     (let [request {:uri "/user/1234/profile/compact/"}]
       (is (= "ID: 1234, Type: compact"
-            (:body (match-route request
+            (:body (->uri request
                      "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}))))))
   (testing "Two clauses (no match)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 400
-            (:status (match-route request
+            (:status (->uri request
                        "/user/:id/profile/:type/" [id type] {:status 200
                                                              :body (format "ID: %s, Type: %s" id type)}
                        "/user/:id/permissions/"   [id]      {:status 200
@@ -31,7 +31,7 @@
   (testing "Two clauses (no match, custom default)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 404
-            (:status (match-route request
+            (:status (->uri request
                        "/user/:id/profile/:type/" [id type] {:status 200
                                                              :body (format "ID: %s, Type: %s" id type)}
                        "/user/:id/permissions/"   [id]      {:status 200
@@ -41,34 +41,34 @@
   (testing "Two clause (with match)"
     (let [request {:uri "/user/1234/permissions/"}]
       (is (= "ID: 1234"
-            (:body (match-route request
+            (:body (->uri request
                      "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}
                      "/user/:id/permissions/"   [id]      {:status 200
                                                            :body (format "ID: %s" id)})))))))
 
 
-(deftest test-match-method
+(deftest test-->method
   (testing "No clause"
     (let [request {:request-method :get}]
       (is (= 405
-            (:status (match-method request))))))
+            (:status (->method request))))))
   (testing "One clause (no match)"
     (let [request {:request-method :get}]
       (is (= 405
-            (:status (match-method request
+            (:status (->method request
                        :put {:status 200
                              :body   "Updated"}))))))
   (testing "One clause (with match)"
     (let [request {:request-method :get}]
       (is (= 200
-            (:status (match-method request
+            (:status (->method request
                        :get {:status 200
                              :body   "Data"}))))))
   (testing "Two clauses (no match)"
     (let [request {:request-method :delete}]
       (is (= 405
-            (:status (match-method request
+            (:status (->method request
                        :get {:status 200
                              :body   "Data"}
                        :put {:status 200
@@ -76,7 +76,7 @@
   (testing "Two clauses (no match, custom default)"
     (let [request {:request-method :delete}]
       (is (= 404
-            (:status (match-method request
+            (:status (->method request
                        :get {:status 200
                              :body   "Data"}
                        :put {:status 200
@@ -86,7 +86,7 @@
   (testing "Two clauses (with match)"
     (let [request {:request-method :put}]
       (is (= "Updated"
-            (:body (match-method request
+            (:body (->method request
                      :get {:status 200
                            :body   "Data"}
                      :put {:status 200
@@ -95,13 +95,13 @@
 
 (defn composite
   [request]
-  (match-route request
-    "/user/:id/profile/:type/" [id type] (match-method request
+  (->uri request
+    "/user/:id/profile/:type/" [id type] (->method request
                                            :get {:status 200
                                                  :body (format "Compact profile for ID: %s, Type: %s" id type)}
                                            :put {:status 200
                                                  :body (format "Updated ID: %s, Type: %s" id type)})
-    "/user/:id/permissions/"   [id]      (match-method request
+    "/user/:id/permissions/"   [id]      (->method request
                                            :post {:status 201
                                                   :body "Created new permission"})))
 

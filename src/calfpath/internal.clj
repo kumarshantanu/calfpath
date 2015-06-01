@@ -1,7 +1,7 @@
 (ns calfpath.internal)
 
 
-(defn parse-route
+(defn parse-uri-template
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
   and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
   [marker-char ^String route]

@@ -2,7 +2,7 @@
   (:require
     [clojure.test :refer [deftest testing use-fixtures]]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
-    [calfpath.core  :refer [match-route match-method]]
+    [calfpath.core  :refer [->uri ->method]]
     [citius.core   :as c]))
 
 
@@ -46,20 +46,20 @@
 
 (defn handler-calfpath
   [request]
-  (match-route request
-    "/user/:id/profile/:type/" [id type] (match-method request
+  (->uri request
+    "/user/:id/profile/:type/" [id type] (->method request
                                            :get {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body "1"})
-    "/user/:id/permissions/"   [id]      (match-method request
+    "/user/:id/permissions/"   [id]      (->method request
                                            :get {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body "2"})
-    "/company/:cid/dept/:did/" [cid did] (match-method request
+    "/company/:cid/dept/:did/" [cid did] (->method request
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body "3"})
-    "/this/is/a/static/route"  []        (match-method request
+    "/this/is/a/static/route"  []        (->method request
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body "4"})))
