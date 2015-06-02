@@ -67,14 +67,12 @@
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body "2.2"})
-    "/company/:cid/dept/:did/" [cid did] (->post request
-                                           {:status 200
-                                            :headers {"Content-Type" "text/plain"}
-                                            :body "3"})
-    "/this/is/a/static/route"  []        (->put request
-                                           {:status 200
-                                            :headers {"Content-Type" "text/plain"}
-                                            :body "4"})))
+    "/company/:cid/dept/:did/" [cid did] (->put request {:status 200
+                                                         :headers {"Content-Type" "text/plain"}
+                                                         :body "3"})
+    "/this/is/a/static/route"  []        (->put request {:status 200
+                                                         :headers {"Content-Type" "text/plain"}
+                                                         :body "4"})))
 
 
 (use-fixtures :once (c/make-bench-wrapper ["Compojure" "CalfPath"]
@@ -97,8 +95,11 @@
   (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (c/compare-perf "static route match" (handler-compojure request) (handler-calfpath request))))
+      (c/compare-perf "static URI match, 1 method" (handler-compojure request) (handler-calfpath request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
-      (c/compare-perf "pattern route match" (handler-compojure request) (handler-calfpath request)))))
+      (c/compare-perf "pattern URI match, 2 methods" (handler-compojure request) (handler-calfpath request)))
+    (let [request {:request-method :get
+                   :uri "/company/1234/dept/5678/"}]
+      (c/compare-perf "pattern URI match, 1 method" (handler-compojure request) (handler-calfpath request)))))
