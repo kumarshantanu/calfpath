@@ -2,13 +2,52 @@
 
 A Clojure library for _à la carte_ (orthogonal) ring request matching. 
 
-Name reference:
-* _Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path)
-* The poem [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) by _Sam Walter Foss_
+(_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path). [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
+
 
 ## Usage
 
-FIXME
+Leiningen dependency: `[calfpath "0.1.0-SNAPSHOT"]`
+
+Require namespace:
+```clojure
+(require '[calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]])
+```
+
+Example:
+```clojure
+(defn handler
+  [request]
+  (->uri request
+    "/user/:id/profile/:type/" [id type] (->method request
+                                           :get {:status 200
+                                                 :headers {"Content-Type" "text/plain"}
+                                                 :body (format "ID: %s, Type: %s" id type)}
+                                           :put {:status 200
+                                                 :headers {"Content-Type" "text/plain"}
+                                                 :body (format "Updated ID: %s, Type: %s" id type)})
+    "/user/:id/permissions/"   [id]      (->method request
+                                           :get {:status 200
+                                                 :headers {"Content-Type" "text/plain"}
+                                                 :body (str "ID: " id)}
+                                           :put {:status 200
+                                                 :headers {"Content-Type" "text/plain"}
+                                                 :body (str "Updated ID: " id)})
+    "/company/:cid/dept/:did/" [cid did] (->put request {:status 200
+                                                         :headers {"Content-Type" "text/plain"}
+                                                         :body (format "CompanyID: %s, DeptID: %s" cid did)})
+    "/this/is/a/static/route"  []        (->put request {:status 200
+                                                         :headers {"Content-Type" "text/plain"}
+                                                         :body "output"})))
+```
+
+
+## Development
+
+Running tests: `lein with-profile c17 test`
+
+Running performance benchmarks: `lein with-profile c17,perf test`
+
 
 ## License
 
