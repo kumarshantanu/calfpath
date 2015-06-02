@@ -47,6 +47,8 @@ Example:
 
 ## Development
 
+You need JDK 1.7 or higher during development.
+
 Running tests: `lein with-profile c17 test`
 
 Running performance benchmarks: `lein with-profile c17,perf test`
