@@ -11,7 +11,8 @@ Leiningen dependency: `[calfpath "0.1.0-SNAPSHOT"]`
 
 Require namespace:
 ```clojure
-(require '[calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]])
+(require '[calfpath.core :refer
+                         [->uri ->method ->get ->head ->options ->put ->post ->delete]])
 ```
 
 Example:
@@ -33,12 +34,14 @@ Example:
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
                                                  :body (str "Updated ID: " id)})
-    "/company/:cid/dept/:did/" [cid did] (->put request {:status 200
-                                                         :headers {"Content-Type" "text/plain"}
-                                                         :body "Data"})
-    "/this/is/a/static/route"  []        (->put request {:status 200
-                                                         :headers {"Content-Type" "text/plain"}
-                                                         :body "output"})))
+    "/company/:cid/dept/:did/" [cid did] (->put request
+                                           {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "Data"})
+    "/this/is/a/static/route"  []        (->put request
+                                           {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "output"})))
 ```
 
 
