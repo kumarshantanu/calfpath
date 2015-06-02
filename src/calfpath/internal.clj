@@ -1,4 +1,5 @@
-(ns calfpath.internal)
+(ns calfpath.internal
+  (:require [clojure.string :as str]))
 
 
 (defn parse-uri-template
@@ -28,3 +29,28 @@
 
 
 (def valid-method-keys #{:get :head :options :put :post :delete})
+
+
+(defmacro method-dispatch
+  ([method-keyword request expr]
+    (when-not (valid-method-keys method-keyword)
+      (throw (IllegalArgumentException.
+               (str "Expected a method key (" valid-method-keys "), but found (" (class method-keyword) ") "
+                 (pr-str method-keyword)))))
+    (let [method-string (->> (name method-keyword)
+                          str/upper-case)
+          default-expr {:status 405
+                        :headers {"Allow"        method-string
+                                  "Content-Type" "text/plain"}
+                        :body (format "405 Method not supported. Only %s is supported." method-string)}]
+      `(if (identical? ~method-keyword (:request-method ~request))
+         ~expr
+         ~default-expr)))
+  ([method-keyword request expr default-expr]
+    (when-not (valid-method-keys method-keyword)
+      (throw (IllegalArgumentException.
+               (str "Expected a method key (" valid-method-keys "), but found (" (class method-keyword) ") "
+                 (pr-str method-keyword)))))
+    `(if (identical? ~method-keyword (:request-method ~request))
+       ~expr
+       ~default-expr)))

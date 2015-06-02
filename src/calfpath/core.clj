@@ -73,83 +73,41 @@
 
 (defmacro ->get
   ([request expr]
-    `(if (identical? :get (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "GET"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only GET is supported.")}))
+    `(i/method-dispatch :get ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :get (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :get ~request ~expr ~default-expr)))
 
 
 (defmacro ->head
   ([request expr]
-    `(if (identical? :head (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "HEAD"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only HEAD is supported.")}))
+    `(i/method-dispatch :head ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :head (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :head ~request ~expr ~default-expr)))
 
 
 (defmacro ->options
   ([request expr]
-    `(if (identical? :options (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "OPTIONS"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only OPTIONS is supported.")}))
+    `(i/method-dispatch :options ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :options (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :options ~request ~expr ~default-expr)))
 
 
 (defmacro ->put
   ([request expr]
-    `(if (identical? :put (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "PUT"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only PUT is supported.")}))
+    `(i/method-dispatch :put ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :put (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :put ~request ~expr ~default-expr)))
 
 
 (defmacro ->post
   ([request expr]
-    `(if (identical? :post (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "POST"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only POST is supported.")}))
+    `(i/method-dispatch :post ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :post (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :post ~request ~expr ~default-expr)))
 
 
 (defmacro ->delete
   ([request expr]
-    `(if (identical? :delete (:request-method ~request))
-       ~expr
-       {:status 405
-        :headers {"Allow"        "DELETE"
-                  "Content-Type" "text/plain"}
-        :body (str "405 Method not supported. Only DELETE is supported.")}))
+    `(i/method-dispatch :delete ~request ~expr))
   ([request expr default-expr]
-    `(if (identical? :delete (:request-method ~request))
-       ~expr
-       ~default-expr)))
+    `(i/method-dispatch :delete ~request ~expr ~default-expr)))
