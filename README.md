@@ -25,7 +25,7 @@ Example:
                                                  :body (format "ID: %s, Type: %s" id type)}
                                            :put {:status 200
                                                  :headers {"Content-Type" "text/plain"}
-                                                 :body (format "Updated ID: %s, Type: %s" id type)})
+                                                 :body "Updated"})
     "/user/:id/permissions/"   [id]      (->method request
                                            :get {:status 200
                                                  :headers {"Content-Type" "text/plain"}
@@ -35,7 +35,7 @@ Example:
                                                  :body (str "Updated ID: " id)})
     "/company/:cid/dept/:did/" [cid did] (->put request {:status 200
                                                          :headers {"Content-Type" "text/plain"}
-                                                         :body (format "CompanyID: %s, DeptID: %s" cid did)})
+                                                         :body "Data"})
     "/this/is/a/static/route"  []        (->put request {:status 200
                                                          :headers {"Content-Type" "text/plain"}
                                                          :body "output"})))
