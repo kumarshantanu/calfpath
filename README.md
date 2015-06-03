@@ -7,7 +7,7 @@ A Clojure library for _à la carte_ (orthogonal) ring request matching.
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.1.0-SNAPSHOT"]`
+Leiningen dependency: `[calfpath "0.1.0"]`
 
 Require namespace:
 ```clojure
