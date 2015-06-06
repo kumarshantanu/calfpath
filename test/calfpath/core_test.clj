@@ -144,21 +144,39 @@
                                                  :body (format "Compact profile for ID: %s, Type: %s" id type)}
                                            :put {:status 200
                                                  :body (format "Updated ID: %s, Type: %s" id type)})
-    "/user/:id/permissions/"   [id]      (->method request
-                                           :post {:status 201
-                                                  :body "Created new permission"})))
+    "/user/:id/permissions/"   [id]      (->post request {:status 201
+                                                          :body "Created new permission"})))
+
+
+(def composite-fn
+  (make-uri-handler
+    "/user/:id/profile/:type/" (fn [request {:keys [id type]}]
+                                 (->method request
+                                   :get {:status 200
+                                         :body (format "Compact profile for ID: %s, Type: %s" id type)}
+                                   :put {:status 200
+                                         :body (format "Updated ID: %s, Type: %s" id type)}))
+    "/user/:id/permissions/"   (fn [request {:keys [id]}]
+                                 (->post request {:status 201
+                                                  :body "Created new permission"}))
+    (fn [_] {:status 400
+             :headers {"Content-Type" "text/plain"}
+             :body "No matching route"})))
 
 
 (deftest test-composite
   (testing "No route match"
     (is (= 400
           (:status (composite {:request-method :get
-                               :uri "/hello/1234/"})))))
+                               :uri "/hello/1234/"}))))
+    (is (= 400
+          (:status (composite-fn {:request-method :get
+                                 :uri "/hello/1234/"})))))
   (testing "Matching route and method"
     (is (= "Compact profile for ID: 1234, Type: compact"
-          (:body (composite {:request-method :get
-                             :uri "/user/1234/profile/compact/"})))))
+          (:body (composite-fn {:request-method :get
+                                :uri "/user/1234/profile/compact/"})))))
   (testing "Matching route, but no matching method"
     (is (= 405
-          (:status (composite {:request-method :delete
-                               :uri "/user/1234/profile/compact/"}))))))
+          (:status (composite-fn {:request-method :delete
+                                  :uri "/user/1234/profile/compact/"}))))))

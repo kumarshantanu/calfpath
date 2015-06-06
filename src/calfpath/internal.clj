@@ -28,6 +28,18 @@
           (recur (unchecked-inc i) (int jn) s? r))))))
 
 
+(defn as-uri-template
+  [uri-pattern-or-template]
+  (cond
+    (string? uri-pattern-or-template)      (parse-uri-template \: uri-pattern-or-template)
+    (and (vector? uri-pattern-or-template)
+      (every? (some-fn string? keyword?)
+        uri-pattern-or-template))          uri-pattern-or-template
+    :otherwise (throw (IllegalArgumentException.
+                        (str "Expected a string URI pattern or a parsed URI template, but found ("
+                          (class uri-pattern-or-template) ") " (pr-str uri-pattern-or-template))))))
+
+
 (def valid-method-keys #{:get :head :options :put :post :delete})
 
 

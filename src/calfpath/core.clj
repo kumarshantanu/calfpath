@@ -42,6 +42,43 @@
       response-400)))
 
 
+(defn make-uri-handler
+  "Given a string URI pattern/parsed template and an arity-2 (request, uri-params map) fn f, return a ring handler that
+  invokes f when the request URI matches the URI template, returns nil otherwise. Several such pairs can be passed,
+  with an optional arity-1 (request) default handler at the end."
+  ([uri-pattern-or-template f]
+    (let [uri-template (i/as-uri-template uri-pattern-or-template)]
+      (fn [request]
+        (when-let [uri-params (Util/matchURI ^String (:uri request) uri-template)]
+          (f request uri-params)))))
+  ([uri-pattern-or-template f default-handler]
+    (let [uri-template (i/as-uri-template uri-pattern-or-template)]
+      (fn [request]
+        (if-let [uri-params (Util/matchURI ^String (:uri request) uri-template)]
+          (f request uri-params)
+          (default-handler request)))))
+  ([uri-pattern-or-template f uri-pattern-or-template2 g & more]
+    (let [clauses   (into [uri-pattern-or-template f uri-pattern-or-template2 g] more)
+          templates (->> (partition 2 clauses)
+                      (map first)
+                      (map i/as-uri-template)
+                      object-array)
+          handlers  (->> (partition 2 clauses)
+                      (map second)
+                      object-array)
+          n-pairs   (count templates)
+          h-default (when (odd? (count clauses))
+                      (last clauses))]
+      (fn [request]
+        (loop [i (int 0)]
+          (if (>= i n-pairs)
+            (when h-default
+              (h-default request))
+            (if-let [uri-params (Util/matchURI ^String (:uri request) (aget templates i))]
+              ((aget handlers i) request uri-params)
+              (recur (unchecked-inc i)))))))))
+
+
 (defmacro ->method
   "Like clojure.core/case except that the first argument must be a request map. Odd numbered clauses imply the last
   argument is the default expression invoked on no-match. Even numbered clauses return HTTP 405 (method not supported)
