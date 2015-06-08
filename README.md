@@ -72,7 +72,8 @@ When you need a function (for composition) that creates a Ring handler:
     "/company/:cid/dept/:did/" (fn [request {:keys [cid did]}]
                                  (->put request {:status 200
                                                  :headers {"Content-Type" "text/plain"}
-                                                 :body ("Updated CompanyID: %s, Dept ID: %s" cid did)}))
+                                                 :body ("Updated CompanyID: %s, Dept ID: %s"
+                                                         cid did)}))
     "/this/is/a/static/route"  (fn [request _]
                                  (->put request {:status 200
                                                  :headers {"Content-Type" "text/plain"}
