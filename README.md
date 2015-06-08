@@ -12,7 +12,8 @@ Leiningen dependency: `[calfpath "0.2.0"]`
 Require namespace:
 ```clojure
 (require '[calfpath.core :refer
-                         [->uri ->method ->get ->head ->options ->put ->post ->delete make-uri-handler]])
+                         [->uri ->method ->get ->head ->options ->put ->post ->delete
+                          make-uri-handler]])
 ```
 
 ### Examples
