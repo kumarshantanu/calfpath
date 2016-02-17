@@ -129,6 +129,13 @@
     `(i/method-dispatch :options ~request ~expr ~default-expr)))
 
 
+(defmacro ->patch
+  ([request expr]
+    `(i/method-dispatch :patch ~request ~expr))
+  ([request expr default-expr]
+    `(i/method-dispatch :patch ~request ~expr ~default-expr)))
+
+
 (defmacro ->put
   ([request expr]
     `(i/method-dispatch :put ~request ~expr))
