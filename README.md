@@ -1,18 +1,18 @@
 # calfpath
 
-A Clojure library for _à la carte_ (orthogonal) ring request matching. 
+A Clojure library for _à la carte_ (orthogonal) ring request matching.
 
 (_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path). [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
 
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.2.0"]`
+Leiningen dependency: `[calfpath "0.2.1"]`
 
 Require namespace:
 ```clojure
 (require '[calfpath.core :refer
-                         [->uri ->method ->get ->head ->options ->put ->post ->delete
+                         [->uri ->method ->get ->head ->options ->patch ->put ->post ->delete
                           make-uri-handler]])
 ```
 
@@ -94,7 +94,7 @@ Running performance benchmarks: `lein with-profile c17,perf test`
 
 ## License
 
-Copyright © 2015 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
+Copyright © 2015-2016 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

@@ -1,4 +1,4 @@
-(defproject calfpath "0.2.0"
+(defproject calfpath "0.2.1"
   :description "A la carte ring request matching"
   :url "https://github.com/kumarshantanu/calfpath"
   :license {:name "Eclipse Public License"
@@ -10,6 +10,8 @@
   :profiles {:dev {:dependencies [[org.clojure/tools.nrepl "0.2.10"]]}
              :c16 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :c17 {:dependencies [[org.clojure/clojure "1.7.0"]]
+                   :global-vars {*unchecked-math* :warn-on-boxed}}
+             :c18 {:dependencies [[org.clojure/clojure "1.8.0"]]
                    :global-vars {*unchecked-math* :warn-on-boxed}}
              :perf {:dependencies [[compojure "1.4.0" :exclusions [[org.clojure/clojure]]]
                                    [citius    "0.2.1"]]
