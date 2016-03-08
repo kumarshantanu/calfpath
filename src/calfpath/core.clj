@@ -12,20 +12,13 @@
   clauses imply the last argument is the default expression invoked on no-match. Even numbered clauses return HTTP 400
   by default on no-match. The dispatch happens in linear time based on URI length and number of clauses."
   [request & clauses]
-  (when-not (symbol? request)
-    (throw (IllegalArgumentException.
-             (str "Expected a symbol bound to ring request map, but found (" (class request) ") " (pr-str request)))))
+  (i/expected symbol? "a symbol bound to ring request map" request)
   (when-not (#{0 1} (rem (count clauses) 3))
-    (throw (IllegalArgumentException.
-             (str "Expected clauses in sets of 3 with an optional default expression, but found " (pr-str clauses)))))
+    (i/expected "clauses in sets of 3 with an optional default expression" clauses))
   (doseq [[uri-template dav _] (partition 3 clauses)]
-    (when-not (string? uri-template)
-      (throw (IllegalArgumentException.
-               (str "Expected a uri-template string, but found (" (class uri-template) ") " (pr-str uri-template)))))
+    (i/expected string? "a uri-template string" uri-template)
     (when-not (and (vector? dav) (every? symbol? dav))
-      (throw (IllegalArgumentException.
-               (str "Expected destructuring argument vector with symbols, but found (" (class dav) ") "
-                 (pr-str dav))))))
+      (i/expected "destructuring argument vector with symbols" dav)))
   (let [response-400 {:status 400
                       :headers {"Content-Type" "text/plain"}
                       :body "400 Bad request. URI does not match any available uri-template."}]
@@ -85,10 +78,7 @@
   by default on no-match. The dispatch happens in constant time."
   [request & clauses]
   (doseq [[method-key _] (partition 2 clauses)]
-    (when-not (i/valid-method-keys method-key)
-      (throw (IllegalArgumentException.
-               (str "Expected method-key to be either of " i/valid-method-keys ", but found (" (class method-key) ") "
-                 (pr-str method-key))))))
+    (i/expected i/valid-method-keys (str "method-key to be either of " i/valid-method-keys) method-key))
   (let [valid-method-keys-str (->> (partition 2 clauses)
                                 (map first)
                                 (map name)
