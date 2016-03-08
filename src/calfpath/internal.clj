@@ -37,10 +37,13 @@
           (recur (unchecked-inc i) (int jn) s? r))))))
 
 
+(def ^:const default-separator \:)
+
+
 (defn as-uri-template
   [uri-pattern-or-template]
   (cond
-    (string? uri-pattern-or-template)      (parse-uri-template \: uri-pattern-or-template)
+    (string? uri-pattern-or-template)      (parse-uri-template default-separator uri-pattern-or-template)
     (and (vector? uri-pattern-or-template)
       (every? (some-fn string? keyword?)
         uri-pattern-or-template))          uri-pattern-or-template
