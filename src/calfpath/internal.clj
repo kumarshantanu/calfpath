@@ -2,6 +2,15 @@
   (:require [clojure.string :as str]))
 
 
+(defn expected
+  ([expectation found]
+    (throw (IllegalArgumentException.
+             (format "Expected %s, but found (%s) %s" expectation (class found) (pr-str found)))))
+  ([pred expectation found]
+    (when-not (pred found)
+      (expected expectation found))))
+
+
 (defn parse-uri-template
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
   and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
@@ -35,9 +44,8 @@
     (and (vector? uri-pattern-or-template)
       (every? (some-fn string? keyword?)
         uri-pattern-or-template))          uri-pattern-or-template
-    :otherwise (throw (IllegalArgumentException.
-                        (str "Expected a string URI pattern or a parsed URI template, but found ("
-                          (class uri-pattern-or-template) ") " (pr-str uri-pattern-or-template))))))
+    :otherwise                             (expected "a string URI pattern or a parsed URI template"
+                                             uri-pattern-or-template)))
 
 
 (def valid-method-keys #{:get :head :options :put :post :delete})
@@ -46,9 +54,7 @@
 (defmacro method-dispatch
   ([method-keyword request expr]
     (when-not (valid-method-keys method-keyword)
-      (throw (IllegalArgumentException.
-               (str "Expected a method key (" valid-method-keys "), but found (" (class method-keyword) ") "
-                 (pr-str method-keyword)))))
+      (expected (str "a method key (" valid-method-keys ")") method-keyword))
     (let [method-string (->> (name method-keyword)
                           str/upper-case)
           default-expr {:status 405
@@ -60,9 +66,7 @@
          ~default-expr)))
   ([method-keyword request expr default-expr]
     (when-not (valid-method-keys method-keyword)
-      (throw (IllegalArgumentException.
-               (str "Expected a method key (" valid-method-keys "), but found (" (class method-keyword) ") "
-                 (pr-str method-keyword)))))
+      (expected (str "a method key (" valid-method-keys ")") method-keyword))
     `(if (identical? ~method-keyword (:request-method ~request))
        ~expr
        ~default-expr)))
