@@ -1,29 +1,29 @@
 (ns calfpath.core-test
   (:require [clojure.test :refer :all]
-            [calfpath.core :refer :all]))
+            [calfpath.core :as c]))
 
 
 (deftest test-->uri
   (testing "No clause"
     (let [request {:uri "/user/1234/profile/compact/"}]
       (is (= 400
-            (:status (->uri request))))))
+            (:status (c/->uri request))))))
   (testing "One clause (no match)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 400
-            (:status (->uri request
+            (:status (c/->uri request
                        "/user/:id/profile/:type/" [id type] (do {:status 200
                                                                  :body (format "ID: %s, Type: %s" id type)})))))))
   (testing "One clause (with match)"
     (let [request {:uri "/user/1234/profile/compact/"}]
       (is (= "ID: 1234, Type: compact"
-            (:body (->uri request
+            (:body (c/->uri request
                      "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}))))))
   (testing "Two clauses (no match)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 400
-            (:status (->uri request
+            (:status (c/->uri request
                        "/user/:id/profile/:type/" [id type] {:status 200
                                                              :body (format "ID: %s, Type: %s" id type)}
                        "/user/:id/permissions/"   [id]      {:status 200
@@ -31,7 +31,7 @@
   (testing "Two clauses (no match, custom default)"
     (let [request {:uri "/hello/1234/"}]
       (is (= 404
-            (:status (->uri request
+            (:status (c/->uri request
                        "/user/:id/profile/:type/" [id type] {:status 200
                                                              :body (format "ID: %s, Type: %s" id type)}
                        "/user/:id/permissions/"   [id]      {:status 200
@@ -41,7 +41,7 @@
   (testing "Two clause (with match)"
     (let [request {:uri "/user/1234/permissions/"}]
       (is (= "ID: 1234"
-            (:body (->uri request
+            (:body (c/->uri request
                      "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}
                      "/user/:id/permissions/"   [id]      {:status 200
@@ -52,23 +52,23 @@
   (testing "No clause"
     (let [request {:request-method :get}]
       (is (= 405
-            (:status (->method request))))))
+            (:status (c/->method request))))))
   (testing "One clause (no match)"
     (let [request {:request-method :get}]
       (is (= 405
-            (:status (->method request
+            (:status (c/->method request
                        :put {:status 200
                              :body   "Updated"}))))))
   (testing "One clause (with match)"
     (let [request {:request-method :get}]
       (is (= 200
-            (:status (->method request
+            (:status (c/->method request
                        :get {:status 200
                              :body   "Data"}))))))
   (testing "Two clauses (no match)"
     (let [request {:request-method :delete}]
       (is (= 405
-            (:status (->method request
+            (:status (c/->method request
                        :get {:status 200
                              :body   "Data"}
                        :put {:status 200
@@ -76,7 +76,7 @@
   (testing "Two clauses (no match, custom default)"
     (let [request {:request-method :delete}]
       (is (= 404
-            (:status (->method request
+            (:status (c/->method request
                        :get {:status 200
                              :body   "Data"}
                        :put {:status 200
@@ -86,7 +86,7 @@
   (testing "Two clauses (with match)"
     (let [request {:request-method :put}]
       (is (= "Updated"
-            (:body (->method request
+            (:body (c/->method request
                      :get {:status 200
                            :body   "Data"}
                      :put {:status 200
@@ -105,59 +105,59 @@
         not-found {:status 404
                    :body   "Not found"}]
     (testing "->get"
-      (is (= 405 (:status (->get request-put ok))))
-      (is (= 404 (:status (->get request-put ok not-found))))
-      (is (= 200 (:status (->get request-get ok))))
-      (is (= 200 (:status (->get request-get ok not-found)))))
+      (is (= 405 (:status (c/->get request-put ok))))
+      (is (= 404 (:status (c/->get request-put ok not-found))))
+      (is (= 200 (:status (c/->get request-get ok))))
+      (is (= 200 (:status (c/->get request-get ok not-found)))))
     (testing "->head"
-      (is (= 405 (:status (->head request-put ok))))
-      (is (= 404 (:status (->head request-put ok not-found))))
-      (is (= 200 (:status (->head request-head ok))))
-      (is (= 200 (:status (->head request-head ok not-found)))))
+      (is (= 405 (:status (c/->head request-put ok))))
+      (is (= 404 (:status (c/->head request-put ok not-found))))
+      (is (= 200 (:status (c/->head request-head ok))))
+      (is (= 200 (:status (c/->head request-head ok not-found)))))
     (testing "->options"
-      (is (= 405 (:status (->options request-put ok))))
-      (is (= 404 (:status (->options request-put ok not-found))))
-      (is (= 200 (:status (->options request-options ok))))
-      (is (= 200 (:status (->options request-options ok not-found)))))
+      (is (= 405 (:status (c/->options request-put ok))))
+      (is (= 404 (:status (c/->options request-put ok not-found))))
+      (is (= 200 (:status (c/->options request-options ok))))
+      (is (= 200 (:status (c/->options request-options ok not-found)))))
     (testing "->put"
-      (is (= 405 (:status (->put request-get ok))))
-      (is (= 404 (:status (->put request-get ok not-found))))
-      (is (= 200 (:status (->put request-put ok))))
-      (is (= 200 (:status (->put request-put ok not-found)))))
+      (is (= 405 (:status (c/->put request-get ok))))
+      (is (= 404 (:status (c/->put request-get ok not-found))))
+      (is (= 200 (:status (c/->put request-put ok))))
+      (is (= 200 (:status (c/->put request-put ok not-found)))))
     (testing "->post"
-      (is (= 405 (:status (->post request-put ok))))
-      (is (= 404 (:status (->post request-put ok not-found))))
-      (is (= 200 (:status (->post request-post ok))))
-      (is (= 200 (:status (->post request-post ok not-found)))))
+      (is (= 405 (:status (c/->post request-put ok))))
+      (is (= 404 (:status (c/->post request-put ok not-found))))
+      (is (= 200 (:status (c/->post request-post ok))))
+      (is (= 200 (:status (c/->post request-post ok not-found)))))
     (testing "->delete"
-      (is (= 405 (:status (->delete request-put ok))))
-      (is (= 404 (:status (->delete request-put ok not-found))))
-      (is (= 200 (:status (->delete request-delete ok))))
-      (is (= 200 (:status (->delete request-delete ok not-found)))))))
+      (is (= 405 (:status (c/->delete request-put ok))))
+      (is (= 404 (:status (c/->delete request-put ok not-found))))
+      (is (= 200 (:status (c/->delete request-delete ok))))
+      (is (= 200 (:status (c/->delete request-delete ok not-found)))))))
 
 
 (defn composite
   [request]
-  (->uri request
-    "/user/:id/profile/:type/" [id type] (->method request
+  (c/->uri request
+    "/user/:id/profile/:type/" [id type] (c/->method request
                                            :get {:status 200
                                                  :body (format "Compact profile for ID: %s, Type: %s" id type)}
                                            :put {:status 200
                                                  :body (format "Updated ID: %s, Type: %s" id type)})
-    "/user/:id/permissions/"   [id]      (->post request {:status 201
+    "/user/:id/permissions/"   [id]      (c/->post request {:status 201
                                                           :body "Created new permission"})))
 
 
 (def composite-fn
-  (make-uri-handler
+  (c/make-uri-handler
     "/user/:id/profile/:type/" (fn [request {:keys [id type]}]
-                                 (->method request
+                                 (c/->method request
                                    :get {:status 200
                                          :body (format "Compact profile for ID: %s, Type: %s" id type)}
                                    :put {:status 200
                                          :body (format "Updated ID: %s, Type: %s" id type)}))
     "/user/:id/permissions/"   (fn [request {:keys [id]}]
-                                 (->post request {:status 201
+                                 (c/->post request {:status 201
                                                   :body "Created new permission"}))
     (fn [_] {:status 400
              :headers {"Content-Type" "text/plain"}
