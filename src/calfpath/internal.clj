@@ -51,7 +51,7 @@
                                              uri-pattern-or-template)))
 
 
-(def valid-method-keys #{:get :head :options :put :post :delete})
+(def valid-method-keys #{:get :head :options :patch :put :post :delete})
 
 
 (defmacro method-dispatch
