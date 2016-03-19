@@ -2,8 +2,8 @@
 
 ## 0.3.0 / 2016-March-??
 
-* [TODO] Support for route-map (route-spec collection) as a core abstraction
-* [TODO] Refactor `make-uri-handler` using route-map
+* Support for extensible routes as a first-class abstraction
+* [TODO] Deprecate/re-orient `calfpath.core/make-uri-handler`
 
 
 ## 0.2.0 / 2015-June-06
