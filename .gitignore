@@ -12,3 +12,5 @@ pom.xml.asc
 /.classpath
 /.project
 /.settings
+/*.swp
+
