@@ -199,14 +199,11 @@
 
 
 (def compiled-calfpath-routes
-  (->> calfpath-uri-routes
-    (map (fn [r]
-           (if-let [nested (:nested r)]
-             (update-in r [:nested]
-               (partial r/make-routes r/make-method-matcher))
-             r)))
-    (r/make-routes r/make-uri-matcher)
-    r/conj-fallback-400))
+  (-> calfpath-uri-routes
+    (r/update-routes r/update-fallback-405 :method)
+    (r/update-routes r/update-fallback-400 :uri {:show-uris? false})
+    (r/update-each-route r/make-method-matcher :method)
+    (r/update-each-route r/make-uri-matcher :uri)))
 
 
 ;(def handler-calfpath-route-walker

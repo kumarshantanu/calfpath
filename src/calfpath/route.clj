@@ -9,6 +9,7 @@
 
 (ns calfpath.route
   (:require
+    [clojure.string :as string]
     [calfpath.internal :as i])
   (:import
     [java.util Map]
@@ -104,7 +105,7 @@
                    (mapcat (fn [idx]
                              `[~(get matcher-syms idx) (:matcher (get ~routes-sym ~idx))
                                ~(get handler-syms idx) (:handler (get ~routes-sym ~idx))]))
-                   ;; eval forms can only access information via root-level vars
+                   ;; eval-forms can only access information via root-level vars
                    ;; so we use the dynamic var *routes* here
                    (into `[~routes-sym ~'calfpath.route/*routes*]))
         all-exps (->> (range n)
@@ -137,6 +138,9 @@
       (eval fn-form))))
 
 
+;; ----- fallback route match -----
+
+
 (defn conj-fallback-match
   "Given a route vector append a matcher that always matches with a corresponding specified handler."
   [routes handler]
@@ -145,66 +149,215 @@
 
 
 (defn conj-fallback-400
-  [routes]
-  (conj-fallback-match routes
-    (fn [_ _]
-      {:status 400
-       :headers {"Content-Type" "text/plain"}
-       :body "400 Bad request. URI does not match any available uri-template."})))
+  ([routes {:keys [show-uris? uri-finder uri-prefix] :as opts}]
+    (when (and show-uris? (not uri-finder))
+      (i/expected ":show-uris? key to be accompanied by :uri-finder key" opts))
+    (let [uri-list-str (when show-uris?
+                         (->> (filter uri-finder routes)
+                           (map uri-finder)
+                           (map (partial str uri-prefix))
+                           (cons "Available URI templates:")
+                           (string/join \newline)
+                           (str "\n\n")))
+          response-400 {:status 400
+                        :headers {"Content-Type" "text/plain"}
+                        :body (str "400 Bad request. URI does not match any available uri-template." uri-list-str)}]
+      (conj-fallback-match routes
+        (fn [_ _] response-400))))
+  ([routes]
+    (conj-fallback-400 routes {})))
 
 
 (defn conj-fallback-405
-  [routes valid-method-keys-str]
-  (conj-fallback-match routes
-    (fn [_ _]
-      {:status 405
-       :headers {"Allow"        valid-method-keys-str
-                 "Content-Type" "text/plain"}
-       :body (str "405 Method not supported. Supported methods are: " valid-method-keys-str)})))
+  [routes {:keys [allowed-methods method-finder] :as opts}]
+  (when (not (or allowed-methods method-finder))
+    (i/expected "either :allowed-methods or :method-finder key to be present" opts))
+  (let [as-str (fn [x] (if (instance? clojure.lang.Named x)
+                         (name x)
+                         (str x)))
+        methods-list (or allowed-methods
+                       (->> (filter method-finder routes)
+                         (map method-finder)
+                         flatten
+                         (map as-str)
+                         (map string/upper-case)
+                         distinct
+                         (string/join ", ")))
+        response-405 {:status 405
+                      :headers {"Allow"        methods-list
+                                "Content-Type" "text/plain"}
+                      :body (str "405 Method not supported. Allowed methods are: " methods-list)}]
+    (conj-fallback-match routes
+      (fn [_ _] response-405))))
 
 
-(defn make-uri-matcher
-  "Given a route spec map containing :uri key with URI-pattern as value, return a matcher fn to match the URI."
-  [{:keys [uri]
-    :as spec}]
-  (when-not (string? uri)
-    (i/expected ":uri key to exist with a string value" spec))
-  (let [uri-template (i/parse-uri-template i/default-separator uri)]
-    (fn [request]
-      (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
-        {:params params}))))
+;; ----- update bulk routes -----
 
 
-(defn make-method-matcher
-  "Given a route spec map containing :method key with method keyword (or keyword set) as value, return a matcher fn to
-  match the method."
-  [{:keys [method]
-    :as spec}]
-  (when-not (or (keyword? method)
-              (and (set? method)
-                (every? keyword? method)))
-    (i/expected ":method key to exist with a keyword or keyword-set value" spec))
-  (cond
-    (keyword? method) (fn [request]
-                        (when (= (:request-method request) method)
-                          {}))
-    (set? method)     (fn [request]
-                        (when (method (:request-method request))
-                          {}))))
-
-
-(defn make-routes
-  "Given a collection of raw route-spec maps, populate the routes with a suitable matcher.
-  See: make-uri-matcher, make-method-matcher"
-  [make-matcher routes]
+(defn update-routes
+  "Given a bunch of routes, update every route-collection (recursively) with f."
+  [routes f & args]
   (when-not (coll? routes)
     (i/expected "routes to be a collection" routes))
   (doseq [spec routes]
     (when-not (map? spec)
       (i/expected "route spec to be a map" spec)))
-  (mapv (fn [{:keys [matcher]
-              :as spec}]
-          (if matcher
-            spec
-            (assoc spec :matcher (make-matcher spec))))
+  (as-> routes $
+    (mapv (fn [spec]
+            (if (contains? spec :nested)
+              (apply update-in spec [:nested] update-routes f args)
+              spec))
+      $)
+    (apply f $ args)))
+
+
+(defn update-fallback-400
+  "Update routes by appending a fallback HTTP-400 route only when all routes have :uri key."
+  ([routes uri-finder opts]
+    (if (every? uri-finder routes)
+      (conj-fallback-400 routes (assoc opts :uri-finder uri-finder))
+      routes))
+  ([routes]
+    (update-fallback-400 {})))
+
+
+(defn update-fallback-405
+  "Update routes by appending a fallback HTTP-405 route when all routes have :method key."
+  ([routes method-finder opts]
+    (if (every? method-finder routes)
+      (conj-fallback-405 routes (assoc opts :method-finder method-finder))
+      routes))
+  ([routes method-finder]
+    (update-fallback-405 routes method-finder {})))
+
+
+;; ----- update each route -----
+
+
+(defn update-each-route
+  "Given a bunch of routes, update every route (recursively) with f."
+  [routes f & args]
+  (when-not (coll? routes)
+    (i/expected "routes to be a collection" routes))
+  (doseq [spec routes]
+    (when-not (map? spec)
+      (i/expected "route spec to be a map" spec)))
+  (mapv (fn [spec]
+          (let [spec (if (contains? spec :nested)
+                       (apply update-in spec [:nested] update-each-route f args)
+                       spec)]
+            (apply f spec args)))
+    routes))
+
+
+(defn make-ensurer
+  "Given a key and factory fn (accepts route and other args, returns new route), create a route updater fn that applies
+  f to the route only when it does not contain the key."
+  [k f]
+  (fn [spec & args]
+    (when-not (map? spec)
+      (i/expected "route spec to be a map" spec))
+    (if (contains? spec k)
+      spec
+      (apply f spec args))))
+
+
+(defn make-updater
+  "Given a key and updater fn (accepts route and other args, returns new route), create a route updater fn that applies
+  f to the route only when it contains the key."
+  [k f]
+  (fn [spec & args]
+    (when-not (map? spec)
+      (i/expected "route spec to be a map" spec))
+    (if (contains? spec k)
+      (apply f spec args)
+      spec)))
+
+
+;; ----- ensure matcher in routes -----
+
+
+(def make-uri-matcher
+  "Given a route spec map containing :uri key with URI-pattern as value, return a matcher fn to match the URI. If the
+  route spec does not contain :uri key then it is left intact."
+  (make-ensurer :matcher
+    (fn [spec uri-finder]
+      (when-not (map? spec)
+        (i/expected "route spec to be a map" spec))
+      (if-let [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
+        (do
+          (when-not (string? uri-pattern)
+            (i/expected "URI pattern to be retrievable as a string value" spec))
+          (assoc spec :matcher
+            (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)]
+              (fn [request]
+                (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
+                  {:params params})))))
+        spec))))
+
+
+(def make-method-matcher
+  "Given a route spec map containing :method key with method keyword (or keyword set) as value, return a matcher fn to
+  match the method. If the route spec does not contain :method key then it is left intact."
+  (make-ensurer :matcher
+    (fn [spec method-finder]
+      (when-not (map? spec)
+        (i/expected "route spec to be a map" spec))
+      (if-let [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
+        (do
+          (when-not (or (keyword? method)
+                      (and (set? method)
+                        (every? keyword? method)))
+            (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
+          (assoc spec :matcher
+            (cond
+              (keyword? method) (fn [request]
+                                  (when (= (:request-method request) method)
+                                    {}))
+              (set? method)     (fn [request]
+                                  (when (method (:request-method request))
+                                    {})))))
+        spec))))
+
+
+;; ----- manipulate nested routes -----
+
+
+(defn cons-matcher
+  "Given a bunch of routes, nest all of them under a specified matcher."
+  [matcher routes]
+  [{:matcher matcher :nested routes}])
+
+
+(defn cons-uri-prefix-matcher
+  "Given a bunch of routes, nest all of them under a URI-prefix matcher."
+  [^String prefix routes {:keys [strip? replace? original-key]
+                          :as options}]
+  (cons-matcher
+    (let [plen (.length prefix)]
+      (cond
+        (and strip? replace?)       (fn [request]
+                                      (let [^String uri (:uri request)]
+                                        (when (and (.startsWith uri prefix)
+                                                (> (.length uri) plen))
+                                          {:request (assoc request
+                                                      :uri         (.substring uri plen)
+                                                      original-key uri)})))
+        (and strip? (not replace?)) (fn [request]
+                                      (let [^String uri (:uri request)]
+                                        (when (and (.startsWith uri prefix)
+                                                (> (.length uri) plen))
+                                          {:request (assoc request
+                                                      :uri (.substring uri plen))})))
+        (and (not strip?) replace?) (fn [request]
+                                      (let [^String uri (:uri request)]
+                                        (when (and (.startsWith uri prefix)
+                                                (> (.length uri) plen))
+                                          {:request (assoc request
+                                                      original-key uri)})))
+        :otherwise                  (fn [request]
+                                      (let [^String uri (:uri request)]
+                                        (when (and (.startsWith uri prefix)
+                                                (> (.length uri) plen))
+                                          {})))))
     routes))

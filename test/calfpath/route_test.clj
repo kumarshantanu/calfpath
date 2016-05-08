@@ -20,7 +20,7 @@
     (merge {:request-method (:request-method request)})))
 
 
-(def uri-routes
+(def all-routes
   [{:uri "/user/:id/profile/:type/"
     :nested [{:method :get    :handler handler :name "get.user.profile"}
              {:method :patch  :handler handler :name "update.user.profile"}
@@ -32,14 +32,11 @@
    {:uri "/hello/1234/" :handler handler}])
 
 
-(def final-routes (->> uri-routes
-                    (map (fn [r]
-                           (if-let [nested (:nested r)]
-                             (update-in r [:nested]
-                               (partial r/make-routes r/make-method-matcher))
-                             r)))
-                    (r/make-routes r/make-uri-matcher)
-                    r/conj-fallback-400))
+(def final-routes (-> all-routes
+                    (r/update-routes r/update-fallback-405 :method)
+                    (r/update-routes r/update-fallback-400 :uri {:show-uris? true})
+                    (r/update-each-route r/make-method-matcher :method)
+                    (r/update-each-route r/make-uri-matcher :uri)))
 
 
 (defn routes-helper
@@ -52,7 +49,20 @@
           :id "id-2"}
         (handler {:uri "/user/id-2/permissions/"    :request-method :post})))
   (is (= {:request-method :get}
-        (handler {:uri "/hello/1234/"               :request-method :get}))))
+        (handler {:uri "/hello/1234/"               :request-method :get})))
+  (is (= {:status 400
+          :headers {"Content-Type" "text/plain"}
+          :body "400 Bad request. URI does not match any available uri-template.
+
+Available URI templates:
+/user/:id/profile/:type/
+/user/:id/permissions/
+/hello/1234/"}
+        (handler {:uri "/bad/uri"          :request-method :get})))
+  (is (= {:status 405
+          :headers {"Allow" "GET, POST, PUT", "Content-Type" "text/plain"}
+          :body "405 Method not supported. Allowed methods are: GET, POST, PUT"}
+        (handler {:uri "/user/123/permissions/"     :request-method :bad}))))
 
 
 (deftest test-routes
