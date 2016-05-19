@@ -76,11 +76,15 @@
   corresponding route handler on successful match, returns nil otherwise.
   Synopsis:
   0. A route is a map {:matcher arity-1 fn  ; :matcher is a required key
+                       :matchex arity-1 fn  ; optional (enabled by default)
                        :nested  route-map   ; either of :nested and :handler keys must be present
-                       :handler arity-3 fn}
+                       :handler arity-2 fn}
   1. A matcher is arity-1 fn (accepts request as argument) that returns {:request request :params route-param-map}
      on successful match, nil otherwise. A matcher may update the request (on successful match) before passing it on.
-  2. Handler is arity-2 function (accepts request and match-param-map as arguments)."
+  2. A matchex is arity-1 fn (accepts request symbol as argument) that returns expression to eval instead of calling
+     matcher. The matchex is used only when :matcher is also present. Expr should return a value similar to matcher.
+  3. A matchex is for optimization only, which may be disabled by setting a false or nil value for the :matchex key.
+  4. Handler is arity-2 function (accepts request and match-param-map as arguments)."
   [routes]
   (let [routes (->> routes
                  (map (fn [spec]
@@ -115,8 +119,11 @@
                                expr)
                              ([expr idx]
                                (let [matcher-sym (get matcher-syms idx)
+                                     matcher-exp (if-let [matchex (:matchex (get routes idx))]
+                                                   (matchex request-sym)
+                                                   `(~matcher-sym ~request-sym))
                                      handler-sym (get handler-syms idx)]
-                                 `(if-let [match# (~matcher-sym ~request-sym)]
+                                 `(if-let [match# ~matcher-exp]
                                     (let [request# (get match# :request ~request-sym)
                                           ^Map params#  (get match# :params)]
                                       (~handler-sym request#
@@ -288,11 +295,17 @@
         (do
           (when-not (string? uri-pattern)
             (i/expected "URI pattern to be retrievable as a string value" spec))
-          (assoc spec :matcher
-            (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)]
-              (fn [request]
-                (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
-                  {:params params})))))
+          (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)
+                ensure-matchex (make-ensurer :matchex
+                                 (fn [spec x]
+                                   (assoc spec :matchex x)))]
+            (-> spec
+              (assoc :matcher (fn [request]
+                                (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
+                                  {:params params})))
+              (ensure-matchex (fn [request]
+                                `(when-let [params# (Util/matchURI ^String (:uri ~request) ~uri-template)]
+                                   {:params params#}))))))
         spec))))
 
 
@@ -304,19 +317,27 @@
       (when-not (map? spec)
         (i/expected "route spec to be a map" spec))
       (if-let [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
-        (do
+        (let [ensure-matchex (make-ensurer :matchex (fn [spec x]
+                                                      (assoc spec :matchex x)))]
           (when-not (or (keyword? method)
                       (and (set? method)
                         (every? keyword? method)))
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
-          (assoc spec :matcher
-            (cond
-              (keyword? method) (fn [request]
-                                  (when (= (:request-method request) method)
-                                    {}))
-              (set? method)     (fn [request]
-                                  (when (method (:request-method request))
-                                    {})))))
+          (cond
+            (keyword? method) (-> spec
+                                (assoc :matcher (fn [request]
+                                                  (when (= (:request-method request) method)
+                                                    {})))
+                                (ensure-matchex (fn [request]
+                                                  `(when (= (:request-method ~request) ~method)
+                                                     {}))))
+            (set? method)     (-> spec
+                                (assoc :matcher (fn [request]
+                                                  (when (method (:request-method request))
+                                                    {})))
+                                (ensure-matchex (fn [request]
+                                                  `(when (~method (:request-method ~request))
+                                                     {}))))))
         spec))))
 
 
