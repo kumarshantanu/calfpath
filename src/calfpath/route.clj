@@ -16,32 +16,38 @@
     [calfpath Util]))
 
 
-;; Implementation notes:
-;; --------------------
-;; A naive implementation would recursively walk the routes evaluating the request with each matcher.
-;; The commented out below implements the naive idea:
-;
-;(defn dispatch
-;  ([routes original-request original-params] ; routes must be a vector
-;    (let [n (count routes)]
-;      (loop [i 0]
-;        (when (< i n)
-;          (let [route-spec (get routes i)
-;                matcher (get route-spec :matcher)
-;                match-result (matcher original-request)]
-;            (if (nil? match-result)
-;              (recur (unchecked-inc i))
-;              (let [request (get match-result :request original-request)
-;                    params  (merge original-params
-;                              (get match-result :params))]
-;                (if-let [nested (get route-spec :nested)]
-;                  (dispatch nested request params)
-;                  (if-let [handler (get route-spec :handler)]
-;                    (handler request params)
-;                    (i/expected ":nested or :handler key to be present in route" route-spec))))))))))
-;  ([routes original-request]
-;    (dispatch routes original-request {})))
-;
+(defn dispatch
+  "Given a vector of routes, recursively walk the routes evaluating the specified Ring request with each matcher.
+  Invoke corresponding handler on successful match.
+  Synopsis:
+  0. A route is a map {:matcher arity-1 fn  ; :matcher is a required key
+                       :nested  route-map   ; either of :nested and :handler keys must be present
+                       :handler arity-2 fn}
+  1. A matcher is arity-1 fn (accepts request as argument) that returns {:request request :params route-param-map}
+     on successful match, nil otherwise. A matcher may update the request (on successful match) before passing it on.
+  2. Handler is arity-2 function (accepts request and match-param-map as arguments)."
+  ([routes original-request original-params] ; routes must be a vector
+    (let [n (count routes)]
+      (loop [i 0]
+        (when (< i n)
+          (if-let [route-spec (get routes i)]
+            (if-let [matcher (get route-spec :matcher)]
+              (if-let [match-result (matcher original-request)]
+                (let [request (get match-result :request original-request)
+                      params  (merge original-params
+                                (get match-result :params))]
+                  (if-let [nested (get route-spec :nested)]
+                    (dispatch nested request params)
+                    (if-let [handler (get route-spec :handler)]
+                      (handler request params)
+                      (i/expected ":nested or :handler key to be present in route" route-spec))))
+                (recur (unchecked-inc i)))
+              (i/expected ":matcher key to be present in route" route-spec))
+            (i/expected "routes to be a vector containing maps" routes))))))
+  ([routes original-request]
+    (dispatch routes original-request {})))
+
+
 ;; Below is the outline of a loop-unrolled optimized version that returns a function that recursively matches routes
 ;; against the request:
 ;

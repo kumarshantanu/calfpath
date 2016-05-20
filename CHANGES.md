@@ -1,14 +1,18 @@
 # Changes and TODO
 
-## 0.3.0 / 2016-March-??
+
+## 0.3.0 / 2016-May-??
 
 * Support for extensible routes as a first-class abstraction
-* [TODO] Deprecate/re-orient `calfpath.core/make-uri-handler`
+  * A dispatcher fn that walks given routes to match request and invoke corresponding handler
+  * An optimized (through loop unrolling) way to create a dispatcher fn from given routes
+  * Helper fns to manipulate routes at shallow and deep levels
 
 
 ## 0.2.1 / 2016-February-17
 
 * Add support for `PATCH` HTTP method
+
 
 ## 0.2.0 / 2015-June-06
 

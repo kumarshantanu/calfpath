@@ -66,7 +66,7 @@ Available URI templates:
 
 
 (deftest test-routes
-;  (testing "walker"
-;    (routes-helper (partial r/dispatch final-routes)))
+  (testing "walker"
+    (routes-helper (partial r/dispatch final-routes)))
   (testing "unrolled"
     (routes-helper (r/make-dispatcher final-routes))))

@@ -206,8 +206,8 @@
     (r/update-each-route r/make-uri-matcher :uri)))
 
 
-;(def handler-calfpath-route-walker
-;  (partial r/dispatch compiled-calfpath-routes))
+(def handler-calfpath-route-walker
+  (partial r/dispatch compiled-calfpath-routes))
 
 
 (def handler-calfpath-route-unrolled
@@ -216,7 +216,7 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Compojure" "Clout" "CalfPath" "CalfPath-fn" #_"CalfPath-route-walker" "CalfPath-route-unrolled"]
+    ["Compojure" "Clout" "CalfPath" "CalfPath-fn" "CalfPath-route-walker" "CalfPath-route-unrolled"]
     {:chart-title "Compojure/Clout/CalfPath"
      :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
 
@@ -234,13 +234,13 @@
                    :uri "/hello/joe/"}]
       (test-compare-perf "no URI match" (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-fn request)
-        #_(handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
   (testing "no method match"
     (let [request {:request-method :put
                    :uri "/user/1234/profile/compact/"}]
       (test-compare-perf "no method match" (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-fn request)
-        #_(handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
 
 
 (deftest test-match
@@ -249,15 +249,15 @@
                    :uri "/this/is/a/static/route"}]
       (test-compare-perf "static URI match, 1 method" (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-fn request)
-        #_(handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
       (test-compare-perf "pattern URI match, 2 methods" (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-fn request)
-        #_(handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
       (test-compare-perf "pattern URI match, 1 method" (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-fn request)
-        #_(handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
