@@ -13,4 +13,5 @@ pom.xml.asc
 /.project
 /.settings
 /*.swp
+/bench*.png
 
