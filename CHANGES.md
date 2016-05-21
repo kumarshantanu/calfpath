@@ -1,6 +1,14 @@
 # Changes and TODO
 
 
+## TODO
+
+* Make URI-match work for partial matches and URI prefixes
+  * A partial URI pattern may be expressed with a `*` suffix
+  * Zero or more partial URI patterns may exist in a route tree
+  * This may impact how URIs in HTTP-400 responses are generated
+
+
 ## 0.3.0 / 2016-May-??
 
 * Support for extensible routes as a first-class abstraction
