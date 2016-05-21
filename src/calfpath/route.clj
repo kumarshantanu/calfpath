@@ -290,9 +290,19 @@
 ;; ----- ensure matcher in routes -----
 
 
-(def make-uri-matcher
-  "Given a route spec map containing :uri key with URI-pattern as value, return a matcher fn to match the URI. If the
-  route spec does not contain :uri key then it is left intact."
+(def ^{:arglists '([route-spec matchex])} ensure-matchex
+  "Given a route spec not containing the :matchex key, assoc specified matchex into the spec. If the route spec already
+  contains :matchex then leave it intact."
+  (make-ensurer :matchex
+    (fn [spec matchex]
+      (assoc spec :matchex matchex))))
+
+
+(def ^{:arglists '([route-spec uri-finder])} make-uri-matcher
+  "Given a route spec not containing the :matcher key and containing URI-pattern string as value (found by uri-finder),
+  create a URI matcher and add it under the :matcher key. If the route spec already contains the :matcher key or if it
+  does not contain URI-pattern then the route spec is left intact. When adding matcher also add matchex unless the
+  :matchex key already exists."
   (make-ensurer :matcher
     (fn [spec uri-finder]
       (when-not (map? spec)
@@ -300,11 +310,8 @@
       (if-let [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
         (do
           (when-not (string? uri-pattern)
-            (i/expected "URI pattern to be retrievable as a string value" spec))
-          (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)
-                ensure-matchex (make-ensurer :matchex
-                                 (fn [spec x]
-                                   (assoc spec :matchex x)))]
+            (i/expected "URI pattern to be a string" spec))
+          (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn [request]
                                 (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
@@ -315,16 +322,17 @@
         spec))))
 
 
-(def make-method-matcher
-  "Given a route spec map containing :method key with method keyword (or keyword set) as value, return a matcher fn to
-  match the method. If the route spec does not contain :method key then it is left intact."
+(def ^{:arglists '([route-spec method-finder])} make-method-matcher
+  "Given a route spec not containing the :matcher key and containing HTTP-method keyword (or keyword set) as value
+  (found by method-finder), create a method matcher and add it under the :matcher key. If the route spec already
+  contains the :matcher key or if it does not contain HTTP-method keyword/set then the route spec is left intact. When
+  adding matcher also add matchex unless the :matchex key already exists."
   (make-ensurer :matcher
     (fn [spec method-finder]
       (when-not (map? spec)
         (i/expected "route spec to be a map" spec))
       (if-let [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
-        (let [ensure-matchex (make-ensurer :matchex (fn [spec x]
-                                                      (assoc spec :matchex x)))]
+        (do
           (when-not (or (keyword? method)
                       (and (set? method)
                         (every? keyword? method)))
@@ -345,46 +353,3 @@
                                                   `(when (~method (:request-method ~request))
                                                      {}))))))
         spec))))
-
-
-;; ----- manipulate nested routes -----
-
-
-(defn cons-matcher
-  "Given a bunch of routes, nest all of them under a specified matcher."
-  [matcher routes]
-  [{:matcher matcher :nested routes}])
-
-
-(defn cons-uri-prefix-matcher
-  "Given a bunch of routes, nest all of them under a URI-prefix matcher."
-  [^String prefix routes {:keys [strip? replace? original-key]
-                          :as options}]
-  (cons-matcher
-    (let [plen (.length prefix)]
-      (cond
-        (and strip? replace?)       (fn [request]
-                                      (let [^String uri (:uri request)]
-                                        (when (and (.startsWith uri prefix)
-                                                (> (.length uri) plen))
-                                          {:request (assoc request
-                                                      :uri         (.substring uri plen)
-                                                      original-key uri)})))
-        (and strip? (not replace?)) (fn [request]
-                                      (let [^String uri (:uri request)]
-                                        (when (and (.startsWith uri prefix)
-                                                (> (.length uri) plen))
-                                          {:request (assoc request
-                                                      :uri (.substring uri plen))})))
-        (and (not strip?) replace?) (fn [request]
-                                      (let [^String uri (:uri request)]
-                                        (when (and (.startsWith uri prefix)
-                                                (> (.length uri) plen))
-                                          {:request (assoc request
-                                                      original-key uri)})))
-        :otherwise                  (fn [request]
-                                      (let [^String uri (:uri request)]
-                                        (when (and (.startsWith uri prefix)
-                                                (> (.length uri) plen))
-                                          {})))))
-    routes))
