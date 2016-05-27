@@ -11,7 +11,7 @@
   * Rendering should be configurable (default: fn that returns file-content as body)
 
 
-## 0.3.0 / 2016-May-??
+## 0.3.0 / 2016-May-27
 
 * Support for extensible routes as a first-class abstraction
   * A dispatcher fn that walks given routes to match request and invoke corresponding handler
