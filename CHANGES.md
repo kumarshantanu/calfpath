@@ -7,6 +7,8 @@
   * A partial URI pattern may be expressed with a `*` suffix
   * Zero or more partial URI patterns may exist in a route tree
   * This may impact how URIs in HTTP-400 responses are generated
+* Add support for fetching/rendering static files
+  * Rendering should be configurable (default: fn that returns file-content as body)
 
 
 ## 0.3.0 / 2016-May-??
