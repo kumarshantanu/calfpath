@@ -1,6 +1,6 @@
 # calfpath
 
-A Clojure library for _à la carte_ (orthogonal) ring request matching.
+A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching.
 
 (_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path). [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
 
