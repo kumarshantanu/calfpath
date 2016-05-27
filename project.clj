@@ -7,7 +7,8 @@
                 *assert* true}
   :java-source-paths ["java-src"]
   :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
-  :profiles {:dev {:dependencies [[org.clojure/tools.nrepl "0.2.10"]]}
+  :profiles {:provided {:dependencies [[org.clojure/clojure "1.5.1"]]}
+             :dev {:dependencies [[org.clojure/tools.nrepl "0.2.10"]]}
              :c15 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :c16 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :c17 {:dependencies [[org.clojure/clojure "1.7.0"]]
