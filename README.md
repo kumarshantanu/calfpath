@@ -119,8 +119,8 @@ See examples below:
 
 (def ring-handler
   (-> (make-routes)
-    (r/update-routes r/update-fallback-405 :method)  ; add HTTP-405 fallback: no-method match
-    (r/update-routes r/update-fallback-400 :uri-template {:show-uris? true})  ; add HTTP-400 fallback: no-URI match
+    (r/update-routes r/update-fallback-405 :method)  ; HTTP-405 fallback: no-method match
+    (r/update-routes r/update-fallback-400 :uri-template {:show-uris? true})  ; HTTP-400 fallback: no-URI match
     (r/update-each-route r/make-method-matcher :method)  ; add method matchers under :matcher key
     (r/update-each-route r/make-uri-matcher :uri-template)  ; add URI matchers under :matcher key
     r/make-dispatcher))
