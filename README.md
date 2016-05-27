@@ -117,12 +117,13 @@ See examples below:
    {:uri-template "/orders/:order-id/confirm/" :nested [{:method :post :handler confirm-order}]}
    {:uri-template "/health/" :handler health-status}])
 
-(def ring-handler (-> (make-routes)
-                    (r/update-routes r/update-fallback-405 :method)  ; add HTTP-405 fallbacks
-                    (r/update-routes r/update-fallback-400 :uri-template {:show-uris? true})  ; add HTTP-400 fallbacks
-                    (r/update-each-route r/make-method-matcher :method)  ; add method matchers under :matcher key
-                    (r/update-each-route r/make-uri-matcher :uri-template)  ; add URI matchers under :matcher key
-                    r/make-dispatcher))
+(def ring-handler
+  (-> (make-routes)
+    (r/update-routes r/update-fallback-405 :method)  ; add HTTP-405 fallback: no-method match
+    (r/update-routes r/update-fallback-400 :uri-template {:show-uris? true})  ; add HTTP-400 fallback: no-URI match
+    (r/update-each-route r/make-method-matcher :method)  ; add method matchers under :matcher key
+    (r/update-each-route r/make-uri-matcher :uri-template)  ; add URI matchers under :matcher key
+    r/make-dispatcher))
 ```
 
 
