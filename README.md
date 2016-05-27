@@ -93,8 +93,9 @@ fundamental keys:
 
 | Key        | Required? | Description |
 |------------|-----------|-------------|
-| `:matcher` |    Yes    | Arity-1 fn: accepts request map, returns `nil` on unsuccessful match and a non-`nil` map on\
-successful match. Updated request is returned via `:request` key, route params are returned via `:params`. |
+| `:matcher` |    Yes    | Arity-1 fn: accepts request map, returns `nil` on unsuccessful match and a non-`nil` map on|
+|            |           | successful match. Updated request may be returned via `:request` key and route params may be|
+|            |           | returned via `:params` key - both keys are optional. A minimal successful match is `{}`.|
 | `:nested`  |   Either  | Routes vector - match is attempted on this if matcher is successful. |
 | `:handler` |   Either  | Arity-2 fn: accepts request map and params map, returns Ring response map. |
 
