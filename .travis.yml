@@ -1,0 +1,11 @@
+language: clojure
+jdk:
+  - openjdk7
+  - oraclejdk7
+  - oraclejdk8
+script:
+  - lein with-profile c15 test
+  - lein with-profile c16 test
+  - lein with-profile c17 test
+  - lein with-profile c18 test
+  - lein with-profile c19 test
