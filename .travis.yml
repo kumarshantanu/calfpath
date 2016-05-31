@@ -9,6 +9,3 @@ script:
   - lein with-profile c17 test
   - lein with-profile c18 test
   - lein with-profile c19 test
-  - lein with-profile c17,perf test
-  - lein with-profile c18,perf test
-  - lein with-profile c19,perf test
