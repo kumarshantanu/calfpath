@@ -198,12 +198,7 @@
              :body "400 Bad request. URI does not match any available uri-template."})))
 
 
-(def compiled-calfpath-routes
-  (-> calfpath-uri-routes
-    (r/update-routes r/update-fallback-405 :method)
-    (r/update-routes r/update-fallback-400 :uri {:show-uris? false})
-    (r/update-each-route r/make-method-matcher :method)
-    (r/update-each-route r/make-uri-matcher :uri)))
+(def compiled-calfpath-routes (r/make-routes calfpath-uri-routes {:show-uris-400? false}))
 
 
 (def handler-calfpath-route-walker

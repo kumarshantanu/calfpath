@@ -353,3 +353,35 @@
                                                   `(when (~method (:request-method ~request))
                                                      {}))))))
         spec))))
+
+
+;; ----- helper fns -----
+
+
+(defn make-routes
+  "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
+  Options:
+   :uri?           (boolean) true if URI templates should be converted to matchers
+   :uri-key        (non-nil) the key to be used to look up the URI template in a spec
+   :fallback-400?  (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
+   :show-uris-400? (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
+   :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
+   :method?        (boolean) true if HTTP methods should be converted to matchers
+   :method-key     (non-nil) the key to be used to look up the method key/set in a spec
+   :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods"
+  ([route-specs {:keys [uri? uri-key fallback-400? show-uris-400? uri-prefix-400
+                        method? method-key fallback-405?]
+                 :or {uri?    true  uri-key    :uri     fallback-400? true  show-uris-400? true
+                      method? true  method-key :method  fallback-405? true}
+                 :as options}]
+    (let [when-> (fn [specs test f & args] (if test
+                                             (apply f specs args)
+                                             specs))]
+      (-> route-specs
+        (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
+        (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
+                                                                                       :uri-prefix uri-prefix-400})
+        (when-> method? update-each-route make-method-matcher method-key)
+        (when-> uri?    update-each-route make-uri-matcher    uri-key))))
+  ([route-specs]
+    (make-routes route-specs {})))

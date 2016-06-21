@@ -32,11 +32,7 @@
    {:uri "/hello/1234/" :handler handler}])
 
 
-(def final-routes (-> all-routes
-                    (r/update-routes r/update-fallback-405 :method)
-                    (r/update-routes r/update-fallback-400 :uri {:show-uris? true})
-                    (r/update-each-route r/make-method-matcher :method)
-                    (r/update-each-route r/make-uri-matcher :uri)))
+(def final-routes (r/make-routes all-routes))
 
 
 (defn routes-helper
