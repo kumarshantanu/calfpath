@@ -21,7 +21,8 @@
 
 
 (def all-routes
-  [{:uri "/user/:id/profile/:type/"
+  [{:uri "/info/:token/" :method :get :handler handler :name "info"}
+   {:uri "/user/:id/profile/:type/"
     :nested [{:method :get    :handler handler :name "get.user.profile"}
              {:method :patch  :handler handler :name "update.user.profile"}
              {:method :delete :handler handler :name "delete.user.profile"}]}
@@ -38,6 +39,13 @@
 (defn routes-helper
   [handler]
   (is (= {:request-method :get
+          :token "status"}
+        (handler {:uri "/info/status/" :request-method :get})))
+  (is (= {:status 405
+          :headers {"Allow" "GET" "Content-Type" "text/plain"}
+          :body "405 Method not supported. Allowed methods are: GET"}
+        (handler {:uri "/info/status/" :request-method :post})))
+  (is (= {:request-method :get
           :id "id-1"
           :type "type-2"}
         (handler {:uri "/user/id-1/profile/type-2/" :request-method :get})))
@@ -51,6 +59,7 @@
           :body "400 Bad request. URI does not match any available uri-template.
 
 Available URI templates:
+/info/:token/
 /user/:id/profile/:type/
 /user/:id/permissions/
 /hello/1234/"}

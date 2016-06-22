@@ -14,7 +14,7 @@
 ## 0.4.0 / 2016-June-??
 
 * Helper fn to build routes from given route specs
-  * [TODO] Support for splitting routes with URI and method specifiers into nested routes
+  * Support for splitting routes with URI and method specifiers into nested routes
 * [TODO] A truthy `(true? matcher)` should result in direct dispatch
 
 

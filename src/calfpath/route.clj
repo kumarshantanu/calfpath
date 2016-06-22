@@ -368,16 +368,24 @@
    :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
    :method?        (boolean) true if HTTP methods should be converted to matchers
    :method-key     (non-nil) the key to be used to look up the method key/set in a spec
-   :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods"
-  ([route-specs {:keys [uri? uri-key fallback-400? show-uris-400? uri-prefix-400
-                        method? method-key fallback-405?]
-                 :or {uri?    true  uri-key    :uri     fallback-400? true  show-uris-400? true
-                      method? true  method-key :method  fallback-405? true}
+   :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
+   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
+  ([route-specs {:keys [uri?       uri-key    fallback-400? show-uris-400? uri-prefix-400
+                        method?    method-key fallback-405?
+                        lift-uri?]
+                 :or {uri?       true  uri-key    :uri     fallback-400? true  show-uris-400? true
+                      method?    true  method-key :method  fallback-405? true
+                      lift-uri?  true}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> (and uri? method?
+                  lift-uri?)                update-each-route (fn [spec] (if (every? spec [uri-key method-key])
+                                                                           {uri-key (get spec uri-key)
+                                                                            :nested [(dissoc spec uri-key)]}
+                                                                           spec)))
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})
