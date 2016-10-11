@@ -8,7 +8,10 @@
 
 
 (ns calfpath.internal
-  (:require [clojure.string :as str]))
+  (:require
+    [clojure.string :as str])
+  (:import
+    [calfpath MatchResult Util]))
 
 
 (defn expected
@@ -23,25 +26,30 @@
 (defn parse-uri-template
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
   and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
-  [marker-char ^String route]
-  (let [n (count route)
+  [marker-char ^String pattern]
+  (let [[^String path partial?] (if (and (> (.length pattern) 1)
+                                      (.endsWith pattern "*"))
+                                  [(subs pattern 0 (dec (.length pattern))) true]  ; chop off last char
+                                  [pattern false])
+        n (count path)
         separator \/]
     (loop [i (int 0) ; current index in the URI string
            j (int 0) ; start index of the current token (string or keyword)
            s? true   ; string in progress? (false implies keyword in progress)
            r []]
       (if (>= i n)
-        (conj r (let [t (.substring route j i)]
-                  (if s?
-                    t
-                    (keyword t))))
-        (let [ch (.charAt route i)
+        [(conj r (let [t (subs path j i)]
+                   (if s?
+                     t
+                     (keyword t))))
+         partial?]
+        (let [ch (.charAt path i)
               [jn s? r] (if s?
                           (if (= ^char marker-char ch)
-                            [(unchecked-inc i) false (conj r (.substring route j i))]
+                            [(unchecked-inc i) false (conj r (subs path j i))]
                             [j true r])
                           (if (= separator ch)
-                            [i true  (conj r (keyword (.substring route j i)))]
+                            [i true  (conj r (keyword (subs path j i)))]
                             [j false r]))]
           (recur (unchecked-inc i) (int jn) s? r))))))
 
@@ -58,6 +66,22 @@
         uri-pattern-or-template))          uri-pattern-or-template
     :otherwise                             (expected "a string URI pattern or a parsed URI template"
                                              uri-pattern-or-template)))
+
+
+(def ^:const uri-match-end-index :calfpath/uri-match-end-index)
+
+
+(definline get-uri-match-end-index
+  [request]
+  `(or (get ~request uri-match-end-index) 0))
+
+
+(definline assoc-uri-match-end-index
+  [request end-index]
+  `(assoc ~request uri-match-end-index ~end-index))
+
+
+(def path-params :calfpath/path-params)
 
 
 (def valid-method-keys #{:get :head :options :patch :put :post :delete})

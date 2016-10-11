@@ -13,7 +13,7 @@
     [calfpath.internal :as i])
   (:import
     [java.util Map]
-    [calfpath Util]))
+    [calfpath MatchResult Util]))
 
 
 (defn dispatch
@@ -26,7 +26,7 @@
   1. A matcher is arity-1 fn (accepts request as argument) that returns {:request request :params route-param-map}
      on successful match, nil otherwise. A matcher may update the request (on successful match) before passing it on.
   2. Handler is arity-2 function (accepts request and match-param-map as arguments)."
-  ([routes original-request original-params] ; routes must be a vector
+  ([routes original-request ^Map original-params] ; routes must be a vector
     (let [n (count routes)]
       (loop [i 0]
         (when (< i n)
@@ -34,8 +34,12 @@
             (if-let [matcher (get route-spec :matcher)]
               (if-let [match-result (matcher original-request)]
                 (let [request (get match-result :request original-request)
-                      params  (merge original-params
-                                (get match-result :params))]
+                      params  (if-let [^Map path-params (get match-result :params)]
+                                (cond
+                                  (.isEmpty original-params) path-params
+                                  (.isEmpty path-params)     original-params
+                                  :otherwise                 (conj {} original-params path-params))
+                                original-params)]
                   (if-let [nested (get route-spec :nested)]
                     (dispatch nested request params)
                     (if-let [handler (get route-spec :handler)]
@@ -311,14 +315,20 @@
         (do
           (when-not (string? uri-pattern)
             (i/expected "URI pattern to be a string" spec))
-          (let [uri-template (i/parse-uri-template i/default-separator uri-pattern)]
+          (let [[uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
-              (assoc :matcher (fn [request]
-                                (when-let [params (Util/matchURI ^String (:uri request) uri-template)]
-                                  {:params params})))
+              (assoc :matcher (fn uri-matcher [request]
+                                (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
+                                                                       (int (i/get-uri-match-end-index request))
+                                                                       uri-template partial?)]
+                                  {:params  (.getParams match-result)
+                                   :request (i/assoc-uri-match-end-index request (.getEndIndex match-result))})))
               (ensure-matchex (fn [request]
-                                `(when-let [params# (Util/matchURI ^String (:uri ~request) ~uri-template)]
-                                   {:params params#}))))))
+                                `(when-let [^MatchResult match-result# (Util/matchURI ^String (:uri ~request)
+                                                                         (int (i/get-uri-match-end-index ~request))
+                                                                         ~uri-template ~partial?)]
+                                   {:params  (.getParams match-result#)
+                                    :request (i/assoc-uri-match-end-index ~request (.getEndIndex match-result#))}))))))
         spec))))
 
 
@@ -339,14 +349,14 @@
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
           (cond
             (keyword? method) (-> spec
-                                (assoc :matcher (fn [request]
+                                (assoc :matcher (fn method-matcher [request]
                                                   (when (= (:request-method request) method)
                                                     {})))
                                 (ensure-matchex (fn [request]
                                                   `(when (= (:request-method ~request) ~method)
                                                      {}))))
             (set? method)     (-> spec
-                                (assoc :matcher (fn [request]
+                                (assoc :matcher (fn multiple-method-matcher [request]
                                                   (when (method (:request-method request))
                                                     {})))
                                 (ensure-matchex (fn [request]

@@ -12,7 +12,7 @@
     [clojure.string :as str]
     [calfpath.internal :as i])
   (:import
-    [calfpath Util]))
+    [calfpath MatchResult Util]))
 
 
 (defmacro ->uri
@@ -35,11 +35,14 @@
       (let [params (gensym "params__")]
         (if (= 1 (count clauses))
           (first clauses)
-          (let [[uri-template dav expr] clauses]
-            `(if-let [{:keys ~dav :as ~params} (Util/matchURI (:uri ~request) ~(i/parse-uri-template \: uri-template))]
-               ;; code commented out below "expensively" merges the URI params to request under the :params key
-               ;; (let [~request (assoc ~request :params (merge-with merge (:params ~request) ~params))] ~expr)
-               ~expr
+          (let [[uri-pattern dav expr] clauses
+                [uri-template partial?] (i/parse-uri-template \: uri-pattern)]
+            `(if-let [^MatchResult match-result# (Util/matchURI (:uri ~request)
+                                                   (int (i/get-uri-match-end-index ~request))
+                                                   ~uri-template ~partial?)]
+               (let [{:keys ~dav :as ~params} (.getParams match-result#)
+                     ~request (i/assoc-uri-match-end-index ~request (.getEndIndex match-result#))]
+                 ~expr)
                (->uri ~request ~@(drop 3 clauses))))))
       response-400)))
 
@@ -49,15 +52,17 @@
   invokes f when the request URI matches the URI template, returns nil otherwise. Several such pairs can be passed,
   with an optional arity-1 (request) default handler at the end."
   ([uri-pattern-or-template f]
-    (let [uri-template (i/as-uri-template uri-pattern-or-template)]
+    (let [[uri-template partial?] (i/as-uri-template uri-pattern-or-template)]
       (fn [request]
-        (when-let [uri-params (Util/matchURI ^String (:uri request) uri-template)]
-          (f request uri-params)))))
+        (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
+                                               (int (i/get-uri-match-end-index request)) uri-template partial?)]
+          (f (i/assoc-uri-match-end-index request (.getEndIndex match-result)) (.getParams match-result))))))
   ([uri-pattern-or-template f default-handler]
-    (let [uri-template (i/as-uri-template uri-pattern-or-template)]
+    (let [[uri-template partial?] (i/as-uri-template uri-pattern-or-template)]
       (fn [request]
-        (if-let [uri-params (Util/matchURI ^String (:uri request) uri-template)]
-          (f request uri-params)
+        (if-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
+                                             (int (i/get-uri-match-end-index request)) uri-template partial?)]
+          (f (i/assoc-uri-match-end-index request (.getEndIndex match-result)) (.getParams match-result))
           (default-handler request)))))
   ([uri-pattern-or-template f uri-pattern-or-template2 g & more]
     (let [clauses   (into [uri-pattern-or-template f uri-pattern-or-template2 g] more)
@@ -76,9 +81,12 @@
           (if (>= i n-pairs)
             (when h-default
               (h-default request))
-            (if-let [uri-params (Util/matchURI ^String (:uri request) (aget templates i))]
-              ((aget handlers i) request uri-params)
-              (recur (unchecked-inc i)))))))))
+            (let [[uri-template partial?] (aget templates i)]
+              (if-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
+                                                   (int (i/get-uri-match-end-index request)) uri-template partial?)]
+                ((aget handlers i) (i/assoc-uri-match-end-index request (.getEndIndex match-result))
+                  (.getParams match-result))
+                (recur (unchecked-inc i))))))))))
 
 
 (defmacro ->method

@@ -3,18 +3,20 @@
 
 ## TODO
 
-* Make URI-match work for partial matches and URI prefixes
-  * A partial URI pattern may be expressed with a `*` suffix
-  * Zero or more partial URI patterns may exist in a route tree
-  * This may impact how URIs in HTTP-400 responses are generated
-* Add support for fetching/rendering static files
+* [TODO] BREAKING CHANGE: Rename the abstraction to uri-template to path
+* [TODO] Add support for fetching/rendering static files
   * Rendering should be configurable (default: fn that returns file-content as body)
 
 
 ## 0.4.0 / 2016-June-??
 
+* Make URI-match work for partial matches and URI prefixes
+  * A partial URI pattern may be expressed with a `*` suffix
+  * Zero or more partial URI patterns may exist in a route tree
+  * This may impact how URIs in HTTP-400 responses are generated
 * Helper fn to build routes from given route specs
   * Support for splitting routes with URI and method specifiers into nested routes
+* [TODO] A route middleware to treat route handlers like arity-1 ring handler fns
 * [TODO] A truthy `(true? matcher)` should result in direct dispatch
 
 
