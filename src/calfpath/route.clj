@@ -291,6 +291,15 @@
       spec)))
 
 
+(defn update-in-each-route
+  "Given a bunch of routes, update every route (recursively) containing specified attribute with the given wrapper. The
+  wrapper fn f is invoked with the old attribute value, and the returned value is updated into the route."
+  [specs reference-key f]
+  (->> #(update-in % [reference-key] f)
+    (make-updater reference-key)
+    (update-each-route specs)))
+
+
 ;; ----- ensure matcher in routes -----
 
 
@@ -365,6 +374,34 @@
         spec))))
 
 
+;; ----- ensure handler in routes -----
+
+
+(def ^{:arglists '([route-spec ring-handler-key params-key])} ring-handler-middleware
+  "Given a route spec not containing the :handler key and containing the ring-handler-key, wrap the arity-1 Ring handler
+  into an arity-2 route handler where the path params are available under the specified key in the request map."
+  (make-ensurer :handler
+    (fn [spec ring-handler-key path-params-key]
+      (if (contains? spec ring-handler-key)
+        (let [ring-handler (get spec ring-handler-key)]
+          (assoc spec :handler (fn [request path-params]
+                                 (ring-handler (assoc request path-params-key path-params)))))
+        spec))))
+
+
+;; ----- route middleware -----
+
+
+(defn lift-key-middleware
+  "Given a route spec, a lift key and one or more conflict keys, if both lift-key and any of the conflict-keys exist in
+  the spec then extract the lift key such that all other attributes are moved into a nested spec."
+  [spec lift-key conflict-keys]
+  (if (and (contains? spec lift-key) (some #(contains? spec %) conflict-keys))
+    {lift-key (get spec lift-key)
+     :nested  [(dissoc spec lift-key)]}
+    spec))
+
+
 ;; ----- helper fns -----
 
 
@@ -379,23 +416,27 @@
    :method?        (boolean) true if HTTP methods should be converted to matchers
    :method-key     (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
-   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
+   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs
+   :ring-handler?  (boolean) whether arity-1 Ring handler be allowed as handlers
+   :ring-handler-key  (fn-1) the key to be used to look up the arity-1 fn Ring handler in a spec
+   :path-param-key (non-nil) the key to associate the path params with in a request map when :ring-handler? is true"
   ([route-specs {:keys [uri?       uri-key    fallback-400? show-uris-400? uri-prefix-400
                         method?    method-key fallback-405?
-                        lift-uri?]
+                        lift-uri?
+                        ring-handler? ring-handler-key path-param-key]
                  :or {uri?       true  uri-key    :uri     fallback-400? true  show-uris-400? true
                       method?    true  method-key :method  fallback-405? true
-                      lift-uri?  true}
+                      lift-uri?  true
+                      ring-handler? true ring-handler-key :ring-handler path-param-key :path-params}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> (and ring-handler?
+                  ring-handler-key)         update-each-route ring-handler-middleware ring-handler-key path-param-key)
         (when-> (and uri? method?
-                  lift-uri?)                update-each-route (fn [spec] (if (every? spec [uri-key method-key])
-                                                                           {uri-key (get spec uri-key)
-                                                                            :nested [(dissoc spec uri-key)]}
-                                                                           spec)))
+                  lift-uri?)                update-each-route lift-key-middleware uri-key [method-key])
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})

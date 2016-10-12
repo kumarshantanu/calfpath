@@ -8,16 +8,18 @@
   * Rendering should be configurable (default: fn that returns file-content as body)
 
 
-## 0.4.0 / 2016-June-??
+## 0.4.0 / 2016-October-??
 
 * Make URI-match work for partial matches and URI prefixes
   * A partial URI pattern may be expressed with a `*` suffix
   * Zero or more partial URI patterns may exist in a route tree
   * This may impact how URIs in HTTP-400 responses are generated
+* A helper fn `calfpath.route/update-in-each-route` to apply route attribute wrapper to specs
+* A lift-key middleware `calfpath.route/lift-key-middleware` to split routes with mixed specs
+* A ring-route middleware `calfpath.route/ring-handler-middleware` to wrap Ring handlers into route handlers
 * Helper fn to build routes from given route specs
-  * Support for splitting routes with URI and method specifiers into nested routes
-* [TODO] A route middleware to treat route handlers like arity-1 ring handler fns
-* [TODO] A truthy `(true? matcher)` should result in direct dispatch
+* [TODO] Allow non-literal string URI-patterns in `calfpath.core/->uri`
+* [TODO] BREAKING CHANGE: Drop `calfpath.core/make-uri-handler` in favor of Calfpath routes
 
 
 ## 0.3.0 / 2016-May-27

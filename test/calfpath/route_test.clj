@@ -47,10 +47,38 @@
    {:uri "/hello/1234/" :handler handler}])
 
 
+(defn ring-route-handler
+  [request]
+  (let [params (:path-params request)]
+    (->> params
+      (merge {:request-method (:request-method request)}))))
+
+
+(def all-ring-routes
+  [{:uri "/info/:token/" :method :get :ring-handler ring-route-handler :name "info"}
+   {:uri "/user/:id/profile/:type/"
+    :nested [{:method :get    :ring-handler ring-route-handler :name "get.user.profile"}
+             {:method :patch  :ring-handler ring-route-handler :name "update.user.profile"}
+             {:method :delete :ring-handler ring-route-handler :name "delete.user.profile"}]}
+   {:uri "/user/:id/permissions/"
+    :nested [{:method :get    :ring-handler ring-route-handler :name "get.user.permissions"}
+             {:method :post   :ring-handler ring-route-handler :name "create.user.permission"}
+             {:method :put    :ring-handler ring-route-handler :name "replace.user.permissions"}]}
+   {:uri "/hello/1234/" :ring-handler ring-route-handler}])
+
+
 (def final-routes (r/make-routes all-routes))
 
 
 (def final-partial-routes (r/make-routes all-partial-routes))
+
+
+(def final-ring-routes (-> all-ring-routes
+                         (r/update-in-each-route :ring-handler (fn [handler]
+                                                                 (fn [request]
+                                                                   (is (contains? request :path-params))
+                                                                   (handler request))))
+                         r/make-routes))
 
 
 (def flat-400 "400 Bad request. URI does not match any available uri-template.
@@ -106,4 +134,8 @@ Available URI templates:
   (testing "walker partial"
     (routes-helper (partial r/dispatch final-partial-routes) partial-400))
   (testing "unrolled partial"
-    (routes-helper (r/make-dispatcher final-partial-routes) partial-400)))
+    (routes-helper (r/make-dispatcher final-partial-routes) partial-400))
+  (testing "walker ring"
+    (routes-helper (partial r/dispatch final-ring-routes) flat-400))
+  (testing "unrolled ring"
+    (routes-helper (r/make-dispatcher final-ring-routes) flat-400)))
