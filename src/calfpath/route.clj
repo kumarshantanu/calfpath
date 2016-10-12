@@ -231,7 +231,7 @@
 (defn update-fallback-400
   "Update routes by appending a fallback HTTP-400 route only when all routes have :uri key."
   ([routes uri-finder opts]
-    (if (every? uri-finder routes)
+    (if (some uri-finder routes)
       (conj-fallback-400 routes (assoc opts :uri-finder uri-finder))
       routes))
   ([routes]
