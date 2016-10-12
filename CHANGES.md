@@ -14,11 +14,12 @@
   * A partial URI pattern may be expressed with a `*` suffix
   * Zero or more partial URI patterns may exist in a route tree
   * This may impact how URIs in HTTP-400 responses are generated
-* A helper fn `calfpath.route/update-in-each-route` to apply route attribute wrapper to specs
-* A lift-key middleware `calfpath.route/lift-key-middleware` to split routes with mixed specs
-* A ring-route middleware `calfpath.route/ring-handler-middleware` to wrap Ring handlers into route handlers
+* Middleware
+  * A helper fn `calfpath.route/update-in-each-route` to apply route attribute wrapper to specs
+  * A lift-key middleware `calfpath.route/lift-key-middleware` to split routes with mixed specs
+  * A ring-route middleware `calfpath.route/ring-handler-middleware` to wrap Ring handlers into route handlers
 * Helper fn to build routes from given route specs
-* [TODO] Allow non-literal string URI-patterns in `calfpath.core/->uri`
+* Allow non-literal string URI-patterns in `calfpath.core/->uri`
 * [TODO] BREAKING CHANGE: Drop `calfpath.core/make-uri-handler` in favor of Calfpath routes
 
 
