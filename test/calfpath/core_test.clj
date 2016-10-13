@@ -179,68 +179,26 @@
                                                                      :body (format "Profile ID: %s, Created new permission" id)}))))
 
 
-(def composite-fn
-  (c/make-uri-handler
-    "/never/hit/"              (fn [request _] {:status 200 :body "Never hit"})
-    "/user/:id/profile/:type/" (fn [request {:keys [id type]}]
-                                 (c/->method request
-                                   :get {:status 200
-                                         :body (format "Compact profile for ID: %s, Type: %s" id type)}
-                                   :put {:status 200
-                                         :body (format "Updated ID: %s, Type: %s" id type)}))
-    "/user/:id/permissions/"   (fn [request {:keys [id]}]
-                                 (c/->post request {:status 201
-                                                  :body (format "Profile ID: %s, Created new permission" id)}))
-    (fn [_] {:status 400
-             :headers {"Content-Type" "text/plain"}
-             :body "No matching route"})))
-
-
-(def composite-fn-partial
-  (c/make-uri-handler
-    "/never/hit/" (fn [request _] {:status 200 :body "Never hit"})
-    "/user/:id*"  (fn [request {:keys [id]}]
-                    (c/->uri request
-                      "/profile/:type/" [type] (c/->method request
-                                                 :get {:status 200
-                                                       :body (format "Compact profile for ID: %s, Type: %s" id type)}
-                                                 :put {:status 200
-                                                       :body (format "Updated ID: %s, Type: %s" id type)})
-                      "/permissions/"   []     (c/->post request {:status 201
-                                                                  :body (format "Profile ID: %s, Created new permission" id)})))
-    (fn [_] {:status 400
-             :headers {"Content-Type" "text/plain"}
-             :body "No matching route"})))
-
-
 (deftest test-composite
   (testing "No route match"
     (let [request {:request-method :get
                    :uri "/hello/1234/"}]
       (is (= 400 (:status (composite request))))
-      (is (= 400 (:status (composite-partial request))))
-      (is (= 400 (:status (composite-fn request))))
-      (is (= 400 (:status (composite-fn-partial request))))))
+      (is (= 400 (:status (composite-partial request))))))
   (testing "Matching route and method"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}
           expected "Compact profile for ID: 1234, Type: compact"]
       (is (= expected (:body (composite request))))
-      (is (= expected (:body (composite-partial request))))
-      (is (= expected (:body (composite-fn request))))
       (is (= expected (:body (composite-partial request))))))
   (testing "Matching route and method"
     (let [request {:request-method :post
                    :uri "/user/1234/permissions/"}
           expected "Profile ID: 1234, Created new permission"]
       (is (= expected (:body (composite request))))
-      (is (= expected (:body (composite-partial request))))
-      (is (= expected (:body (composite-fn request))))
       (is (= expected (:body (composite-partial request))))))
   (testing "Matching route, but no matching method"
     (let [request {:request-method :delete
                    :uri "/user/1234/profile/compact/"}]
       (is (= 405 (:status (composite request))))
-      (is (= 405 (:status (composite-partial request))))
-      (is (= 405 (:status (composite-fn request))))
-      (is (= 405 (:status (composite-fn-partial request)))))))
+      (is (= 405 (:status (composite-partial request)))))))
