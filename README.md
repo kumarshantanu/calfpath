@@ -9,13 +9,11 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.3.0"]`
+Leiningen dependency: `[calfpath "0.4.0"]`
 
 Require namespace:
 ```clojure
-(require '[calfpath.core :refer
-                         [->uri ->method ->get ->head ->options ->patch ->put ->post ->delete
-                          make-uri-handler]])
+(require '[calfpath.core  :refer [->uri ->method ->get ->head ->options ->patch ->put ->post ->delete]])
 (require '[calfpath.route :as r])
 ```
 
@@ -28,20 +26,21 @@ When you need to dispatch on URI pattern with convenient API:
   [request]
   ;; ->uri is a macro that dispatches on URI pattern
   (->uri request
-    "/user/:id/profile/:type/" [id type] (->method request
-                                           :get {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body (format "ID: %s, Type: %s" id type)}
-                                           :put {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "Updated"})
-    "/user/:id/permissions/"   [id]      (->method request
-                                           :get {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body (str "ID: " id)}
-                                           :put {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body (str "Updated ID: " id)})
+    "/user/:id*" [id]  (->uri request
+                         "/profile/:type/" [type] (->method request
+                                                    :get {:status 200
+                                                          :headers {"Content-Type" "text/plain"}
+                                                          :body (format "ID: %s, Type: %s" id type)}
+                                                    :put {:status 200
+                                                          :headers {"Content-Type" "text/plain"}
+                                                          :body "Updated"})
+                         "/permissions/"   []     (->method request
+                                                    :get {:status 200
+                                                          :headers {"Content-Type" "text/plain"}
+                                                          :body (str "ID: " id)}
+                                                    :put {:status 200
+                                                          :headers {"Content-Type" "text/plain"}
+                                                          :body (str "Updated ID: " id)}))
     "/company/:cid/dept/:did/" [cid did] (->put request
                                            {:status 200
                                             :headers {"Content-Type" "text/plain"}
@@ -52,40 +51,6 @@ When you need to dispatch on URI pattern with convenient API:
                                             :body "output"})))
 ```
 
-When you need a function (for composition) that creates a Ring handler:
-```clojure
-(defn make-handler
-  [app-config]
-  (make-uri-handler
-    "/user/:id/profile/:type/" (fn [request {:keys [id type]}]
-                                 (->method request
-                                   :get {:status 200
-                                         :headers {"Content-Type" "text/plain"}
-                                         :body (format "Data for ID: %s, Type: %s" id type)}
-                                   :put {:status 200
-                                         :headers {"Content-Type" "text/plain"}
-                                         :body (format "Updated ID: %s, type: %s" id type)}))
-    "/user/:id/permissions/"   (fn [request {:keys [id]}]
-                                 (->method request
-                                   :get {:status 200
-                                         :headers {"Content-Type" "text/plain"}
-                                         :body (str "Permissions for ID: " id)}
-                                   :put {:status 200
-                                         :headers {"Content-Type" "text/plain"}
-                                         :body ("Updated permissions for ID: " id)}))
-    "/company/:cid/dept/:did/" (fn [request {:keys [cid did]}]
-                                 (->put request {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body ("Updated CompanyID: %s, Dept ID: %s"
-                                                         cid did)}))
-    "/this/is/a/static/route"  (fn [request _]
-                                 (->put request {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "Lorem Ipsum"}))
-    (fn [_] {:status 400
-             :headers {"Content-Type" "text/plain"}
-             :body "400 Bad request. URI does not match any available uri-template."})))
-```
 
 ### Routes abstraction
 
@@ -111,20 +76,26 @@ fundamental keys:
 See examples below:
 
 ```clojure
-(defn make-routes
+
+;; a route handler is arity-2 fn
+(defn list-user-jobs
+  [request {:keys [user-id]}]
+  ...)
+
+(defn app-routes
   "Return a vector of route specs."
   []
-  [{:uri-template "/users/:user-id/jobs/"      :nested [{:method :get  :handler list-user-jobs}
-                                                        {:method :post :handler assign-job}]}
-   {:uri-template "/orders/:order-id/confirm/" :nested [{:method :post :handler confirm-order}]}
-   {:uri-template "/health/" :handler health-status}])
+  [;; first route has a partial URI match,implied by a trailing '*'
+   {:uri "/users/:user-id*" :nested [{:uri "/jobs/"        :nested [{:method :get  :handler list-user-jobs}
+                                                                    {:method :post :handler assign-job}]}
+                                     {:uri "/permissions/" :method :get :handler permissions-hanler}]}
+   {:uri "/orders/:order-id/confirm/" :method :post :handler confirm-order}
+   {:uri "/health/" :handler health-status}])
 
+;; create a Ring handler from given routes
 (def ring-handler
-  (-> (make-routes)
-    (r/update-routes r/update-fallback-405 :method)  ; HTTP-405 fallback: no-method match
-    (r/update-routes r/update-fallback-400 :uri-template {:show-uris? true})  ; HTTP-400 fallback: no-URI match
-    (r/update-each-route r/make-method-matcher :method)  ; add method matchers under :matcher key
-    (r/update-each-route r/make-uri-matcher :uri-template)  ; add URI matchers under :matcher key
+  (-> (app-routes)
+    r/make-routes
     r/make-dispatcher))
 ```
 

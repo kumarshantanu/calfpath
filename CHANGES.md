@@ -8,7 +8,7 @@
   * Rendering should be configurable (default: fn that returns file-content as body)
 
 
-## 0.4.0 / 2016-October-??
+## 0.4.0 / 2016-October-13
 
 * Make URI-match work for partial matches and URI prefixes
   * A partial URI pattern may be expressed with a `*` suffix
@@ -18,7 +18,7 @@
   * A helper fn `calfpath.route/update-in-each-route` to apply route attribute wrapper to specs
   * A lift-key middleware `calfpath.route/lift-key-middleware` to split routes with mixed specs
   * A ring-route middleware `calfpath.route/ring-handler-middleware` to wrap Ring handlers into route handlers
-* Helper fn to build routes from given route specs
+* Helper fn `calfpath.route/make-routes` to build routes from given route specs
 * Allow non-literal string URI-patterns in `calfpath.core/->uri`
 * Fix `calfpath.route/update-fallback-400` to add fallback 400 route on one or more URI entry, instead of all
 * BREAKING CHANGE: Drop `calfpath.core/make-uri-handler` in favor of Calfpath routes
