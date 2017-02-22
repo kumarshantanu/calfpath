@@ -1,4 +1,4 @@
-(defproject calfpath "0.4.0"
+(defproject calfpath "0.5.0-SNAPSHOT"
   :description "A la carte ring request matching"
   :url "https://github.com/kumarshantanu/calfpath"
   :license {:name "Eclipse Public License"
@@ -14,10 +14,10 @@
                    :global-vars {*unchecked-math* :warn-on-boxed}}
              :c18 {:dependencies [[org.clojure/clojure "1.8.0"]]
                    :global-vars {*unchecked-math* :warn-on-boxed}}
-             :c19 {:dependencies [[org.clojure/clojure "1.9.0-alpha13"]]
+             :c19 {:dependencies [[org.clojure/clojure "1.9.0-alpha14"]]
                    :global-vars {*unchecked-math* :warn-on-boxed}}
              :dln {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
-             :perf {:dependencies [[compojure "1.5.1" :exclusions [[org.clojure/clojure]]]
-                                   [citius    "0.2.3"]]
+             :perf {:dependencies [[compojure "1.5.2" :exclusions [[org.clojure/clojure]]]
+                                   [citius    "0.2.4"]]
                     :test-paths ["perf"]
                     :jvm-opts ^:replace ["-server" "-Xms2048m" "-Xmx2048m"]}})

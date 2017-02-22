@@ -3,7 +3,14 @@
 
 ## TODO
 
-* [TODO] BREAKING CHANGE: Rename the abstraction to uri-template to path
+
+## [WIP] 0.5.0 / 2017-March-??
+
+* [TODO - BREAKING CHANGE] Use arity-1 route handler functions
+  * Params associated in the request map under the `:path-params` key
+  * This allows Ring middleware to be applied to route handlers
+* [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
+* [TODO] Add a middleware to add route to the request map
 * [TODO] Add support for fetching/rendering static files
   * Rendering should be configurable (default: fn that returns file-content as body)
 
