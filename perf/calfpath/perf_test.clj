@@ -141,7 +141,7 @@
 
 
 (def calfpath-uri-routes
-  [{:uri "/user/:id/profile/:type/" :handler (fn [request {:keys [id type]}]
+  [{:uri "/user/:id/profile/:type/" :handler (fn [{:keys [id type] :as request}]
                                                (->method request
                                                  :get {:status 200
                                                        :headers {"Content-Type" "text/plain"}
@@ -149,7 +149,7 @@
                                                  :put {:status 200
                                                        :headers {"Content-Type" "text/plain"}
                                                        :body "1.2"}))}
-   {:uri "/user/:id/permissions/"   :handler (fn [request {:keys [id]}]
+   {:uri "/user/:id/permissions/"   :handler (fn [{:keys [id] :as request}]
                                                (->method request
                                                  :get {:status 200
                                                        :headers {"Content-Type" "text/plain"}
@@ -157,11 +157,11 @@
                                                  :put {:status 200
                                                        :headers {"Content-Type" "text/plain"}
                                                        :body "2.2"}))}
-   {:uri "/company/:cid/dept/:did/" :handler (fn [request {:keys [cid did]}]
+   {:uri "/company/:cid/dept/:did/" :handler (fn [{:keys [cid did] :as request}]
                                                (->put request {:status 200
                                                                :headers {"Content-Type" "text/plain"}
                                                                :body "3"}))}
-   {:uri "/this/is/a/static/route"  :handler (fn [request _]
+   {:uri "/this/is/a/static/route"  :handler (fn [request]
                                                (->put request {:status 200
                                                                :headers {"Content-Type" "text/plain"}
                                                                :body "4"}))}])

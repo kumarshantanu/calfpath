@@ -20,58 +20,42 @@
   "Given a vector of routes, recursively walk the routes evaluating the specified Ring request with each matcher.
   Invoke corresponding handler on successful match.
   Synopsis:
-  0. A route is a map {:matcher arity-1 fn  ; :matcher is a required key
-                       :nested  route-map   ; either of :nested and :handler keys must be present
-                       :handler arity-2 fn}
-  1. A matcher is arity-1 fn (accepts request as argument) that returns {:request request :params route-param-map}
-     on successful match, nil otherwise. A matcher may update the request (on successful match) before passing it on.
-  2. Handler is arity-2 function (accepts request and match-param-map as arguments)."
-  ([routes original-request ^Map original-params] ; routes must be a vector
-    (let [n (count routes)]
-      (loop [i 0]
-        (when (< i n)
-          (if-let [route-spec (get routes i)]
-            (if-let [matcher (get route-spec :matcher)]
-              (if-let [match-result (matcher original-request)]
-                (let [request (get match-result :request original-request)
-                      params  (if-let [^Map path-params (get match-result :params)]
-                                (cond
-                                  (.isEmpty original-params) path-params
-                                  (.isEmpty path-params)     original-params
-                                  :otherwise                 (conj {} original-params path-params))
-                                original-params)]
-                  (if-let [nested (get route-spec :nested)]
-                    (dispatch nested request params)
-                    (if-let [handler (get route-spec :handler)]
-                      (handler request params)
-                      (i/expected ":nested or :handler key to be present in route" route-spec))))
-                (recur (unchecked-inc i)))
-              (i/expected ":matcher key to be present in route" route-spec))
-            (i/expected "routes to be a vector containing maps" routes))))))
-  ([routes original-request]
-    (dispatch routes original-request {})))
+  0. A route is a map {:matcher `(fn [request]) -> request?` ; :matcher is a required key
+                       :nested  vector of child routes       ; either :handler or :nested key must be present
+                       :handler `(fn [request]) -> response`}
+  1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
+  2. Handler is a Ring handler (fn [request]) that returns Ring response."
+  [routes request]
+  (loop [routes (seq routes)]
+    (when routes
+      (let [current-route (first routes)]
+        (if-let [matcher (get current-route :matcher)]
+          (if-let [updated-request (matcher request)]
+            (cond
+              (contains? current-route :handler) ((:handler current-route) updated-request)
+              (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
+              :otherwise                         (i/expected ":handler or :nested key to be present in route"
+                                                   current-route))
+            (recur (next routes)))
+          (i/expected ":matcher key to be present in route" current-route))))))
 
 
 ;; Below is the outline of a loop-unrolled optimized version that returns a function that recursively matches routes
 ;; against the request:
 ;
 ;(let [m0 (:matcher (get routes 0))
-;      h0 (if-let [nested (:nested (get routes 0))]
-;           (make-handler nested)
-;           (:handler (get routes 0)))
+;      h0 (or (:handler (get routes 0))
+;           (make-handler (:nested (get routes 0)))) 
 ;      m1 ; similar to m0, for element 1
 ;      h1 ; similar to h0, for element 1
 ;      ....]
 ;  (fn dispatcher
-;    ([original-request original-params]
-;      (if-let [{:keys [request params]
-;                :or {request original-request}} (m0 original-request)]
-;        (h0 request (merge original-params params))
-;        (if-let [....] ; similar to m0, for element 1
-;          .... ; similar to h0, for element 1
-;          ....)))
-;    ([request]
-;      (dispatcher request {}))))
+;    [original-request]
+;    (if-let [updated-request (m0 original-request)]
+;      (h0 updated-request)
+;      (if-let [....] ; similar to m0, for element 1
+;        .... ; similar to h0, for element 1
+;        ....))))
 ;
 ;; The `make-dispatcher` function analyzes the routes collection and prepares a loop-unrolled form that is
 ;; evaluated at the end to create the Ring handler function.
@@ -85,16 +69,15 @@
   "Given a collection of routes return a Ring handler function that matches specified request and invokes
   corresponding route handler on successful match, returns nil otherwise.
   Synopsis:
-  0. A route is a map {:matcher arity-1 fn  ; :matcher is a required key
-                       :matchex arity-1 fn  ; optional (enabled by default)
-                       :nested  route-map   ; either of :nested and :handler keys must be present
-                       :handler arity-2 fn}
-  1. A matcher is arity-1 fn (accepts request as argument) that returns {:request request :params route-param-map}
-     on successful match, nil otherwise. A matcher may update the request (on successful match) before passing it on.
-  2. A matchex is arity-1 fn (accepts request symbol as argument) that returns expression to eval instead of calling
-     matcher. The matchex is used only when :matcher is also present. Expr should return a value similar to matcher.
+  0. A route is a map {:matcher `(fn [request]) -> request?`     ; :matcher is a required key
+                       :matchex `(fn [request-sym]) -> matcher`  ; optional (enabled by default)
+                       :nested  routes-vector                    ; either :handler or :nested key must be present
+                       :handler `(fn [request]) -> response`}
+  1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
+  2. A matchex is (fn [request-sym]) that returns expression to eval instead of calling matcher. The matchex is used
+     only when :matcher is also present. Expr should return a value similar to matcher.
   3. A matchex is for optimization only, which may be disabled by setting a false or nil value for the :matchex key.
-  4. Handler is arity-2 function (accepts request and match-param-map as arguments)."
+  4. Handler is a Ring handler (fn [request]) that returns Ring response."
   [routes]
   (let [routes (->> routes
                  (map (fn [spec]
@@ -110,8 +93,6 @@
         routes-sym   (gensym "routes-")
         dispatch-sym (gensym "dispatch-")
         request-sym  (gensym "request-")
-        params-sym   (vary-meta (gensym "params-")
-                       assoc :tag "java.util.Map")
         n            (count routes)
         matcher-syms (mapv (fn [idx] (gensym (str "matcher-" idx "-"))) (range n))
         handler-syms (mapv (fn [idx] (gensym (str "handler-" idx "-"))) (range n))
@@ -133,24 +114,14 @@
                                                    (matchex request-sym)
                                                    `(~matcher-sym ~request-sym))
                                      handler-sym (get handler-syms idx)]
-                                 `(if-let [match# ~matcher-exp]
-                                    (let [request# (get match# :request ~request-sym)
-                                          ^Map params#  (get match# :params)]
-                                      (~handler-sym request#
-                                        (if params#
-                                          (cond
-                                            (.isEmpty ~params-sym) params#
-                                            (.isEmpty params#)     ~params-sym
-                                            :otherwise             (conj {} ~params-sym params#))
-                                          ~params-sym)))
+                                 `(if-let [request# ~matcher-exp]
+                                    (~handler-sym request#)
                                     ~expr))))
                      `nil))
         fn-form  `(let [~@bindings]
                     (fn ~dispatch-sym
-                      ([~request-sym ~params-sym]
-                        ~all-exps)
-                      ([~request-sym]
-                        (~dispatch-sym ~request-sym {}))))]
+                      [~request-sym]
+                      ~all-exps))]
     (binding [*routes* routes]
       (eval fn-form))))
 
@@ -161,7 +132,7 @@
 (defn conj-fallback-match
   "Given a route vector append a matcher that always matches with a corresponding specified handler."
   [routes handler]
-  (conj routes {:matcher (fn [_] {})
+  (conj routes {:matcher identity
                 :handler handler}))
 
 
@@ -180,7 +151,7 @@
                         :headers {"Content-Type" "text/plain"}
                         :body (str "400 Bad request. URI does not match any available uri-template." uri-list-str)}]
       (conj-fallback-match routes
-        (fn [_ _] response-400))))
+        (fn [_] response-400))))
   ([routes]
     (conj-fallback-400 routes {})))
 
@@ -205,7 +176,7 @@
                                 "Content-Type" "text/plain"}
                       :body (str "405 Method not supported. Allowed methods are: " methods-list)}]
     (conj-fallback-match routes
-      (fn [_ _] response-405))))
+      (fn [_] response-405))))
 
 
 ;; ----- update bulk routes -----
@@ -330,14 +301,22 @@
                                 (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
                                                                        (int (i/get-uri-match-end-index request))
                                                                        uri-template partial?)]
-                                  {:params  (.getParams match-result)
-                                   :request (i/assoc-uri-match-end-index request (.getEndIndex match-result))})))
+                                  (let [^Map params (.getParams match-result)
+                                        end-index   (.getEndIndex match-result)]
+                                    (if (.isEmpty params)
+                                      (assoc request
+                                        i/uri-match-end-index end-index)
+                                      (conj request params {i/uri-match-end-index end-index}))))))
               (ensure-matchex (fn [request]
                                 `(when-let [^MatchResult match-result# (Util/matchURI ^String (:uri ~request)
                                                                          (int (i/get-uri-match-end-index ~request))
                                                                          ~uri-template ~partial?)]
-                                   {:params  (.getParams match-result#)
-                                    :request (i/assoc-uri-match-end-index ~request (.getEndIndex match-result#))}))))))
+                                   (let [^Map params# (.getParams match-result#)
+                                         end-index#   (.getEndIndex match-result#)]
+                                     (if (.isEmpty params#)
+                                       (assoc ~request
+                                         i/uri-match-end-index end-index#)
+                                       (conj ~request params# {i/uri-match-end-index end-index#})))))))))
         spec))))
 
 
@@ -360,32 +339,17 @@
             (keyword? method) (-> spec
                                 (assoc :matcher (fn method-matcher [request]
                                                   (when (= (:request-method request) method)
-                                                    {})))
+                                                    request)))
                                 (ensure-matchex (fn [request]
                                                   `(when (= (:request-method ~request) ~method)
-                                                     {}))))
+                                                     ~request))))
             (set? method)     (-> spec
                                 (assoc :matcher (fn multiple-method-matcher [request]
                                                   (when (method (:request-method request))
-                                                    {})))
+                                                    request)))
                                 (ensure-matchex (fn [request]
                                                   `(when (~method (:request-method ~request))
-                                                     {}))))))
-        spec))))
-
-
-;; ----- ensure handler in routes -----
-
-
-(def ^{:arglists '([route-spec ring-handler-key params-key])} ring-handler-middleware
-  "Given a route spec not containing the :handler key and containing the ring-handler-key, wrap the arity-1 Ring handler
-  into an arity-2 route handler where the path params are available under the specified key in the request map."
-  (make-ensurer :handler
-    (fn [spec ring-handler-key path-params-key]
-      (if (contains? spec ring-handler-key)
-        (let [ring-handler (get spec ring-handler-key)]
-          (assoc spec :handler (fn [request path-params]
-                                 (ring-handler (assoc request path-params-key path-params)))))
+                                                     ~request))))))
         spec))))
 
 
@@ -416,25 +380,19 @@
    :method?        (boolean) true if HTTP methods should be converted to matchers
    :method-key     (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
-   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs
-   :ring-handler?  (boolean) whether arity-1 Ring handler be allowed as handlers
-   :ring-handler-key  (fn-1) the key to be used to look up the arity-1 fn Ring handler in a spec
-   :path-param-key (non-nil) the key to associate the path params with in a request map when :ring-handler? is true"
+   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
   ([route-specs {:keys [uri?       uri-key    fallback-400? show-uris-400? uri-prefix-400
                         method?    method-key fallback-405?
                         lift-uri?
                         ring-handler? ring-handler-key path-param-key]
                  :or {uri?       true  uri-key    :uri     fallback-400? true  show-uris-400? true
                       method?    true  method-key :method  fallback-405? true
-                      lift-uri?  true
-                      ring-handler? true ring-handler-key :ring-handler path-param-key :path-params}
+                      lift-uri?  true}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
-        (when-> (and ring-handler?
-                  ring-handler-key)         update-each-route ring-handler-middleware ring-handler-key path-param-key)
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware uri-key [method-key])
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)

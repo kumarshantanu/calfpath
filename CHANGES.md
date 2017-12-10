@@ -6,15 +6,17 @@
 
 ## [WIP] 0.5.0 / 2017-December-??
 
-* [TODO - BREAKING CHANGE] Use arity-1 route handler functions
-  * Params associated in the request map under the `:path-params` key
-  * This allows Ring middleware to be applied to route handlers
-* [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
-* [TODO] Allow to construct a URI from URI template and params map
-* [TODO] Add a middleware to add route to the request map
-* [TODO] Add support for fetching/rendering static files
-  * Rendering should be configurable (default: fn that returns file-content as body)
-* [TODO] Documentation for routes (keys other than essential ones)
+* Routes
+  * [BREAKING CHANGE] Route handler now has the same arity as Ring handler
+    * Path-params associated in request map under respective keys
+    * This allows Ring middleware to be applied to route handlers
+  * [BREAKING CHANGE] Drop `ring-handler-middleware`
+  * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
+  * [TODO] Allow to construct a URI from URI template and params map
+  * [TODO] Add a middleware to add route to the request map
+  * [TODO] Add support for fetching/rendering static files
+    * Rendering should be configurable (default: fn that returns file-content as body)
+  * [TODO] Documentation for routes (keys other than essential ones)
 
 
 ## 0.4.0 / 2016-October-13
