@@ -3,6 +3,11 @@
 
 ## TODO
 
+* [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
+* [TODO] Add a middleware to add route to the request map
+* [TODO] Allow to construct a URI from URI template and params map
+  - Account for partial and nested URI templates
+
 
 ## [WIP] 0.5.0 / 2017-December-??
 
@@ -12,12 +17,9 @@
     * Path-params associated in request map under respective keys
     * This allows Ring middleware to be applied to route handlers
   * [BREAKING CHANGE] Drop `ring-handler-middleware`
-  * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
-  * [TODO] Allow to construct a URI from URI template and params map
-  * [TODO] Add a middleware to add route to the request map
-  * [TODO] Add support for fetching/rendering static files
-    * Rendering should be configurable (default: fn that returns file-content as body)
-  * [TODO] Documentation for routes (keys other than essential ones)
+* Documentation
+  * Fetching/rendering static files or classpath resources using Ring middleware
+  * Documentation for routes (keys other than essential ones)
 
 
 ## 0.4.0 / 2016-October-13

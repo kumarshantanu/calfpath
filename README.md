@@ -67,8 +67,10 @@ fundamental keys:
 
 #### Notes on routes
 
-* Either `:handler` or `:nested` key must be present in a route spec.
-* A successful match may return an updated request, or the same request or `nil`
+- The `:matcher` key must be present in a route spec for dispatch.
+  - In practice, other keys (e.g. `:uri`, `:method` etc.) add the `:matcher` key
+- Either `:handler` or `:nested` key must be present in a route spec.
+- A successful match may return an updated request, or the same request, or `nil`
 
 See examples below:
 
@@ -86,8 +88,14 @@ See examples below:
    {:uri "/users/:user-id*" :nested [{:uri "/jobs/"        :nested [{:method :get  :handler list-user-jobs}
                                                                     {:method :post :handler assign-job}]}
                                      {:uri "/permissions/" :method :get :handler permissions-hanler}]}
-   {:uri "/orders/:order-id/confirm/" :method :post :handler confirm-order}
-   {:uri "/health/" :handler health-status}])
+   {:uri "/orders/:order-id/confirm/" :method :post :handler confirm-order}        ; :uri is lifted over :method
+   {:uri "/health/"  :handler health-status}
+   {:uri "/static/*" :handler (-> (fn [_] {:status 400 :body "No such file"})      ; static files serving example
+                                ;; the following require Ring dependency in your project
+                                (ring.middleware.resource/wrap-resource "public")  ; render files from classpath
+                                (ring.middleware.file/wrap-file "/var/www/public") ; render files from filesystem
+                                (ring.middleware.content-type/wrap-content-type)
+                                (ring.middleware.not-modified/wrap-not-modified))}])
 
 ;; create a Ring handler from given routes
 (def ring-handler
