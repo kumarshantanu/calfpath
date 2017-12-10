@@ -9,7 +9,7 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.5.0 / 2017-December-??
+## 0.5.0 / 2017-December-10
 
 * Routes
   * [BREAKING CHANGE] Matcher now returns potentially-updated request, or `nil`
