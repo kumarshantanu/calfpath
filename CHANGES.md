@@ -7,6 +7,7 @@
 ## [WIP] 0.5.0 / 2017-December-??
 
 * Routes
+  * [BREAKING CHANGE] Matcher now returns potentially-updated request, or `nil`
   * [BREAKING CHANGE] Route handler now has the same arity as Ring handler
     * Path-params associated in request map under respective keys
     * This allows Ring middleware to be applied to route handlers
