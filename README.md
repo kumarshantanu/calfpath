@@ -9,7 +9,7 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.4.0"]`
+Leiningen dependency: `[calfpath "0.5.0-SNAPSHOT"]`
 
 Require namespace:
 ```clojure
@@ -60,26 +60,25 @@ fundamental keys:
 
 | Key        | Required? | Description |
 |------------|-----------|-------------|
-| `:matcher` |    Yes    | Arity-1 fn: accepts request map, returns non-`nil` map on success and `nil` on failure |
-| `:nested`  |   Either  | Routes vector - match is attempted on this if matcher was successful |
-| `:handler` |   Either  | Arity-2 fn: accepts request map and params map, returns Ring response map |
+| `:matcher` |    Yes    | `(fn [request]) -> request?` returns request on success and `nil` on failure |
+| `:nested`  |   Either  | Routes vector - nested match is attempted on this if matcher was successful |
+| `:handler` |   Either  | `(fn [request]) -> response` returns Ring response map, like a Ring handler |
 
 
 #### Notes on routes
 
-* Either of `:nested` and `:handler` keys must be present in a route spec.
-* A minimal successful match result is `{}`.
-* A match result may optionally contain
-  * `:request` key to represent an updated request map
-  * `:params` key to represent a route-params map
+- The `:matcher` key must be present in a route spec for dispatch.
+  - In practice, other keys (e.g. `:uri`, `:method` etc.) add the `:matcher` key
+- Either `:handler` or `:nested` key must be present in a route spec.
+- A successful match may return an updated request, or the same request, or `nil`
 
 See examples below:
 
 ```clojure
 
-;; a route handler is arity-2 fn
+;; a route-handler is arity-1 fn, like a ring-handler
 (defn list-user-jobs
-  [request {:keys [user-id]}]
+  [{:keys [user-id] :as request}]
   ...)
 
 (defn app-routes
@@ -89,8 +88,14 @@ See examples below:
    {:uri "/users/:user-id*" :nested [{:uri "/jobs/"        :nested [{:method :get  :handler list-user-jobs}
                                                                     {:method :post :handler assign-job}]}
                                      {:uri "/permissions/" :method :get :handler permissions-hanler}]}
-   {:uri "/orders/:order-id/confirm/" :method :post :handler confirm-order}
-   {:uri "/health/" :handler health-status}])
+   {:uri "/orders/:order-id/confirm/" :method :post :handler confirm-order}        ; :uri is lifted over :method
+   {:uri "/health/"  :handler health-status}
+   {:uri "/static/*" :handler (-> (fn [_] {:status 400 :body "No such file"})      ; static files serving example
+                                ;; the following require Ring dependency in your project
+                                (ring.middleware.resource/wrap-resource "public")  ; render files from classpath
+                                (ring.middleware.file/wrap-file "/var/www/public") ; render files from filesystem
+                                (ring.middleware.content-type/wrap-content-type)
+                                (ring.middleware.not-modified/wrap-not-modified))}])
 
 ;; create a Ring handler from given routes
 (def ring-handler
@@ -104,14 +109,24 @@ See examples below:
 
 You need JDK 1.7 or higher during development.
 
-Running tests: `lein with-profile c17 test`
+Running tests:
 
-Running performance benchmarks: `lein with-profile c17,perf test`
+```shell
+$ lein do clean, test
+$ lein with-profile c17 test
+```
+
+Running performance benchmarks:
+
+```shell
+$ lein do clean, perf-test
+$ lein with-profile c17,perf test  # on specified Clojure version
+```
 
 
 ## License
 
-Copyright © 2015-2016 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
+Copyright © 2015-2017 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
