@@ -9,6 +9,15 @@
   - Account for partial and nested URI templates
 
 
+## [WIP] 0.6.0 / 2018-March-??
+
+* [Todo] Put path params under an optional key
+  * https://github.com/kumarshantanu/calfpath/issues/5
+* [Todo] Middleware to apply url-decode to path params (not applied by default)
+* [Todo] Middleware to drop or add trailing slash to complete URI matchers
+* [Todo] Support for asynchronous Ring handlers
+
+
 ## 0.5.0 / 2017-December-10
 
 * Routes
