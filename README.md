@@ -3,11 +3,17 @@
 [![Build Status](https://travis-ci.org/kumarshantanu/calfpath.svg)](https://travis-ci.org/kumarshantanu/calfpath)
 
 A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching.
-Match URI patterns, HTTP methods or anything in a Ring request in a freeform manner. Calfpath is _very_ fast -
-there is no cost to what you do not use. Available as both dispatch macros and data-driven routes.
 
 (_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path).
 [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
+
+
+## Why Calfpath?
+
+- Ring has no built-in routing mechanism; Calfpath delivers this essential feature.
+- Orthogonality - match URI patterns, HTTP methods or anything in a Ring request.
+- Calfpath is fast (benchmarks included) - there is no cost to what you do not use.
+- API is available as both dispatch macros and composable, data-driven routes.
 
 
 ## Usage
