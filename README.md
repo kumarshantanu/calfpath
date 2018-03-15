@@ -3,8 +3,11 @@
 [![Build Status](https://travis-ci.org/kumarshantanu/calfpath.svg)](https://travis-ci.org/kumarshantanu/calfpath)
 
 A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching.
+Match URI patterns, HTTP methods or anything in a Ring request in a freeform manner. Calfpath is _very_ fast -
+there is no cost to what you do not use. Available as both dispatch macros and data-driven routes.
 
-(_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path). [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
+(_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path).
+[The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
 
 
 ## Usage
@@ -52,7 +55,7 @@ When you need to dispatch on URI pattern with convenient API:
 ```
 
 
-### Routes abstraction
+### Data-driven Routes abstraction
 
 In many cases we need to manipulate (i.e. add and extend) the dispatch criteria before handling the requests. This can
 be addressed by the _routes_ abstraction. Routes are a vector of route specification maps. Every route has three
@@ -126,7 +129,7 @@ $ lein with-profile c17,perf test  # on specified Clojure version
 
 ## License
 
-Copyright © 2015-2017 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
+Copyright © 2015-2018 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
