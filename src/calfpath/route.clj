@@ -282,20 +282,25 @@
       (assoc spec :matchex matchex))))
 
 
-(def ^{:arglists '([route-spec uri-finder])} make-uri-matcher
+(def ^{:arglists '([route-spec uri-finder params-key-finder])} make-uri-matcher
   "Given a route spec not containing the :matcher key and containing URI-pattern string as value (found by uri-finder),
   create a URI matcher and add it under the :matcher key. If the route spec already contains the :matcher key or if it
   does not contain URI-pattern then the route spec is left intact. When adding matcher also add matchex unless the
   :matchex key already exists."
   (make-ensurer :matcher
-    (fn [spec uri-finder]
-      (when-not (map? spec)
-        (i/expected "route spec to be a map" spec))
+    (fn [spec uri-finder params-key-finder]
+      (i/expected map? "route spec to be a map" spec)
       (if-let [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
         (do
           (when-not (string? uri-pattern)
             (i/expected "URI pattern to be a string" spec))
-          (let [[uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
+          (let [params-key    (if (nil? params-key-finder)
+                                nil
+                                (params-key-finder spec))
+                params-sym    (-> (gensym "uri-params-")
+                                (vary-meta assoc :tag "java.util.Map"))
+                end-index-sym (gensym "end-index-")
+                [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
                                 (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
@@ -303,20 +308,28 @@
                                                                        uri-template partial?)]
                                   (let [^Map params (.getParams match-result)
                                         end-index   (.getEndIndex match-result)]
-                                    (if (.isEmpty params)
-                                      (assoc request
-                                        i/uri-match-end-index end-index)
-                                      (conj request params {i/uri-match-end-index end-index}))))))
+                                    (cond
+                                      (.isEmpty params) (assoc request
+                                                          i/uri-match-end-index end-index)
+                                      (nil? params-key) (conj request params {i/uri-match-end-index end-index})
+                                      :otherwise        (-> request
+                                                          (assoc i/uri-match-end-index end-index)
+                                                          (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
                                 `(when-let [^MatchResult match-result# (Util/matchURI ^String (:uri ~request)
                                                                          (int (i/get-uri-match-end-index ~request))
                                                                          ~uri-template ~partial?)]
-                                   (let [^Map params# (.getParams match-result#)
-                                         end-index#   (.getEndIndex match-result#)]
-                                     (if (.isEmpty params#)
+                                   (let [~params-sym    (.getParams match-result#)
+                                         ~end-index-sym (.getEndIndex match-result#)]
+                                     (if (.isEmpty ~params-sym)
                                        (assoc ~request
-                                         i/uri-match-end-index end-index#)
-                                       (conj ~request params# {i/uri-match-end-index end-index#})))))))))
+                                         i/uri-match-end-index ~end-index-sym)
+                                       ~(if (nil? params-key)
+                                          `(conj ~request ~params-sym
+                                             {i/uri-match-end-index ~end-index-sym})
+                                          `(-> ~request
+                                             (assoc i/uri-match-end-index ~end-index-sym)
+                                             (update ~params-key i/conj-maps ~params-sym)))))))))))
         spec))))
 
 
@@ -357,12 +370,15 @@
 
 
 (defn lift-key-middleware
-  "Given a route spec, a lift key and one or more conflict keys, if both lift-key and any of the conflict-keys exist in
-  the spec then extract the lift key such that all other attributes are moved into a nested spec."
-  [spec lift-key conflict-keys]
-  (if (and (contains? spec lift-key) (some #(contains? spec %) conflict-keys))
-    {lift-key (get spec lift-key)
-     :nested  [(dissoc spec lift-key)]}
+  "Given a route spec, lift keys and one or more conflict keys, if the spec contains both any of the lift-keys and any
+  of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested spec."
+  [spec lift-keys conflict-keys]
+  (if (and
+        (some #(contains? spec %) lift-keys)
+        (some #(contains? spec %) conflict-keys))
+    (-> spec
+      (select-keys lift-keys)
+      (assoc :nested [(apply dissoc spec lift-keys)]))
     spec))
 
 
@@ -374,6 +390,7 @@
   Options:
    :uri?           (boolean) true if URI templates should be converted to matchers
    :uri-key        (non-nil) the key to be used to look up the URI template in a spec
+   :uri-params-key (non-nil) the key to put URI params under; if unspecified, params map is merged into request
    :fallback-400?  (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
    :show-uris-400? (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
    :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
@@ -381,24 +398,25 @@
    :method-key     (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
    :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [uri?       uri-key    fallback-400? show-uris-400? uri-prefix-400
-                        method?    method-key fallback-405?
+  ([route-specs {:keys [uri?     uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
+                        method?  method-key              fallback-405?
                         lift-uri?
-                        ring-handler? ring-handler-key path-param-key]
-                 :or {uri?       true  uri-key    :uri     fallback-400? true  show-uris-400? true
-                      method?    true  method-key :method  fallback-405? true
-                      lift-uri?  true}
+                        ring-handler? ring-handler-key]
+                 :or {uri?      true  uri-key        :uri
+                                      uri-params-key :uri-params  fallback-400? true  show-uris-400? true
+                      method?   true  method-key     :method      fallback-405? true
+                      lift-uri? true}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
         (when-> (and uri? method?
-                  lift-uri?)                update-each-route lift-key-middleware uri-key [method-key])
+                  lift-uri?)                update-each-route lift-key-middleware [uri-key uri-params-key] [method-key])
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})
         (when-> method? update-each-route make-method-matcher method-key)
-        (when-> uri?    update-each-route make-uri-matcher    uri-key))))
+        (when-> uri?    update-each-route make-uri-matcher    uri-key uri-params-key))))
   ([route-specs]
     (make-routes route-specs {})))

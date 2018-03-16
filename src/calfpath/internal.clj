@@ -106,3 +106,13 @@
     `(if (identical? ~method-keyword (:request-method ~request))
        ~expr
        ~default-expr)))
+
+
+(defn conj-maps
+  "Merge two maps efficiently using conj."
+  [old-map new-map]
+  (conj
+    (if (nil? old-map)
+      {}
+      old-map)
+    new-map))

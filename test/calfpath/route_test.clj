@@ -22,6 +22,8 @@
 
 (def all-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
+   {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:uri-params])
+    :uri-params :uri-params}
    {:uri "/user/:id/profile/:type/"
     :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
              {:method :patch  :handler (handler [:id :type]) :name "update.user.profile"}
@@ -35,6 +37,10 @@
 
 (def all-partial-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
+   {:uri "/album/:lid*"  :uri-params :uri-params
+    :nested [{:uri "/artist/:rid/"
+              :uri-params :uri-params
+              :method :get :handler (handler [:uri-params])}]}
    {:uri "/user/:id*"
     :nested [{:uri "/profile/:type/"
               :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
@@ -57,6 +63,7 @@
 
 Available URI templates:
 /info/:token/
+/album/:lid/artist/:rid/
 /user/:id/profile/:type/
 /user/:id/permissions/
 /hello/1234/")
@@ -66,6 +73,7 @@ Available URI templates:
 
 Available URI templates:
 /info/:token/
+/album/:lid*
 /user/:id*
 /hello/1234/")
 
@@ -79,6 +87,9 @@ Available URI templates:
           :headers {"Allow" "GET" "Content-Type" "text/plain"}
           :body "405 Method not supported. Allowed methods are: GET"}
         (handler {:uri "/info/status/" :request-method :post})))
+  (is (= {:request-method :get
+          :uri-params {:lid "10" :rid "20"}}
+        (handler {:uri "/album/10/artist/20/" :request-method :get})))
   (is (= {:request-method :get
           :id "id-1"
           :type "type-2"}
