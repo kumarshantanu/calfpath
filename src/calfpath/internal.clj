@@ -116,3 +116,11 @@
       {}
       old-map)
     new-map))
+
+
+(defn invoke
+  "Invoke first arg as a function on remaing args."
+  ([f]            (f))
+  ([f x]          (f x))
+  ([f x y]        (f x y))
+  ([f x y & args] (apply f x y args)))

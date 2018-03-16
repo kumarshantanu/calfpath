@@ -22,22 +22,27 @@
   Synopsis:
   0. A route is a map {:matcher `(fn [request]) -> request?` ; :matcher is a required key
                        :nested  vector of child routes       ; either :handler or :nested key must be present
-                       :handler `(fn [request]) -> response`}
+                       :handler Ring handler for route}
   1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
-  2. Handler is a Ring handler (fn [request]) that returns Ring response."
-  [routes request]
-  (loop [routes (seq routes)]
-    (when routes
-      (let [current-route (first routes)]
-        (if-let [matcher (get current-route :matcher)]
-          (if-let [updated-request (matcher request)]
-            (cond
-              (contains? current-route :handler) ((:handler current-route) updated-request)
-              (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
-              :otherwise                         (i/expected ":handler or :nested key to be present in route"
-                                                   current-route))
-            (recur (next routes)))
-          (i/expected ":matcher key to be present in route" current-route))))))
+  2. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
+  ([routes request f] ;; (f handler updated-request)
+    (loop [routes (seq routes)]
+      (when routes
+        (let [current-route (first routes)]
+          (if-let [matcher (get current-route :matcher)]
+            (if-let [updated-request (matcher request)]
+              (cond
+                (contains? current-route :handler) (f (:handler current-route) updated-request)
+                (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
+                :otherwise                         (i/expected ":handler or :nested key to be present in route"
+                                                     current-route))
+              (recur (next routes)))
+            (i/expected ":matcher key to be present in route" current-route))))))
+  ([routes request]
+    (dispatch routes request i/invoke))
+  ([routes request respond raise]
+    (dispatch routes request (fn [handler updated-request]
+                               (handler updated-request respond raise)))))
 
 
 ;; Below is the outline of a loop-unrolled optimized version that returns a function that recursively matches routes
@@ -50,9 +55,9 @@
 ;      h1 ; similar to h0, for element 1
 ;      ....]
 ;  (fn dispatcher
-;    [original-request]
+;    [original-request] ; or [original-request respond raise] for async handlers
 ;    (if-let [updated-request (m0 original-request)]
-;      (h0 updated-request)
+;      (h0 updated-request) ; or (h0 updated-request respond raise) for async handlers
 ;      (if-let [....] ; similar to m0, for element 1
 ;        .... ; similar to h0, for element 1
 ;        ....))))
@@ -72,12 +77,12 @@
   0. A route is a map {:matcher `(fn [request]) -> request?`     ; :matcher is a required key
                        :matchex `(fn [request-sym]) -> matcher`  ; optional (enabled by default)
                        :nested  routes-vector                    ; either :handler or :nested key must be present
-                       :handler `(fn [request]) -> response`}
+                       :handler Ring handler}
   1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
   2. A matchex is (fn [request-sym]) that returns expression to eval instead of calling matcher. The matchex is used
      only when :matcher is also present. Expr should return a value similar to matcher.
   3. A matchex is for optimization only, which may be disabled by setting a false or nil value for the :matchex key.
-  4. Handler is a Ring handler (fn [request]) that returns Ring response."
+  4. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
   [routes]
   (let [routes (->> routes
                  (map (fn [spec]
@@ -93,6 +98,7 @@
         routes-sym   (gensym "routes-")
         dispatch-sym (gensym "dispatch-")
         request-sym  (gensym "request-")
+        invoke-sym   (gensym "invoke-handler-")
         n            (count routes)
         matcher-syms (mapv (fn [idx] (gensym (str "matcher-" idx "-"))) (range n))
         handler-syms (mapv (fn [idx] (gensym (str "handler-" idx "-"))) (range n))
@@ -115,13 +121,18 @@
                                                    `(~matcher-sym ~request-sym))
                                      handler-sym (get handler-syms idx)]
                                  `(if-let [request# ~matcher-exp]
-                                    (~handler-sym request#)
+                                    (~invoke-sym ~handler-sym request#)
                                     ~expr))))
                      `nil))
         fn-form  `(let [~@bindings]
                     (fn ~dispatch-sym
-                      [~request-sym]
-                      ~all-exps))]
+                      ([~request-sym ~invoke-sym]
+                        ~all-exps)
+                      ([~request-sym]
+                        (~dispatch-sym ~request-sym i/invoke))
+                      ([~request-sym respond# raise#]
+                        (~dispatch-sym ~request-sym (fn [handler# updated-request#]
+                                                      (handler# updated-request# respond# raise#))))))]
     (binding [*routes* routes]
       (eval fn-form))))
 
@@ -151,7 +162,8 @@
                         :headers {"Content-Type" "text/plain"}
                         :body (str "400 Bad request. URI does not match any available uri-template." uri-list-str)}]
       (conj-fallback-match routes
-        (fn [_] response-400))))
+        (fn ([_] response-400)
+          ([_ respond _] (respond response-400))))))
   ([routes]
     (conj-fallback-400 routes {})))
 
@@ -176,7 +188,8 @@
                                 "Content-Type" "text/plain"}
                       :body (str "405 Method not supported. Allowed methods are: " methods-list)}]
     (conj-fallback-match routes
-      (fn [_] response-405))))
+      (fn ([_] response-405)
+        ([_ respond _] (respond response-405))))))
 
 
 ;; ----- update bulk routes -----
