@@ -11,8 +11,12 @@
 
 ## [WIP] 0.6.0 / 2018-March-??
 
+* [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
 * [Todo] Put path params under an optional key
   * https://github.com/kumarshantanu/calfpath/issues/5
+  * [Todo - BREAKING CHANGE] Update arity (extra argument `uri-params-key`) of `calfpath.route/make-uri-matcher`
+  * [Todo - BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
+* [Todo] Middleware to add path-params key to all URI routes
 * [Todo] Middleware to apply url-decode to path params (not applied by default)
 * [Todo] Middleware to drop or add trailing slash to complete URI matchers
 * [Todo] Support for asynchronous Ring handlers
