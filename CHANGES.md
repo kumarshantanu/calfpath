@@ -22,6 +22,9 @@
   * [Todo] `decode-uri-params`  - apply url-decode to URI params (not applied by default)
   * [Todo] `uri-trailing-slash` - drop or add trailing slash to non-partial URI matchers
 * [Todo] Bi-directional route support (CLJS compatible)
+* Benchmarks
+  * [Todo] Ataraxy
+  * Bidi
 
 
 ## 0.5.0 / 2017-December-10

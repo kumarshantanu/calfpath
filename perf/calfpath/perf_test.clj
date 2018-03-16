@@ -12,9 +12,59 @@
     [clojure.test :refer [deftest is testing use-fixtures]]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
     [clout.core     :as l]
+    [bidi.ring      :as bidi]
     [calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]]
     [calfpath.route :as r]
     [citius.core    :as c]))
+
+
+(def handler-bidi
+  (bidi/make-handler ["/" {"user/" {[:id "/profile/" :type "/"]  ; :id and :type in (:route-params request)
+                                    {:get (fn [req] {:status 200
+                                                     :headers {"Content-Type" "text/plain"}
+                                                     :body "1.1"})
+                                     :put (fn [req] {:status 200
+                                                     :headers {"Content-Type" "text/plain"}
+                                                     :body "1.2"})
+                                     true (fn [req] {:status 405
+                                                     :headers {"Allow" "GET, PUT"
+                                                               "Content-Type" "text/plain"}
+                                                     :body "405 Method not supported. Supported methods are: GET, PUT"})}
+                                    ;;--
+                                    [:id "/permissions/"]
+                                    {:get (fn [req] {:status 200
+                                                     :headers {"Content-Type" "text/plain"}
+                                                     :body "2.1"})
+                                     :put (fn [req] {:status 200
+                                                     :headers {"Content-Type" "text/plain"}
+                                                     :body "2.2"})
+                                     true (fn [req] {:status 405
+                                                     :headers {"Allow" "GET, PUT"
+                                                               "Content-Type" "text/plain"}
+                                                     :body "405 Method not supported. Supported methods are: GET, PUT"})}}
+                           ;;--
+                           ["company/" :cid "/dept/" :did "/"]
+                           {:put (fn [req] {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "3"})
+                            true (fn [req] {:status 405
+                                            :headers {"Allow" "PUT"
+                                                      "Content-Type" "text/plain"}
+                                            :body "405 Method not supported. Only PUT is supported."})}
+                           ;;--
+                           "this/is/a/static/route"
+                           {:put (fn [req] {:status 200
+                                            :headers {"Content-Type" "text/plain"}
+                                            :body "4"})
+                            true (fn [req] {:status 405
+                                            :headers {"Allow" "PUT"
+                                                      "Content-Type" "text/plain"}
+                                            :body "405 Method not supported. Only PUT is supported."})}
+                           ;;--
+                           true
+                           (fn [req] {:status 400
+                                      :headers {"Content-Type" "text/plain"}
+                                      :body "400 Bad request. URI does not match any available uri-template."})}]))
 
 
 (defroutes handler-compojure
@@ -180,8 +230,8 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Compojure" "Clout" "CalfPath" "CalfPath-route-walker" "CalfPath-route-unrolled"]
-    {:chart-title "Compojure/Clout/CalfPath"
+    ["Bidi" "Compojure" "Clout" "CalfPath" "CalfPath-route-walker" "CalfPath-route-unrolled"]
+    {:chart-title "Bidi/Compojure/Clout/CalfPath"
      :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
 
 
@@ -196,12 +246,12 @@
   (testing "no URI match"
     (let [request {:request-method :get
                    :uri "/hello/joe/"}]
-      (test-compare-perf "no URI match" (handler-compojure request) (handler-clout request)
+      (test-compare-perf "no URI match" (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
   (testing "no method match"
     (let [request {:request-method :put
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "no method match" (handler-compojure request) (handler-clout request)
+      (test-compare-perf "no method match" (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
 
 
@@ -209,14 +259,14 @@
   (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (test-compare-perf "static URI match, 1 method" (handler-compojure request) (handler-clout request)
+      (test-compare-perf "static URI match, 1 method" (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "pattern URI match, 2 methods" (handler-compojure request) (handler-clout request)
+      (test-compare-perf "pattern URI match, 2 methods" (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
-      (test-compare-perf "pattern URI match, 1 method" (handler-compojure request) (handler-clout request)
+      (test-compare-perf "pattern URI match, 1 method" (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
