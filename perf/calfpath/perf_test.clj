@@ -10,105 +10,118 @@
 (ns calfpath.perf-test
   (:require
     [clojure.test :refer [deftest is testing use-fixtures]]
+    [ataraxy.core   :as ataraxy]
+    [bidi.ring      :as bidi]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
     [clout.core     :as l]
-    [bidi.ring      :as bidi]
     [calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]]
+    [calfpath.internal :as i]
     [calfpath.route :as r]
     [citius.core    :as c]))
 
 
+(defn h11 [id type] {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body (str id ".11." type)})
+(defn h12 [id type] {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body (str id ".12." type)})
+(defn h1x []        {:status 405
+                     :headers {"Allow" "GET, PUT"
+                               "Content-Type" "text/plain"}
+                     :body "405 Method not supported. Supported methods are: GET, PUT"})
+
+
+(defn h21 [id]      {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body (str id ".21")})
+(defn h22 [id]      {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body (str id ".22")})
+(defn h2x []        {:status 405
+                     :headers {"Allow" "GET, PUT"
+                               "Content-Type" "text/plain"}
+                     :body "405 Method not supported. Supported methods are: GET, PUT"})
+(defn h30 [cid did] {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body (str cid ".3." did)})
+(defn h3x []        {:status 405
+                     :headers {"Allow" "PUT"
+                               "Content-Type" "text/plain"}
+                     :body "405 Method not supported. Only PUT is supported."})
+(defn h40 []        {:status 200
+                     :headers {"Content-Type" "text/plain"}
+                     :body "4"})
+(defn h4x []        {:status 405
+                     :headers {"Allow" "PUT"
+                               "Content-Type" "text/plain"}
+                     :body "405 Method not supported. Only PUT is supported."})
+(defn hxx []        {:status 400
+                     :headers {"Content-Type" "text/plain"}
+                     :body "400 Bad request. URI does not match any available uri-template."})
+
+(def handler-ataraxy
+ (ataraxy/handler
+   {:routes '{["/user/" id "/profile/" type "/"] {:get [:h11 id type] :put [:h12 id type] "" [:h1x]}
+              ["/user/" id "/permissions/"]      {:get [:h21 id] :put [:h22 id] "" [:h2x]}
+              ["/company/" cid "/dept/" did "/"] {:put [:h30] "" [:h3x]}
+              "/this/is/a/static/route"          {:put [:h40] "" [:h4x]}
+              ^{:re #".*"} path                  [:hxx]}
+    :handlers {:h11 (fn [{{:keys [id type]} :route-params}] (h11 id type))
+               :h12 (fn [{{:keys [id type]} :route-params}] (h12 id type))
+               :h1x (fn [_] (h1x))
+               :h21 (fn [{{:keys [id]} :route-params}] (h21 id))
+               :h22 (fn [{{:keys [id]} :route-params}] (h22 id))
+               :h2x (fn [_] (h2x))
+               :h30 (fn [{{:keys [cid did]} :route-params}] (h30 cid did))
+               :h3x (fn [_] (h3x))
+               :h40 (fn [_] (h40))
+               :h4x (fn [_] (h4x))
+               :hxx (fn [_] (hxx))}}))
+
+
 (def handler-bidi
-  (bidi/make-handler ["/" {"user/" {[:id "/profile/" :type "/"]  ; :id and :type in (:route-params request)
-                                    {:get (fn [req] {:status 200
-                                                     :headers {"Content-Type" "text/plain"}
-                                                     :body "1.1"})
-                                     :put (fn [req] {:status 200
-                                                     :headers {"Content-Type" "text/plain"}
-                                                     :body "1.2"})
-                                     true (fn [req] {:status 405
-                                                     :headers {"Allow" "GET, PUT"
-                                                               "Content-Type" "text/plain"}
-                                                     :body "405 Method not supported. Supported methods are: GET, PUT"})}
-                                    ;;--
-                                    [:id "/permissions/"]
-                                    {:get (fn [req] {:status 200
-                                                     :headers {"Content-Type" "text/plain"}
-                                                     :body "2.1"})
-                                     :put (fn [req] {:status 200
-                                                     :headers {"Content-Type" "text/plain"}
-                                                     :body "2.2"})
-                                     true (fn [req] {:status 405
-                                                     :headers {"Allow" "GET, PUT"
-                                                               "Content-Type" "text/plain"}
-                                                     :body "405 Method not supported. Supported methods are: GET, PUT"})}}
-                           ;;--
-                           ["company/" :cid "/dept/" :did "/"]
-                           {:put (fn [req] {:status 200
-                                            :headers {"Content-Type" "text/plain"}
-                                            :body "3"})
-                            true (fn [req] {:status 405
-                                            :headers {"Allow" "PUT"
-                                                      "Content-Type" "text/plain"}
-                                            :body "405 Method not supported. Only PUT is supported."})}
-                           ;;--
-                           "this/is/a/static/route"
-                           {:put (fn [req] {:status 200
-                                            :headers {"Content-Type" "text/plain"}
-                                            :body "4"})
-                            true (fn [req] {:status 405
-                                            :headers {"Allow" "PUT"
-                                                      "Content-Type" "text/plain"}
-                                            :body "405 Method not supported. Only PUT is supported."})}
-                           ;;--
-                           true
-                           (fn [req] {:status 400
-                                      :headers {"Content-Type" "text/plain"}
-                                      :body "400 Bad request. URI does not match any available uri-template."})}]))
+  ;; path params are in (:route-params request)
+  (bidi/make-handler
+    ["/" {"user/" {[:id "/profile/" :type "/"] {:get (fn [{{:keys [id type]} :route-params}] (h11 id type))
+                                                :put (fn [{{:keys [id type]} :route-params}] (h12 id type))
+                                                true (fn [_] (h1x))}
+                   [:id "/permissions/"]       {:get (fn [{{:keys [id]} :route-params}] (h21 id))
+                                                :put (fn [{{:keys [id]} :route-params}] (h22 id))
+                                                true (fn [_] (h2x))}}
+          ["company/" :cid "/dept/" :did "/"]  {:put (fn [{{:keys [cid did]} :route-params}] (h30 cid did))
+                                                true (fn [_] (h3x))}
+          "this/is/a/static/route"             {:put (fn [_] (h40))
+                                                true (fn [_] (h4x))}
+          true                                 (fn [_] (hxx))}]))
 
 
 (defroutes handler-compojure
   (context "/user/:id/profile/:type/" [id type]
-    (GET "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "1.1"})
-    (PUT "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "1.2"})
-    (ANY "/" request {:status 405
-                      :headers {"Allow" "GET, PUT"
-                                "Content-Type" "text/plain"}
-                      :body "405 Method not supported. Supported methods are: GET, PUT"}))
+    (GET "/" request (h11 id type))
+    (PUT "/" request (h12 id type))
+    (ANY "/" request (h1x)))
   (context "/user/:id/permissions"    [id]
-    (GET "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "2.1"})
-    (PUT "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "2.2"})
-    (ANY "/" request {:status 405
-                      :headers {"Allow" "GET, PUT"
-                                "Content-Type" "text/plain"}
-                      :body "405 Method not supported. Supported methods are: GET, PUT"}))
+    (GET "/" request (h21 id))
+    (PUT "/" request (h22 id))
+    (ANY "/" request (h2x)))
   (context "/company/:cid/dept/:did"  [cid did]
-    (PUT "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "3"})
-    (ANY "/" request {:status 405
-                      :headers {"Allow" "PUT"
-                                "Content-Type" "text/plain"}
-                      :body "405 Method not supported. Only PUT is supported."}))
+    (PUT "/" request (h30 cid did))
+    (ANY "/" request (h3x)))
   (context "/this/is/a/static/route"  []
-    (PUT "/" request {:status 200
-                      :headers {"Content-Type" "text/plain"}
-                      :body "4"})
-    (ANY "/" request {:status 405
-                      :headers {"Allow" "PUT"
-                                "Content-Type" "text/plain"}
-                      :body "405 Method not supported. Only PUT is supported."}))
-  (rfn request {:status 400
-                :headers {"Content-Type" "text/plain"}
-                :body "400 Bad request. URI does not match any available uri-template."}))
+    (PUT "/" request (h40))
+    (ANY "/" request (h4x)))
+  (rfn request (hxx)))
+
+
+(defmacro cond-let
+  [& clauses]
+  (i/expected (comp odd? count) "odd number of clauses" clauses)
+  (if (= 1 (count clauses))
+    (first clauses)
+    `(if-let ~(first clauses)
+       ~(second clauses)
+       (cond-let ~@(drop 2 clauses)))))
 
 
 (let [uri-1 (l/route-compile "/user/:id/profile/:type/")
@@ -117,121 +130,69 @@
       uri-4 (l/route-compile "/this/is/a/static/route")]
   (defn handler-clout
     [request]
-    (condp l/route-matches request
-      uri-1 (let [{:keys [id type]} request]
-                                        (case (:request-method request)
-                                          :get {:status 200
-                                                :headers {"Content-Type" "text/plain"}
-                                                :body "1.1"}
-                                          :put {:status 200
-                                                :headers {"Content-Type" "text/plain"}
-                                                :body "1.2"}
-                                          {:status 405
-                                           :headers {"Allow" "GET, PUT"
-                                                     "Content-Type" "text/plain"}
-                                           :body "405 Method not supported. Supported methods are: GET, PUT"}))
-      uri-2 (let [{:keys [id]} request]
-                                      (case (:request-method request)
-                                        :get {:status 200
-                                              :headers {"Content-Type" "text/plain"}
-                                              :body "2.1"}
-                                        :put {:status 200
-                                              :headers {"Content-Type" "text/plain"}
-                                              :body "2.2"}
-                                        {:status 405
-                                         :headers {"Allow" "GET, PUT"
-                                                   "Content-Type" "text/plain"}
-                                         :body "405 Method not supported. Supported methods are: GET, PUT"}))
-      uri-3 (let [{:keys [cid did]} request]
-                                        (if (identical? :put (:request-method request))
-                                          {:status 200
-                                           :headers {"Content-Type" "text/plain"}
-                                           :body "3"}
-                                          {:status 405
-                                           :headers {"Allow" "PUT"
-                                                     "Content-Type" "text/plain"}
-                                           :body "405 Method not supported. Only PUT is supported."}))
-      uri-4 (let []
-                                       (if (identical? :put (:request-method request))
-                                         {:status 200
-                                          :headers {"Content-Type" "text/plain"}
-                                          :body "4"}
-                                         {:status 405
-                                          :headers {"Allow" "PUT"
-                                                    "Content-Type" "text/plain"}
-                                          :body "405 Method not supported. Only PUT is supported."}))
-      {:status 400
-       :headers {"Content-Type" "text/plain"}
-       :body "400 Bad request. URI does not match any available uri-template."})))
+    (cond-let
+      [{:keys [id type]} (l/route-matches uri-1 request)] (case (:request-method request)
+                                                            :get (h11 id type)
+                                                            :put (h12 id type)
+                                                            (h1x))
+      [{:keys [id]} (l/route-matches uri-2 request)]      (case (:request-method request)
+                                                            :get (h21 id)
+                                                            :put (h22 id)
+                                                            (h2x))
+      [{:keys [cid did]} (l/route-matches uri-3 request)] (if (identical? :put (:request-method request))
+                                                            (h30 cid did)
+                                                            (h3x))
+      [_ (l/route-matches uri-4 request)]                 (if (identical? :put (:request-method request))
+                                                            (h40)
+                                                            (h4x))
+      (hxx))))
 
 
 (defn handler-calfpath
   [request]
   (->uri request
     "/user/:id/profile/:type/" [id type] (->method request
-                                           :get {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "1.1"}
-                                           :put {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "1.2"})
+                                           :get (h11 id type)
+                                           :put (h12 id type)
+                                           (h1x))
     "/user/:id/permissions/"   [id]      (->method request
-                                           :get {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "2.1"}
-                                           :put {:status 200
-                                                 :headers {"Content-Type" "text/plain"}
-                                                 :body "2.2"})
-    "/company/:cid/dept/:did/" [cid did] (->put request {:status 200
-                                                         :headers {"Content-Type" "text/plain"}
-                                                         :body "3"})
-    "/this/is/a/static/route"  []        (->put request {:status 200
-                                                         :headers {"Content-Type" "text/plain"}
-                                                         :body "4"})))
+                                           :get (h21 id)
+                                           :put (h22 id)
+                                           (h2x))
+    "/company/:cid/dept/:did/" [cid did] (->put request (h30 cid did) (h3x))
+    "/this/is/a/static/route"  []        (->put request (h40) (h4x))
+    (hxx)))
 
 
-(def calfpath-uri-routes
-  [{:uri "/user/:id/profile/:type/" :handler (fn [{:keys [id type] :as request}]
-                                               (->method request
-                                                 :get {:status 200
-                                                       :headers {"Content-Type" "text/plain"}
-                                                       :body "1.1"}
-                                                 :put {:status 200
-                                                       :headers {"Content-Type" "text/plain"}
-                                                       :body "1.2"}))}
-   {:uri "/user/:id/permissions/"   :handler (fn [{:keys [id] :as request}]
-                                               (->method request
-                                                 :get {:status 200
-                                                       :headers {"Content-Type" "text/plain"}
-                                                       :body "2.1"}
-                                                 :put {:status 200
-                                                       :headers {"Content-Type" "text/plain"}
-                                                       :body "2.2"}))}
-   {:uri "/company/:cid/dept/:did/" :handler (fn [{:keys [cid did] :as request}]
-                                               (->put request {:status 200
-                                                               :headers {"Content-Type" "text/plain"}
-                                                               :body "3"}))}
-   {:uri "/this/is/a/static/route"  :handler (fn [request]
-                                               (->put request {:status 200
-                                                               :headers {"Content-Type" "text/plain"}
-                                                               :body "4"}))}])
+(def calfpath-routes
+  [{:uri "/user/:id/profile/:type/" :nested [{:method :get :handler (fn [{:keys [id type]}] (h11 id type))}
+                                             {:method :put :handler (fn [{:keys [id type]}] (h12 id type))}
+                                             {:matcher identity :handler (fn [_] (h1x))}]}
+   {:uri "/user/:id/permissions/"   :nested [{:method :get :handler (fn [{:keys [id] :as request}] (h21 id))}
+                                             {:method :put :handler (fn [{:keys [id] :as request}] (h22 id))}
+                                             {:matcher identity :handler (fn [_] (h2x))}]}
+   {:uri "/company/:cid/dept/:did/" :nested [{:method :put :handler (fn [{:keys [cid did] :as request}] (h30 {}))}
+                                             {:matcher identity :handler (fn [_] (h3x))}]}
+   {:uri "/this/is/a/static/route"  :nested [{:method :put :handler (fn [request] (h40))}
+                                             {:matcher identity :handler (fn [_] (h4x))}]}
+   {:matcher identity :handler (fn [_] (hxx))}])
 
 
-(def compiled-calfpath-routes (r/make-routes calfpath-uri-routes {:show-uris-400? false}))
+(def compiled-calfpath-routes (r/make-routes calfpath-routes {:show-uris-400? false}))
 
 
 (def handler-calfpath-route-walker
   (partial r/dispatch compiled-calfpath-routes))
 
 
-(def handler-calfpath-route-unrolled
+(def handler-calfpath-route-unroll
   (r/make-dispatcher compiled-calfpath-routes))
 
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Bidi" "Compojure" "Clout" "CalfPath" "CalfPath-route-walker" "CalfPath-route-unrolled"]
-    {:chart-title "Bidi/Compojure/Clout/CalfPath"
+    ["Ataraxy" "Bidi" "Compojure" "Clout" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
+    {:chart-title "Ataraxy/Bidi/Compojure/Clout/CalfPath"
      :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
 
 
@@ -239,34 +200,40 @@
   [bench-name & exprs]
   `(do
      (is (= ~@exprs) ~bench-name)
-     (c/compare-perf ~bench-name ~@exprs)))
+     (when-not (System/getenv "BENCH_DISABLE")
+       (c/compare-perf ~bench-name ~@exprs))))
 
 
 (deftest test-no-match
   (testing "no URI match"
     (let [request {:request-method :get
                    :uri "/hello/joe/"}]
-      (test-compare-perf "no URI match" (handler-bidi request) (handler-compojure request) (handler-clout request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
+      (test-compare-perf "no URI match"
+        (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "no method match"
-    (let [request {:request-method :put
+    (let [request {:request-method :post
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "no method match" (handler-bidi request) (handler-compojure request) (handler-clout request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
+      (test-compare-perf "no method match"
+        (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
 
 
 (deftest test-match
   (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (test-compare-perf "static URI match, 1 method" (handler-bidi request) (handler-compojure request) (handler-clout request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request))))
+      (test-compare-perf "static URI match, 1 method"
+        (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "pattern URI match, 2 methods" (handler-bidi request) (handler-compojure request) (handler-clout request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))
+      (test-compare-perf "pattern URI match, 2 methods"
+        (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
-      (test-compare-perf "pattern URI match, 1 method" (handler-bidi request) (handler-compojure request) (handler-clout request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unrolled request)))))
+      (test-compare-perf "pattern URI match, 1 method"
+        (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
