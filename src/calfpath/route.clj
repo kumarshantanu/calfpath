@@ -144,6 +144,7 @@
   "Given a route vector append a matcher that always matches with a corresponding specified handler."
   [routes handler]
   (conj routes {:matcher identity
+                :matchex identity
                 :handler handler}))
 
 

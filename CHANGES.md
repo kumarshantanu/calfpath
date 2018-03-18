@@ -17,6 +17,9 @@
   * [BREAKING CHANGE] Update `calfpath.route/make-uri-matcher` arity - accept an extra argument `uri-params-key`
   * [BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
 * Support for asynchronous Ring handlers in routes API
+* Performance optimization
+  * Make fallback matches faster with matchex optimization
+  * [Todo] Make keyword method matches faster using `identical?` instead of `=`
 * Middleware
   * [Todo] `add-uri-params-key` - add path-params key to all URI routes
   * [Todo] `decode-uri-params`  - apply url-decode to URI params (not applied by default)
