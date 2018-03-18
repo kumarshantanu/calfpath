@@ -207,7 +207,7 @@
   (as-> routes $
     (mapv (fn [spec]
             (if (contains? spec :nested)
-              (apply update-in spec [:nested] update-routes f args)
+              (apply update spec :nested update-routes f args)
               spec))
       $)
     (apply f $ args)))
@@ -246,7 +246,7 @@
       (i/expected "route spec to be a map" spec)))
   (mapv (fn [spec]
           (let [spec (if (contains? spec :nested)
-                       (apply update-in spec [:nested] update-each-route f args)
+                       (apply update spec :nested update-each-route f args)
                        spec)]
             (apply f spec args)))
     routes))
@@ -280,7 +280,7 @@
   "Given a bunch of routes, update every route (recursively) containing specified attribute with the given wrapper. The
   wrapper fn f is invoked with the old attribute value, and the returned value is updated into the route."
   [specs reference-key f]
-  (->> #(update-in % [reference-key] f)
+  (->> #(update % reference-key f)
     (make-updater reference-key)
     (update-each-route specs)))
 
