@@ -20,11 +20,16 @@
 * Performance optimization
   * Make fallback matches faster with matchex optimization
   * Make keyword method matches faster using `identical?` instead of `=`
-* Middleware
-  * [Todo] `add-uri-params-key` - add path-params key to all URI routes
-  * [Todo] `decode-uri-params`  - apply url-decode to URI params (not applied by default)
-  * [Todo] `uri-trailing-slash` - drop or add trailing slash to non-partial URI matchers
-* [Todo] Bi-directional route support (CLJS compatible)
+* Route middleware
+  * `calfpath.route/assoc-kv-middleware` - associate key/value pairs corresponding to a main key in a route
+  * [Todo] `calfpath.route/decode-uri-params`   - apply url-decode to URI params (not applied by default)
+  * [Todo] `calfpath.route/uri-trailing-slash`  - drop or add trailing slash to non-partial URI matchers
+* Refactor `calfpath.route/make-routes`
+  * Add option kwargs
+    * `:uri-params-key` to find out where to place URI params in the request map
+    * `:uri-params-val` to specify where to place URI params in the request map
+    * `:split-params?` to determine whether to split URI params under a separate key in request map
+* [Todo] Route based URI-generation support (CLJS compatible)
 * Overhaul performance benchmarks
   * Use external handler fns in routing code
   * Fix parameter extraction with Clout

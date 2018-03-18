@@ -384,6 +384,17 @@
 ;; ----- route middleware -----
 
 
+(defn assoc-kv-middleware
+  "Given a route spec, if the route contains the main key then ensure that it also has the associated key/value pairs."
+  [spec main-key-finder assoc-map]
+  (if (main-key-finder spec)
+    (reduce-kv (fn [m k v] (if (contains? m k)
+                             m
+                             (assoc m k v)))
+      spec assoc-map)
+    spec))
+
+
 (defn lift-key-middleware
   "Given a route spec, lift keys and one or more conflict keys, if the spec contains both any of the lift-keys and any
   of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested spec."
@@ -406,6 +417,7 @@
    :uri?           (boolean) true if URI templates should be converted to matchers
    :uri-key        (non-nil) the key to be used to look up the URI template in a spec
    :uri-params-key (non-nil) the key to put URI params under; if unspecified, params map is merged into request
+   :split-params?  (boolean) whether extract URI params under a key in request map by auto-specifying :uri-params-key
    :fallback-400?  (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
    :show-uris-400? (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
    :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
@@ -415,17 +427,21 @@
    :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
   ([route-specs {:keys [uri?     uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
                         method?  method-key              fallback-405?
+                        split-params?  uri-params-val
                         lift-uri?
                         ring-handler? ring-handler-key]
                  :or {uri?      true  uri-key        :uri
                                       uri-params-key :uri-params  fallback-400? true  show-uris-400? true
                       method?   true  method-key     :method      fallback-405? true
+                      split-params? false  uri-params-val :route-params  ; compatibility with Bidi and Ataraxy
                       lift-uri? true}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> (and uri? split-params?)    update-each-route assoc-kv-middleware uri-key {uri-params-key
+                                                                                           uri-params-val})
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware [uri-key uri-params-key] [method-key])
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
