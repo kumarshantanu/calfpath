@@ -19,7 +19,7 @@
 * Support for asynchronous Ring handlers in routes API
 * Performance optimization
   * Make fallback matches faster with matchex optimization
-  * [Todo] Make keyword method matches faster using `identical?` instead of `=`
+  * Make keyword method matches faster using `identical?` instead of `=`
 * Middleware
   * [Todo] `add-uri-params-key` - add path-params key to all URI routes
   * [Todo] `decode-uri-params`  - apply url-decode to URI params (not applied by default)

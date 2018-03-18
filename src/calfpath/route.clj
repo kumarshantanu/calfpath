@@ -364,11 +364,12 @@
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
           (cond
             (keyword? method) (-> spec
+                                ;; Clojure keywords are interned; we can compare identity (faster) instead of equality
                                 (assoc :matcher (fn method-matcher [request]
-                                                  (when (= (:request-method request) method)
+                                                  (when (identical? (:request-method request) method)
                                                     request)))
                                 (ensure-matchex (fn [request]
-                                                  `(when (= (:request-method ~request) ~method)
+                                                  `(when (identical? (:request-method ~request) ~method)
                                                      ~request))))
             (set? method)     (-> spec
                                 (assoc :matcher (fn multiple-method-matcher [request]
