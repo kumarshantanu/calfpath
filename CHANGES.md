@@ -13,9 +13,14 @@
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
   * Supported Clojure versions: 1.7, 1.8, 1.9
-* Put path params under an optional key in request map (by adding pair `:uri-params <request-key>` to route spec)
+* Routes: Put URI params under an optional key in request map (by adding pair `:uri-params <request-key>` to route)
   * [BREAKING CHANGE] Update `calfpath.route/make-uri-matcher` arity - accept an extra argument `uri-params-key`
   * [BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
+  * Refactor `calfpath.route/make-routes`
+    * Add option kwargs
+      * `:uri-params-key` to find out where to place URI params in the request map
+      * `:uri-params-val` to specify where to place URI params in the request map
+      * `:split-params?` to determine whether to split URI params under a separate key in request map
 * Support for asynchronous Ring handlers in routes API
 * Performance optimization
   * Make fallback matches faster with matchex optimization
@@ -24,11 +29,6 @@
   * `calfpath.route/assoc-kv-middleware` - associate key/value pairs corresponding to a main key in a route
   * [Todo] `calfpath.route/decode-uri-params`   - apply url-decode to URI params (not applied by default)
   * [Todo] `calfpath.route/uri-trailing-slash`  - drop or add trailing slash to non-partial URI matchers
-* Refactor `calfpath.route/make-routes`
-  * Add option kwargs
-    * `:uri-params-key` to find out where to place URI params in the request map
-    * `:uri-params-val` to specify where to place URI params in the request map
-    * `:split-params?` to determine whether to split URI params under a separate key in request map
 * [Todo] Route based URI-generation support (CLJS compatible)
 * Overhaul performance benchmarks
   * Use external handler fns in routing code
