@@ -11,7 +11,7 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.6.0-alpha2 / 2018-March-??
+## 0.6.0-alpha2 / 2018-March-20
 
 - Refactor `compile-routes`
   - Fold options `:trailing-slash?` and `:slash-action` into one `:trailing-slash` kwarg option
