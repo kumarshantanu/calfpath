@@ -5,11 +5,13 @@
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO] Add a middleware to add route to the request map
-* [TODO] Allow to construct a URI from URI template and params map
+* [TODO] Route based URI-generation from URI pattern (in a route) and params map
+  - `:id` attribute (in route, later associated with `:handler`) based
+  - CLJS compatible (implies: JVM code must stay away in routes definition)
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.6.0 / 2018-March-??
+## 0.6.0-alpha1 / 2018-March-19
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
   * Supported Clojure versions: 1.7, 1.8, 1.9
@@ -23,7 +25,7 @@
       * `:uri-params-val` to specify where to place URI params in the request map
       * `:split-params?` to determine whether to split URI params under a separate key in request map
       * `:trailing-slash?` to determine whether to add/remove trailing slash to URI patterns
-      * `:slash-action` to specify what action to perform with trailing slash (:add or :remove)
+      * `:slash-action` to specify what action to perform with trailing slash (`:add` or `:remove`)
 * Support for asynchronous Ring handlers in routes API
 * Performance optimization
   * Make fallback matches faster with matchex optimization
@@ -31,7 +33,6 @@
 * Route middleware
   * `calfpath.route/assoc-kv-middleware` - associate key/value pairs corresponding to a main key in a route
   * `calfpath.route/trailing-slash-middleware` - drop or add trailing slash to non-partial URI matchers
-* [Todo] Route based URI-generation support (CLJS compatible)
 * Overhaul performance benchmarks
   * Use external handler fns in routing code
   * Fix parameter extraction with Clout
