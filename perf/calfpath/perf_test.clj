@@ -178,7 +178,7 @@
    {:matcher identity :handler (fn [_] (hxx))}])
 
 
-(def compiled-calfpath-routes (r/make-routes calfpath-routes {:show-uris-400? false}))
+(def compiled-calfpath-routes (r/compile-routes calfpath-routes {:show-uris-400? false}))
 
 
 (def handler-calfpath-route-walker

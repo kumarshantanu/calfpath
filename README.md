@@ -109,7 +109,7 @@ See examples below:
 ;; create a Ring handler from given routes
 (def ring-handler
   (-> (app-routes)
-    r/make-routes
+    r/compile-routes
     r/make-dispatcher))
 ```
 

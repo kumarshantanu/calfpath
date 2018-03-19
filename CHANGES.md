@@ -16,6 +16,7 @@
 * Routes: Put URI params under an optional key in request map (by adding pair `:uri-params <request-key>` to route)
   * [BREAKING CHANGE] Update `calfpath.route/make-uri-matcher` arity - accept an extra argument `uri-params-key`
   * [BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
+  * [BREAKING CHANGE] Rename `calfpath.route/make-routes` to `calfpath.route/compile-routes`
   * Refactor `calfpath.route/make-routes`
     * Add option kwargs
       * `:uri-params-key` to find out where to place URI params in the request map

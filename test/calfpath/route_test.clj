@@ -53,10 +53,10 @@
    {:uri "/hello/1234/" :handler (handler [])}])
 
 
-(def final-routes (r/make-routes all-routes))
+(def final-routes (r/compile-routes all-routes))
 
 
-(def final-partial-routes (r/make-routes all-partial-routes))
+(def final-partial-routes (r/compile-routes all-partial-routes))
 
 
 (def flat-400 "400 Bad request. URI does not match any available uri-template.

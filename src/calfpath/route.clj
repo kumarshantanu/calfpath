@@ -411,7 +411,7 @@
 ;; ----- helper fns -----
 
 
-(defn make-routes
+(defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
   Options:
    :uri?           (boolean) true if URI templates should be converted to matchers
@@ -450,4 +450,4 @@
         (when-> method? update-each-route make-method-matcher method-key)
         (when-> uri?    update-each-route make-uri-matcher    uri-key uri-params-key))))
   ([route-specs]
-    (make-routes route-specs {})))
+    (compile-routes route-specs {})))
