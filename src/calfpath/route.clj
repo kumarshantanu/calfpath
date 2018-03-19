@@ -408,33 +408,57 @@
     spec))
 
 
+(defn trailing-slash-middleware
+  "Given a route spec, URI key and action (keyword :add or :remove) edit the URI to have or not have a trailing slash
+  if the route has a URI pattern. Leave the route unchanged if it has no URI pattern."
+  [spec uri-key action]
+  (i/expected keyword? "URI key to be a keyword" uri-key)
+  (i/expected #{:add :remove} "action to be :add or :remove" action)
+  (if (contains? spec uri-key)
+    (update spec uri-key (fn [^String uri]
+                           (i/expected string? "URI to be a string" uri)
+                           (if (.endsWith uri "*")  ; candidate for partial match?
+                             uri                    ; do not change partial-match URIs
+                             (let [trailing? (.endsWith uri "/")]
+                               (if (identical? action :add)
+                                 (if trailing? uri (str uri "/"))              ;; add trailing slash if missing
+                                 (if (and trailing? (> (.length uri) 1))
+                                   (subs uri 0 (unchecked-dec (.length uri)))  ;; remove trailing slash if present
+                                   uri))))))
+    spec))
+
+
 ;; ----- helper fns -----
 
 
 (defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
   Options:
-   :uri?           (boolean) true if URI templates should be converted to matchers
-   :uri-key        (non-nil) the key to be used to look up the URI template in a spec
-   :uri-params-key (non-nil) the key to put URI params under; if unspecified, params map is merged into request
-   :split-params?  (boolean) whether extract URI params under a key in request map by auto-specifying :uri-params-key
-   :fallback-400?  (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
-   :show-uris-400? (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
-   :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
-   :method?        (boolean) true if HTTP methods should be converted to matchers
-   :method-key     (non-nil) the key to be used to look up the method key/set in a spec
-   :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
-   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [uri?     uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
-                        method?  method-key              fallback-405?
-                        split-params?  uri-params-val
+   :uri?            (boolean) true if URI templates should be converted to matchers
+   :uri-key         (non-nil) the key to be used to look up the URI template in a spec
+   :uri-params-key  (non-nil) the key to put URI params under; if unspecified, params map is merged into request
+   :split-params?   (boolean) whether extract URI params under a key in request map by auto-specifying :uri-params-key
+   :trailing-slash? (boolean) whether add or remove trailing slash from URI patterns (see :slash-action co-param)
+   :slash-action    (keyword) Trailing-slash action to perform on route - :add or :remove
+   :fallback-400?   (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
+   :show-uris-400?  (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
+   :uri-prefix-400  (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
+   :method?         (boolean) true if HTTP methods should be converted to matchers
+   :method-key      (non-nil) the key to be used to look up the method key/set in a spec
+   :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
+   :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
+  ([route-specs {:keys [uri?            uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
+                        method?         method-key              fallback-405?
+                        split-params?   uri-params-val
+                        trailing-slash? slash-action
                         lift-uri?
                         ring-handler? ring-handler-key]
-                 :or {uri?      true  uri-key        :uri
-                                      uri-params-key :uri-params  fallback-400? true  show-uris-400? true
-                      method?   true  method-key     :method      fallback-405? true
-                      split-params? false  uri-params-val :route-params  ; compatibility with Bidi and Ataraxy
-                      lift-uri? true}
+                 :or {uri?            true   uri-key        :uri
+                                             uri-params-key :uri-params  fallback-400? true  show-uris-400? true
+                      method?         true   method-key     :method      fallback-405? true
+                      split-params?   false  uri-params-val :route-params  ; compatibility with Bidi and Ataraxy
+                      lift-uri?       true
+                      trailing-slash? false  slash-action   :add}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
@@ -444,6 +468,7 @@
                                                                                            uri-params-val})
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware [uri-key uri-params-key] [method-key])
+        (when-> (and uri? trailing-slash?)  update-each-route trailing-slash-middleware uri-key slash-action)
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})

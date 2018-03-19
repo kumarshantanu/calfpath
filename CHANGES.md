@@ -22,14 +22,15 @@
       * `:uri-params-key` to find out where to place URI params in the request map
       * `:uri-params-val` to specify where to place URI params in the request map
       * `:split-params?` to determine whether to split URI params under a separate key in request map
+      * `:trailing-slash?` to determine whether to add/remove trailing slash to URI patterns
+      * `:slash-action` to specify what action to perform with trailing slash (:add or :remove)
 * Support for asynchronous Ring handlers in routes API
 * Performance optimization
   * Make fallback matches faster with matchex optimization
   * Make keyword method matches faster using `identical?` instead of `=`
 * Route middleware
   * `calfpath.route/assoc-kv-middleware` - associate key/value pairs corresponding to a main key in a route
-  * [Todo] `calfpath.route/decode-uri-params`   - apply url-decode to URI params (not applied by default)
-  * [Todo] `calfpath.route/uri-trailing-slash`  - drop or add trailing slash to non-partial URI matchers
+  * `calfpath.route/trailing-slash-middleware` - drop or add trailing slash to non-partial URI matchers
 * [Todo] Route based URI-generation support (CLJS compatible)
 * Overhaul performance benchmarks
   * Use external handler fns in routing code
