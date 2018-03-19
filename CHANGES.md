@@ -11,6 +11,12 @@
   - Account for partial and nested URI templates
 
 
+## [WIP] 0.6.0-alpha2 / 2018-March-??
+
+- [Todo] Refactor `compile-routes`
+  - [Todo] Fold `:trailing-slash?` and `:slash-action` into one `:trailing-slash`
+
+
 ## 0.6.0-alpha1 / 2018-March-19
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
