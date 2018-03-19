@@ -13,11 +13,11 @@
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
   * Supported Clojure versions: 1.7, 1.8, 1.9
+* [BREAKING CHANGE] Rename `calfpath.route/make-routes` to `calfpath.route/compile-routes`
 * Routes: Put URI params under an optional key in request map (by adding pair `:uri-params <request-key>` to route)
   * [BREAKING CHANGE] Update `calfpath.route/make-uri-matcher` arity - accept an extra argument `uri-params-key`
   * [BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
-  * [BREAKING CHANGE] Rename `calfpath.route/make-routes` to `calfpath.route/compile-routes`
-  * Refactor `calfpath.route/make-routes`
+  * Refactor `calfpath.route/compile-routes`
     * Add option kwargs
       * `:uri-params-key` to find out where to place URI params in the request map
       * `:uri-params-val` to specify where to place URI params in the request map
