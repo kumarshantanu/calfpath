@@ -13,8 +13,8 @@
 
 ## [WIP] 0.6.0-alpha2 / 2018-March-??
 
-- [Todo] Refactor `compile-routes`
-  - [Todo] Fold `:trailing-slash?` and `:slash-action` into one `:trailing-slash`
+- Refactor `compile-routes`
+  - Fold options `:trailing-slash?` and `:slash-action` into one `:trailing-slash` kwarg option
 
 
 ## 0.6.0-alpha1 / 2018-March-19

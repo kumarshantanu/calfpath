@@ -438,8 +438,7 @@
    :uri-key         (non-nil) the key to be used to look up the URI template in a spec
    :uri-params-key  (non-nil) the key to put URI params under; if unspecified, params map is merged into request
    :split-params?   (boolean) whether extract URI params under a key in request map by auto-specifying :uri-params-key
-   :trailing-slash? (boolean) whether add or remove trailing slash from URI patterns (see :slash-action co-param)
-   :slash-action    (keyword) Trailing-slash action to perform on route - :add or :remove
+   :trailing-slash  (keyword) Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect
    :fallback-400?   (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
    :show-uris-400?  (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
    :uri-prefix-400  (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
@@ -450,7 +449,7 @@
   ([route-specs {:keys [uri?            uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
                         method?         method-key              fallback-405?
                         split-params?   uri-params-val
-                        trailing-slash? slash-action
+                        trailing-slash
                         lift-uri?
                         ring-handler? ring-handler-key]
                  :or {uri?            true   uri-key        :uri
@@ -458,7 +457,7 @@
                       method?         true   method-key     :method      fallback-405? true
                       split-params?   false  uri-params-val :route-params  ; compatibility with Bidi and Ataraxy
                       lift-uri?       true
-                      trailing-slash? false  slash-action   :add}
+                      trailing-slash  false}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
@@ -468,7 +467,7 @@
                                                                                            uri-params-val})
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware [uri-key uri-params-key] [method-key])
-        (when-> (and uri? trailing-slash?)  update-each-route trailing-slash-middleware uri-key slash-action)
+        (when-> (and uri? trailing-slash)   update-each-route trailing-slash-middleware uri-key trailing-slash)
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})
