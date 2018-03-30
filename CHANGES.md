@@ -11,7 +11,7 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.6.0-alpha3 / 2018-March-??
+## 0.6.0-beta1 / 2018-March-30
 
 - Workaround for `conj` bug in Aleph and Immutant requests
   - https://github.com/ztellman/aleph/issues/374
