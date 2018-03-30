@@ -11,6 +11,7 @@
   (:require
     [clojure.string :as str])
   (:import
+    [java.util Iterator Map Map$Entry]
     [calfpath MatchResult Util]))
 
 
@@ -118,9 +119,23 @@
     new-map))
 
 
+(defn reduce-mkv
+  "Same as clojure.core/reduce-kv for java.util.Map instances."
+  [f init ^Map m]
+  (if (or (nil? m) (.isEmpty m))
+    init
+    (let [i (.iterator (.entrySet m))]
+      (loop [last-result init]
+        (if (.hasNext ^Iterator i)
+          (let [^Map$Entry pair (.next i)]
+            (recur (f last-result (.getKey pair) (.getValue pair))))
+          last-result)))))
+
+
 (defn invoke
   "Invoke first arg as a function on remaing args."
   ([f]            (f))
   ([f x]          (f x))
   ([f x y]        (f x y))
   ([f x y & args] (apply f x y args)))
+

@@ -13,7 +13,7 @@
 
 ## [WIP] 0.6.0-alpha3 / 2018-March-??
 
-- [Fixme] Workaround for `conj` bug in Aleph and Immutant requests
+- Workaround for `conj` bug in Aleph and Immutant requests
   - https://github.com/ztellman/aleph/issues/374
   - https://issues.jboss.org/browse/IMMUTANT-640
 

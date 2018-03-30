@@ -325,7 +325,9 @@
                                     (cond
                                       (.isEmpty params) (assoc request
                                                           i/uri-match-end-index end-index)
-                                      (nil? params-key) (conj request params {i/uri-match-end-index end-index})
+                                      (nil? params-key) (as-> request $
+                                                          (assoc $ i/uri-match-end-index end-index)
+                                                          (i/reduce-mkv assoc $ params))
                                       :otherwise        (-> request
                                                           (assoc i/uri-match-end-index end-index)
                                                           (update params-key i/conj-maps params)))))))
@@ -339,8 +341,9 @@
                                        (assoc ~request
                                          i/uri-match-end-index ~end-index-sym)
                                        ~(if (nil? params-key)
-                                          `(conj ~request ~params-sym
-                                             {i/uri-match-end-index ~end-index-sym})
+                                          `(as-> ~request $#
+                                             (assoc $# i/uri-match-end-index ~end-index-sym)
+                                             (i/reduce-mkv assoc $# ~params-sym))
                                           `(-> ~request
                                              (assoc i/uri-match-end-index ~end-index-sym)
                                              (update ~params-key i/conj-maps ~params-sym)))))))))))
