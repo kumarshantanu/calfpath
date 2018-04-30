@@ -4,12 +4,21 @@
 
 A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching.
 
-(_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path). [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
+(_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path).
+[The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
+
+
+## Why Calfpath?
+
+- Ring has no built-in routing mechanism; Calfpath delivers this essential feature.
+- Orthogonality - match URI patterns, HTTP methods or anything in a Ring request.
+- Calfpath is fast (benchmarks included) - there is no cost to what you do not use.
+- API is available as both dispatch macros and composable, data-driven routes.
 
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.5.0"]`
+Leiningen dependency: `[calfpath "0.6.0-beta1"]` (requires Clojure 1.7 or later)
 
 Require namespace:
 ```clojure
@@ -52,7 +61,7 @@ When you need to dispatch on URI pattern with convenient API:
 ```
 
 
-### Routes abstraction
+### Data-driven Routes abstraction
 
 In many cases we need to manipulate (i.e. add and extend) the dispatch criteria before handling the requests. This can
 be addressed by the _routes_ abstraction. Routes are a vector of route specification maps. Every route has three
@@ -100,7 +109,7 @@ See examples below:
 ;; create a Ring handler from given routes
 (def ring-handler
   (-> (app-routes)
-    r/make-routes
+    r/compile-routes
     r/make-dispatcher))
 ```
 
@@ -126,7 +135,7 @@ $ lein with-profile c17,perf test  # on specified Clojure version
 
 ## License
 
-Copyright © 2015-2017 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
+Copyright © 2015-2018 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

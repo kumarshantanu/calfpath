@@ -1,12 +1,57 @@
-# Changes and TODO
+# calfpath Changes and TODO
 
 
 ## TODO
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO] Add a middleware to add route to the request map
-* [TODO] Allow to construct a URI from URI template and params map
+* [TODO] Route based URI-generation from URI pattern (in a route) and params map
+  - `:id` attribute (in route, later associated with `:handler`) based
+  - CLJS compatible (implies: JVM code must stay away in routes definition)
   - Account for partial and nested URI templates
+
+
+## 0.6.0-beta1 / 2018-March-30
+
+- Workaround for `conj` bug in Aleph (0.4.4) and Immutant (2.1.10) requests
+  - https://github.com/ztellman/aleph/issues/374
+  - https://issues.jboss.org/browse/IMMUTANT-640
+
+
+## 0.6.0-alpha2 / 2018-March-20
+
+- Refactor `compile-routes`
+  - Fold options `:trailing-slash?` and `:slash-action` into one `:trailing-slash` kwarg option
+
+
+## 0.6.0-alpha1 / 2018-March-19
+
+* [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
+  * Supported Clojure versions: 1.7, 1.8, 1.9
+* [BREAKING CHANGE] Rename `calfpath.route/make-routes` to `calfpath.route/compile-routes`
+* Routes: Put URI params under an optional key in request map (by adding pair `:uri-params <request-key>` to route)
+  * [BREAKING CHANGE] Update `calfpath.route/make-uri-matcher` arity - accept an extra argument `uri-params-key`
+  * [BREAKING CHANGE] In middleware `lift-key-middleware` accept `lift-keys` collection instead of single `lift-key`
+  * Refactor `calfpath.route/compile-routes`
+    * Add option kwargs
+      * `:uri-params-key` to find out where to place URI params in the request map
+      * `:uri-params-val` to specify where to place URI params in the request map
+      * `:split-params?` to determine whether to split URI params under a separate key in request map
+      * `:trailing-slash?` to determine whether to add/remove trailing slash to URI patterns
+      * `:slash-action` to specify what action to perform with trailing slash (`:add` or `:remove`)
+* Support for asynchronous Ring handlers in routes API
+* Performance optimization
+  * Make fallback matches faster with matchex optimization
+  * Make keyword method matches faster using `identical?` instead of `=`
+* Route middleware
+  * `calfpath.route/assoc-kv-middleware` - associate key/value pairs corresponding to a main key in a route
+  * `calfpath.route/trailing-slash-middleware` - drop or add trailing slash to non-partial URI matchers
+* Overhaul performance benchmarks
+  * Use external handler fns in routing code
+  * Fix parameter extraction with Clout
+  * Add benchmarks for other routing libraries
+    * Ataraxy
+    * Bidi
 
 
 ## 0.5.0 / 2017-December-10

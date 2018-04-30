@@ -22,22 +22,27 @@
   Synopsis:
   0. A route is a map {:matcher `(fn [request]) -> request?` ; :matcher is a required key
                        :nested  vector of child routes       ; either :handler or :nested key must be present
-                       :handler `(fn [request]) -> response`}
+                       :handler Ring handler for route}
   1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
-  2. Handler is a Ring handler (fn [request]) that returns Ring response."
-  [routes request]
-  (loop [routes (seq routes)]
-    (when routes
-      (let [current-route (first routes)]
-        (if-let [matcher (get current-route :matcher)]
-          (if-let [updated-request (matcher request)]
-            (cond
-              (contains? current-route :handler) ((:handler current-route) updated-request)
-              (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
-              :otherwise                         (i/expected ":handler or :nested key to be present in route"
-                                                   current-route))
-            (recur (next routes)))
-          (i/expected ":matcher key to be present in route" current-route))))))
+  2. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
+  ([routes request f] ;; (f handler updated-request)
+    (loop [routes (seq routes)]
+      (when routes
+        (let [current-route (first routes)]
+          (if-let [matcher (get current-route :matcher)]
+            (if-let [updated-request (matcher request)]
+              (cond
+                (contains? current-route :handler) (f (:handler current-route) updated-request)
+                (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
+                :otherwise                         (i/expected ":handler or :nested key to be present in route"
+                                                     current-route))
+              (recur (next routes)))
+            (i/expected ":matcher key to be present in route" current-route))))))
+  ([routes request]
+    (dispatch routes request i/invoke))
+  ([routes request respond raise]
+    (dispatch routes request (fn [handler updated-request]
+                               (handler updated-request respond raise)))))
 
 
 ;; Below is the outline of a loop-unrolled optimized version that returns a function that recursively matches routes
@@ -50,9 +55,9 @@
 ;      h1 ; similar to h0, for element 1
 ;      ....]
 ;  (fn dispatcher
-;    [original-request]
+;    [original-request] ; or [original-request respond raise] for async handlers
 ;    (if-let [updated-request (m0 original-request)]
-;      (h0 updated-request)
+;      (h0 updated-request) ; or (h0 updated-request respond raise) for async handlers
 ;      (if-let [....] ; similar to m0, for element 1
 ;        .... ; similar to h0, for element 1
 ;        ....))))
@@ -72,12 +77,12 @@
   0. A route is a map {:matcher `(fn [request]) -> request?`     ; :matcher is a required key
                        :matchex `(fn [request-sym]) -> matcher`  ; optional (enabled by default)
                        :nested  routes-vector                    ; either :handler or :nested key must be present
-                       :handler `(fn [request]) -> response`}
+                       :handler Ring handler}
   1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
   2. A matchex is (fn [request-sym]) that returns expression to eval instead of calling matcher. The matchex is used
      only when :matcher is also present. Expr should return a value similar to matcher.
   3. A matchex is for optimization only, which may be disabled by setting a false or nil value for the :matchex key.
-  4. Handler is a Ring handler (fn [request]) that returns Ring response."
+  4. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
   [routes]
   (let [routes (->> routes
                  (map (fn [spec]
@@ -93,6 +98,7 @@
         routes-sym   (gensym "routes-")
         dispatch-sym (gensym "dispatch-")
         request-sym  (gensym "request-")
+        invoke-sym   (gensym "invoke-handler-")
         n            (count routes)
         matcher-syms (mapv (fn [idx] (gensym (str "matcher-" idx "-"))) (range n))
         handler-syms (mapv (fn [idx] (gensym (str "handler-" idx "-"))) (range n))
@@ -115,13 +121,18 @@
                                                    `(~matcher-sym ~request-sym))
                                      handler-sym (get handler-syms idx)]
                                  `(if-let [request# ~matcher-exp]
-                                    (~handler-sym request#)
+                                    (~invoke-sym ~handler-sym request#)
                                     ~expr))))
                      `nil))
         fn-form  `(let [~@bindings]
                     (fn ~dispatch-sym
-                      [~request-sym]
-                      ~all-exps))]
+                      ([~request-sym ~invoke-sym]
+                        ~all-exps)
+                      ([~request-sym]
+                        (~dispatch-sym ~request-sym i/invoke))
+                      ([~request-sym respond# raise#]
+                        (~dispatch-sym ~request-sym (fn [handler# updated-request#]
+                                                      (handler# updated-request# respond# raise#))))))]
     (binding [*routes* routes]
       (eval fn-form))))
 
@@ -133,6 +144,7 @@
   "Given a route vector append a matcher that always matches with a corresponding specified handler."
   [routes handler]
   (conj routes {:matcher identity
+                :matchex identity
                 :handler handler}))
 
 
@@ -151,7 +163,8 @@
                         :headers {"Content-Type" "text/plain"}
                         :body (str "400 Bad request. URI does not match any available uri-template." uri-list-str)}]
       (conj-fallback-match routes
-        (fn [_] response-400))))
+        (fn ([_] response-400)
+          ([_ respond _] (respond response-400))))))
   ([routes]
     (conj-fallback-400 routes {})))
 
@@ -176,7 +189,8 @@
                                 "Content-Type" "text/plain"}
                       :body (str "405 Method not supported. Allowed methods are: " methods-list)}]
     (conj-fallback-match routes
-      (fn [_] response-405))))
+      (fn ([_] response-405)
+        ([_ respond _] (respond response-405))))))
 
 
 ;; ----- update bulk routes -----
@@ -193,7 +207,7 @@
   (as-> routes $
     (mapv (fn [spec]
             (if (contains? spec :nested)
-              (apply update-in spec [:nested] update-routes f args)
+              (apply update spec :nested update-routes f args)
               spec))
       $)
     (apply f $ args)))
@@ -232,7 +246,7 @@
       (i/expected "route spec to be a map" spec)))
   (mapv (fn [spec]
           (let [spec (if (contains? spec :nested)
-                       (apply update-in spec [:nested] update-each-route f args)
+                       (apply update spec :nested update-each-route f args)
                        spec)]
             (apply f spec args)))
     routes))
@@ -266,7 +280,7 @@
   "Given a bunch of routes, update every route (recursively) containing specified attribute with the given wrapper. The
   wrapper fn f is invoked with the old attribute value, and the returned value is updated into the route."
   [specs reference-key f]
-  (->> #(update-in % [reference-key] f)
+  (->> #(update % reference-key f)
     (make-updater reference-key)
     (update-each-route specs)))
 
@@ -282,20 +296,25 @@
       (assoc spec :matchex matchex))))
 
 
-(def ^{:arglists '([route-spec uri-finder])} make-uri-matcher
+(def ^{:arglists '([route-spec uri-finder params-key-finder])} make-uri-matcher
   "Given a route spec not containing the :matcher key and containing URI-pattern string as value (found by uri-finder),
   create a URI matcher and add it under the :matcher key. If the route spec already contains the :matcher key or if it
   does not contain URI-pattern then the route spec is left intact. When adding matcher also add matchex unless the
   :matchex key already exists."
   (make-ensurer :matcher
-    (fn [spec uri-finder]
-      (when-not (map? spec)
-        (i/expected "route spec to be a map" spec))
+    (fn [spec uri-finder params-key-finder]
+      (i/expected map? "route spec to be a map" spec)
       (if-let [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
         (do
           (when-not (string? uri-pattern)
             (i/expected "URI pattern to be a string" spec))
-          (let [[uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
+          (let [params-key    (if (nil? params-key-finder)
+                                nil
+                                (params-key-finder spec))
+                params-sym    (-> (gensym "uri-params-")
+                                (vary-meta assoc :tag "java.util.Map"))
+                end-index-sym (gensym "end-index-")
+                [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
                                 (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
@@ -303,20 +322,31 @@
                                                                        uri-template partial?)]
                                   (let [^Map params (.getParams match-result)
                                         end-index   (.getEndIndex match-result)]
-                                    (if (.isEmpty params)
-                                      (assoc request
-                                        i/uri-match-end-index end-index)
-                                      (conj request params {i/uri-match-end-index end-index}))))))
+                                    (cond
+                                      (.isEmpty params) (assoc request
+                                                          i/uri-match-end-index end-index)
+                                      (nil? params-key) (as-> request $
+                                                          (assoc $ i/uri-match-end-index end-index)
+                                                          (i/reduce-mkv assoc $ params))
+                                      :otherwise        (-> request
+                                                          (assoc i/uri-match-end-index end-index)
+                                                          (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
                                 `(when-let [^MatchResult match-result# (Util/matchURI ^String (:uri ~request)
                                                                          (int (i/get-uri-match-end-index ~request))
                                                                          ~uri-template ~partial?)]
-                                   (let [^Map params# (.getParams match-result#)
-                                         end-index#   (.getEndIndex match-result#)]
-                                     (if (.isEmpty params#)
+                                   (let [~params-sym    (.getParams match-result#)
+                                         ~end-index-sym (.getEndIndex match-result#)]
+                                     (if (.isEmpty ~params-sym)
                                        (assoc ~request
-                                         i/uri-match-end-index end-index#)
-                                       (conj ~request params# {i/uri-match-end-index end-index#})))))))))
+                                         i/uri-match-end-index ~end-index-sym)
+                                       ~(if (nil? params-key)
+                                          `(as-> ~request $#
+                                             (assoc $# i/uri-match-end-index ~end-index-sym)
+                                             (i/reduce-mkv assoc $# ~params-sym))
+                                          `(-> ~request
+                                             (assoc i/uri-match-end-index ~end-index-sym)
+                                             (update ~params-key i/conj-maps ~params-sym)))))))))))
         spec))))
 
 
@@ -337,11 +367,12 @@
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
           (cond
             (keyword? method) (-> spec
+                                ;; Clojure keywords are interned; we can compare identity (faster) instead of equality
                                 (assoc :matcher (fn method-matcher [request]
-                                                  (when (= (:request-method request) method)
+                                                  (when (identical? (:request-method request) method)
                                                     request)))
                                 (ensure-matchex (fn [request]
-                                                  `(when (= (:request-method ~request) ~method)
+                                                  `(when (identical? (:request-method ~request) ~method)
                                                      ~request))))
             (set? method)     (-> spec
                                 (assoc :matcher (fn multiple-method-matcher [request]
@@ -356,49 +387,94 @@
 ;; ----- route middleware -----
 
 
+(defn assoc-kv-middleware
+  "Given a route spec, if the route contains the main key then ensure that it also has the associated key/value pairs."
+  [spec main-key-finder assoc-map]
+  (if (main-key-finder spec)
+    (reduce-kv (fn [m k v] (if (contains? m k)
+                             m
+                             (assoc m k v)))
+      spec assoc-map)
+    spec))
+
+
 (defn lift-key-middleware
-  "Given a route spec, a lift key and one or more conflict keys, if both lift-key and any of the conflict-keys exist in
-  the spec then extract the lift key such that all other attributes are moved into a nested spec."
-  [spec lift-key conflict-keys]
-  (if (and (contains? spec lift-key) (some #(contains? spec %) conflict-keys))
-    {lift-key (get spec lift-key)
-     :nested  [(dissoc spec lift-key)]}
+  "Given a route spec, lift keys and one or more conflict keys, if the spec contains both any of the lift-keys and any
+  of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested spec."
+  [spec lift-keys conflict-keys]
+  (if (and
+        (some #(contains? spec %) lift-keys)
+        (some #(contains? spec %) conflict-keys))
+    (-> spec
+      (select-keys lift-keys)
+      (assoc :nested [(apply dissoc spec lift-keys)]))
+    spec))
+
+
+(defn trailing-slash-middleware
+  "Given a route spec, URI key and action (keyword :add or :remove) edit the URI to have or not have a trailing slash
+  if the route has a URI pattern. Leave the route unchanged if it has no URI pattern."
+  [spec uri-key action]
+  (i/expected keyword? "URI key to be a keyword" uri-key)
+  (i/expected #{:add :remove} "action to be :add or :remove" action)
+  (if (contains? spec uri-key)
+    (update spec uri-key (fn [^String uri]
+                           (i/expected string? "URI to be a string" uri)
+                           (if (.endsWith uri "*")  ; candidate for partial match?
+                             uri                    ; do not change partial-match URIs
+                             (let [trailing? (.endsWith uri "/")]
+                               (if (identical? action :add)
+                                 (if trailing? uri (str uri "/"))              ;; add trailing slash if missing
+                                 (if (and trailing? (> (.length uri) 1))
+                                   (subs uri 0 (unchecked-dec (.length uri)))  ;; remove trailing slash if present
+                                   uri))))))
     spec))
 
 
 ;; ----- helper fns -----
 
 
-(defn make-routes
+(defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
   Options:
-   :uri?           (boolean) true if URI templates should be converted to matchers
-   :uri-key        (non-nil) the key to be used to look up the URI template in a spec
-   :fallback-400?  (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
-   :show-uris-400? (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
-   :uri-prefix-400 (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
-   :method?        (boolean) true if HTTP methods should be converted to matchers
-   :method-key     (non-nil) the key to be used to look up the method key/set in a spec
-   :fallback-405?  (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
-   :lift-uri?      (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [uri?       uri-key    fallback-400? show-uris-400? uri-prefix-400
-                        method?    method-key fallback-405?
+   :uri?            (boolean) true if URI templates should be converted to matchers
+   :uri-key         (non-nil) the key to be used to look up the URI template in a spec
+   :uri-params-key  (non-nil) the key to put URI params under; if unspecified, params map is merged into request
+   :split-params?   (boolean) whether extract URI params under a key in request map by auto-specifying :uri-params-key
+   :trailing-slash  (keyword) Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect
+   :fallback-400?   (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
+   :show-uris-400?  (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
+   :uri-prefix-400  (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
+   :method?         (boolean) true if HTTP methods should be converted to matchers
+   :method-key      (non-nil) the key to be used to look up the method key/set in a spec
+   :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
+   :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
+  ([route-specs {:keys [uri?            uri-key uri-params-key  fallback-400? show-uris-400? uri-prefix-400
+                        method?         method-key              fallback-405?
+                        split-params?   uri-params-val
+                        trailing-slash
                         lift-uri?
-                        ring-handler? ring-handler-key path-param-key]
-                 :or {uri?       true  uri-key    :uri     fallback-400? true  show-uris-400? true
-                      method?    true  method-key :method  fallback-405? true
-                      lift-uri?  true}
+                        ring-handler? ring-handler-key]
+                 :or {uri?            true   uri-key        :uri
+                                             uri-params-key :uri-params  fallback-400? true  show-uris-400? true
+                      method?         true   method-key     :method      fallback-405? true
+                      split-params?   false  uri-params-val :route-params  ; compatibility with Bidi and Ataraxy
+                      lift-uri?       true
+                      trailing-slash  false}
                  :as options}]
     (let [when-> (fn [specs test f & args] (if test
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> (and uri? split-params?)    update-each-route assoc-kv-middleware uri-key {uri-params-key
+                                                                                           uri-params-val})
         (when-> (and uri? method?
-                  lift-uri?)                update-each-route lift-key-middleware uri-key [method-key])
+                  lift-uri?)                update-each-route lift-key-middleware [uri-key uri-params-key] [method-key])
+        (when-> (and uri? trailing-slash)   update-each-route trailing-slash-middleware uri-key trailing-slash)
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
         (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
                                                                                        :uri-prefix uri-prefix-400})
         (when-> method? update-each-route make-method-matcher method-key)
-        (when-> uri?    update-each-route make-uri-matcher    uri-key))))
+        (when-> uri?    update-each-route make-uri-matcher    uri-key uri-params-key))))
   ([route-specs]
-    (make-routes route-specs {})))
+    (compile-routes route-specs {})))
