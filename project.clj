@@ -15,9 +15,13 @@
              :c09 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :c10 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :dln {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
-             :perf {:dependencies [[ataraxy   "0.4.0" :exclusions [org.clojure/clojure]]
-                                   [bidi      "2.1.3"]
-                                   [compojure "1.6.0" :exclusions [org.clojure/clojure]]
+             :perf {:dependencies [[ataraxy   "0.4.2" :exclusions [[org.clojure/clojure]
+                                                                   [ring/ring-core]]]
+                                   [bidi      "2.1.4" :exclusions [ring/ring-core]]
+                                   [compojure "1.6.1" :exclusions [[org.clojure/clojure]
+                                                                   [ring/ring-core]
+                                                                   [ring/ring-codec]]]
+                                   [metosin/reitit-ring "0.2.9"]
                                    [citius    "0.2.4"]]
                     :test-paths ["perf"]
                     :jvm-opts ^:replace ["-server" "-Xms2048m" "-Xmx2048m"]}}

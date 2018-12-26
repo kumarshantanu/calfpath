@@ -16,7 +16,7 @@
 * Routes
   * [TODO - BREAKING CHANGE] Always put route params under `:route-params` key in request map
   * [TODO] Composite (AND) matchers
-  * [TODO] Include performance benchmarks for Reitit
+  * Include [Reitit](https://github.com/metosin/reitit) performance benchmarks
 
 
 ## 0.6.0 / 2018-April-30
