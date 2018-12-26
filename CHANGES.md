@@ -11,6 +11,14 @@
   - Account for partial and nested URI templates
 
 
+## 0.7.0 / 2018-December-??
+
+* Routes
+  * [TODO - BREAKING CHANGE] Always put route params under `:route-params` key in request map
+  * [TODO] Composite (AND) matchers
+  * [TODO] Include performance benchmarks for Reitit
+
+
 ## 0.6.0 / 2018-April-30
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6
