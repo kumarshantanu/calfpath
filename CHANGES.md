@@ -14,7 +14,10 @@
 ## 0.7.0 / 2018-December-??
 
 * Routes
-  * [TODO - BREAKING CHANGE] Always put route params under `:route-params` key in request map
+  * [BREAKING CHANGE] Allow argument `params-key` instead of looking up route spec
+    * [BREAKING CHANGE] Accept `params-key` in `calfpath.route/make-uri-matcher` - no route spec lookup
+    * [BREAKING CHANGE] Drop support for kwargs `:split-params?` and `:uri-params-key`
+      * Accept `params-key` kwarg in `calfpath.route/compile-routes`
   * Include [Reitit](https://github.com/metosin/reitit) performance benchmarks
 
 
