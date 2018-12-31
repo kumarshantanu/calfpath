@@ -38,12 +38,13 @@ public class Util {
         if (beginIndex == MatchResult.FULL_MATCH_INDEX) { // if already a full-match then no need to match further
             return MatchResult.NO_MATCH;
         }
+        final int tokenCount = patternTokens.size();
         // if length==1, then token must be string (static URI path)
-        if (patternTokens.size() == 1) {
+        if (tokenCount == 1) {
             final String staticPath = (String) patternTokens.get(0);
             if (uri.startsWith(staticPath, beginIndex)) {  // URI begins with the path, so at least partial match exists
                 if ((uri.length() - beginIndex) == staticPath.length()) {  // if full match exists, then return as such
-                    return MatchResult.fullMatch();
+                    return MatchResult.FULL_MATCH_NO_PARAMS;
                 }
                 return attemptPartialMatch? MatchResult.partialMatch(staticPath.length()): MatchResult.NO_MATCH;
             } else {
@@ -51,7 +52,7 @@ public class Util {
             }
         }
         final int uriLength = uri.length();
-        final Map<Object, String> pathParams = new HashMap<Object, String>();
+        final Map<Object, String> pathParams = new HashMap<Object, String>(tokenCount);
         int uriIndex = beginIndex;
         OUTER:
         for (final Object token: patternTokens) {

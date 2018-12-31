@@ -15,10 +15,15 @@
 
 * Routes
   * [BREAKING CHANGE] Allow argument `params-key` instead of looking up route spec
-    * [BREAKING CHANGE] Accept `params-key` in `calfpath.route/make-uri-matcher` - no route spec lookup
-    * [BREAKING CHANGE] Drop support for kwargs `:split-params?` and `:uri-params-key`
-      * Accept `params-key` kwarg in `calfpath.route/compile-routes`
+    * Accept `params-key` in `calfpath.route/make-uri-matcher` - no route spec lookup
+    * Changes to `calfpath.route/compile-routes`
+      * Drop support for kwargs `:split-params?` and `:uri-params-key`
+      * Accept optional kwarg `:params-key`
+* Performance
   * Include [Reitit](https://github.com/metosin/reitit) performance benchmarks
+  * Avoid allocating MatchResult object on route full-match with no params
+    * [BREAKING CHANGE] Drop `MatchResult.fullMatch()` in favour of `MatchResult.FULL_MATCH_NO_PARAMS`
+  * Allocate a fixed-size map (in `Util.matchURI()`) to hold only as many params as likely
 
 
 ## 0.6.0 / 2018-April-30
