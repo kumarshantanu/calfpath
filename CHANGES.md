@@ -20,10 +20,10 @@
       * Drop support for kwargs `:split-params?` and `:uri-params-key`
       * Accept optional kwarg `:params-key`
 * Performance
-  * Include [Reitit](https://github.com/metosin/reitit) performance benchmarks
+  * Include [Reitit](https://github.com/metosin/reitit) among performance benchmarks
   * Avoid allocating MatchResult object on route full-match with no params
-    * [BREAKING CHANGE] Drop `MatchResult.fullMatch()` in favour of `MatchResult.FULL_MATCH_NO_PARAMS`
-  * Allocate a fixed-size map (in `Util.matchURI()`) to hold only as many params as likely
+    * [IMPL CHANGE] Drop `MatchResult.fullMatch()` in favour of `MatchResult.FULL_MATCH_NO_PARAMS`
+  * Allocate param map (in `Util.matchURI()`) to hold only as many params as likely
 
 
 ## 0.6.0 / 2018-April-30
