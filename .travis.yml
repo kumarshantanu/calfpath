@@ -8,6 +8,8 @@ jdk:
   - openjdk11
 script:
   - lein with-profile c07 test
+    exclude:
+      - openjdk7
   - lein with-profile c08 test
   - lein with-profile c09 test
   - lein with-profile c10 test
