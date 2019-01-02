@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/kumarshantanu/calfpath.svg)](https://travis-ci.org/kumarshantanu/calfpath)
 
-A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching.
+A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching and routing.
 
 (_Calf path_ is a synonym for [Desire path](http://en.wikipedia.org/wiki/Desire_path).
 [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
@@ -18,7 +18,7 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.6.0"]` (requires Clojure 1.7 or later)
+Leiningen dependency: `[calfpath "0.7.0-SNAPSHOT"]` (requires Clojure 1.7 or later)
 
 Require namespace:
 ```clojure
@@ -63,9 +63,16 @@ When you need to dispatch on URI pattern with convenient API:
 
 ### Data-driven Routes abstraction
 
-In many cases we need to manipulate (i.e. add and extend) the dispatch criteria before handling the requests. This can
-be addressed by the _routes_ abstraction. Routes are a vector of route specification maps. Every route has three
-fundamental keys:
+Calfpath supports data-driven _routes_ where every route is a map of certain keys. Routes are easy to
+extend and re-purpose. An example low-level route looks like the following (where route-handler is the
+same as a Ring handler function):
+
+```clojure
+{:matcher uri-matcher :nested [{:matcher get-matcher :handler handler1}
+                               {:matcher post-matcher :handler handler2}]}
+```
+
+Every route has two required keys - `:matcher` and `:handler`/`:nested` as described below:
 
 | Key        | Required? | Description |
 |------------|-----------|-------------|
@@ -73,19 +80,15 @@ fundamental keys:
 | `:nested`  |   Either  | Routes vector - nested match is attempted on this if matcher was successful |
 | `:handler` |   Either  | `(fn [request]) -> response` returns Ring response map, like a Ring handler |
 
+Calfpath comes with utilities to create common matchers, e.g. URI, HTTP method, fallback etc.
 
-#### Notes on routes
+#### Quickstart
 
-- The `:matcher` key must be present in a route spec for dispatch.
-  - In practice, other keys (e.g. `:uri`, `:method` etc.) add the `:matcher` key
-- Either `:handler` or `:nested` key must be present in a route spec.
-- A successful match may return an updated request, or the same request, or `nil`
-
-See examples below:
+See the route examples below:
 
 ```clojure
 
-;; a route-handler is arity-1 fn, like a ring-handler
+;; a route-handler is arity-1 (or arity-3 for async) fn, like a ring-handler
 (defn list-user-jobs
   [{:keys [user-id] :as request}]
   ...)
@@ -108,10 +111,17 @@ See examples below:
 
 ;; create a Ring handler from given routes
 (def ring-handler
-  (-> (app-routes)
-    r/compile-routes
+  (-> (app-routes)   ; return routes vector
+    r/compile-routes ; turn every map into a route by populating matchers in them
     r/make-dispatcher))
 ```
+
+#### Notes on routes
+
+- The `:matcher` key must be present in a route spec for dispatch.
+  - In practice, other keys (e.g. `:uri`, `:method` etc.) add the `:matcher` key
+- Either `:handler` or `:nested` key must be present in a route spec.
+- A successful match may return an updated request, or the same request, or `nil`
 
 
 ## Development
@@ -135,7 +145,7 @@ $ lein with-profile c17,perf test  # on specified Clojure version
 
 ## License
 
-Copyright © 2015-2018 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
+Copyright © 2015-2019 Shantanu Kumar (kumar.shantanu@gmail.com, shantanu.kumar@concur.com)
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
