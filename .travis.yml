@@ -3,7 +3,11 @@ jdk:
   - openjdk7
   - oraclejdk7
   - oraclejdk8
+  - oraclejdk9
+  - openjdk10
+  - openjdk11
 script:
   - lein with-profile c17 test
   - lein with-profile c18 test
   - lein with-profile c19 test
+  - lein with-profile c10 test
