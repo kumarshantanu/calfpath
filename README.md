@@ -132,14 +132,14 @@ Running tests:
 
 ```shell
 $ lein do clean, test
-$ lein with-profile c17 test
+$ lein with-profile c07 test
 ```
 
 Running performance benchmarks:
 
 ```shell
 $ lein do clean, perf-test
-$ lein with-profile c17,perf test  # on specified Clojure version
+$ lein with-profile c07,perf test  # on specified Clojure version
 ```
 
 
