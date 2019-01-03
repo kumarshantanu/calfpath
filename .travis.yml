@@ -13,7 +13,7 @@ script:
   - lein with-profile c10 test
 matrix:
   exclude:
-  - openjdk7
-    lein with-profile c10 test
-  - oraclejdk7
-    lein with-profile c10 test
+  - jdk: openjdk7
+    script: lein with-profile c10 test
+  - jdk: oraclejdk7
+    script: lein with-profile c10 test
