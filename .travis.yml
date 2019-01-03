@@ -5,12 +5,14 @@ jdk:
   - oraclejdk9
   - openjdk10
   - openjdk11
+env:
+  - LEIN_PROFILE=c07
+  - LEIN_PROFILE=c08
+  - LEIN_PROFILE=c09
+  - LEIN_PROFILE=c10
 script:
-  - lein with-profile c07 test
-  - lein with-profile c08 test
-  - lein with-profile c09 test
-  - lein with-profile c10 test
+  - lein with-profile ${LEIN_PROFILE} test
 matrix:
   exclude:
   - jdk: openjdk7
-    script: lein with-profile c10 test
+    env: LEIN_PROFILE=c10
