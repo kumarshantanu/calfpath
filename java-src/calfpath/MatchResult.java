@@ -14,12 +14,14 @@ import java.util.Map;
 
 public class MatchResult {
 
-    public static MatchResult NO_MATCH = null;
+    public static final MatchResult NO_MATCH = null;
 
     @SuppressWarnings("unchecked")
     public static final Map<?, String> NO_PARAMS = Collections.EMPTY_MAP;
 
     public static final int FULL_MATCH_INDEX = -1;
+
+    public static final MatchResult FULL_MATCH_NO_PARAMS = new MatchResult(NO_PARAMS, FULL_MATCH_INDEX);
 
     private final Map<?, String> params;
 
@@ -43,10 +45,6 @@ public class MatchResult {
 
     public static MatchResult fullMatch(Map<?, String> params) {
         return new MatchResult(params, FULL_MATCH_INDEX);
-    }
-
-    public static MatchResult fullMatch() {
-        return new MatchResult(NO_PARAMS, FULL_MATCH_INDEX);
     }
 
     // ----- utility methods -----

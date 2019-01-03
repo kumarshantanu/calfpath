@@ -14,6 +14,7 @@
     [bidi.ring      :as bidi]
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
     [clout.core     :as l]
+    [reitit.ring    :as reitit]
     [calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]]
     [calfpath.internal :as i]
     [calfpath.route :as r]
@@ -114,6 +115,24 @@
   (rfn request (hxx)))
 
 
+(def handler-reitit
+  (reitit/ring-handler
+    (reitit/router
+      [["/user/:id/profile/:type/" {:get (fn [{{:keys [id type]} :path-params}] (h11 id type))
+                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))}]
+       ["/user/:id/permissions/"   {:get (fn [{{:keys [id]} :path-params}] (h21 id))
+                                    :put (fn [{{:keys [id]} :path-params}] (h22 id))}]
+       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))}]
+       ["/this/is/a/static/route"  {:put (fn [_] (h40))}]])
+    (fn [request]
+      (case (get-in request [:reitit.core/match :template])
+        "/user/:id/profile/:type/" (h1x)
+        "/user/:id/permissions/"   (h2x)
+        "/company/:cid/dept/:did/" (h3x)
+        "/this/is/a/static/route"  (h4x)
+        (hxx)))))
+
+
 (defmacro cond-let
   [& clauses]
   (i/expected (comp odd? count) "odd number of clauses" clauses)
@@ -191,8 +210,8 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Ataraxy" "Bidi" "Compojure" "Clout" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
-    {:chart-title "Ataraxy/Bidi/Compojure/Clout/CalfPath"
+    ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
+    {:chart-title "Ataraxy/Bidi/Compojure/Clout/Reitit/CalfPath"
      :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
 
 
@@ -210,12 +229,14 @@
                    :uri "/hello/joe/"}]
       (test-compare-perf "no URI match"
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "no method match"
     (let [request {:request-method :post
                    :uri "/user/1234/profile/compact/"}]
       (test-compare-perf "no method match"
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
 
 
@@ -225,15 +246,18 @@
                    :uri "/this/is/a/static/route"}]
       (test-compare-perf "static URI match, 1 method"
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
       (test-compare-perf "pattern URI match, 2 methods"
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
       (test-compare-perf "pattern URI match, 1 method"
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
+        (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))

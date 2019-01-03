@@ -11,6 +11,21 @@
   - Account for partial and nested URI templates
 
 
+## 0.7.0 / 2019-January-03
+
+* Routes
+  * [BREAKING CHANGE] Allow argument `params-key` instead of looking up route spec
+    * Accept `params-key` in `calfpath.route/make-uri-matcher` - no route spec lookup
+    * Changes to `calfpath.route/compile-routes`
+      * Drop support for kwargs `:split-params?` and `:uri-params-key`
+      * Accept optional kwarg `:params-key`
+* Performance
+  * Include [Reitit](https://github.com/metosin/reitit) among performance benchmarks
+  * Avoid allocating MatchResult object on route full-match with no params
+    * [IMPL CHANGE] Drop `MatchResult.fullMatch()` in favour of `MatchResult.FULL_MATCH_NO_PARAMS`
+  * Allocate param map (in `Util.matchURI()`) to hold only as many params as likely
+
+
 ## 0.6.0 / 2018-April-30
 
 * [BREAKING CHANGE] Drop support for Clojure versions 1.5 and 1.6

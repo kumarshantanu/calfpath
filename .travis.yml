@@ -1,9 +1,18 @@
 language: clojure
 jdk:
   - openjdk7
-  - oraclejdk7
   - oraclejdk8
+  - oraclejdk9
+  - openjdk10
+  - openjdk11
+env:
+  - LEIN_PROFILE=c07
+  - LEIN_PROFILE=c08
+  - LEIN_PROFILE=c09
+  - LEIN_PROFILE=c10
 script:
-  - lein with-profile c17 test
-  - lein with-profile c18 test
-  - lein with-profile c19 test
+  - lein with-profile ${LEIN_PROFILE} test
+matrix:
+  exclude:
+  - jdk: openjdk7
+    env: LEIN_PROFILE=c10

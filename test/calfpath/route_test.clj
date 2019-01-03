@@ -22,8 +22,7 @@
 
 (def all-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
-   {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:uri-params])
-    :uri-params :uri-params}
+   {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:lid :rid])}
    {:uri "/user/:id/profile/:type/"
     :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
              {:method :patch  :handler (handler [:id :type]) :name "update.user.profile"}
@@ -35,12 +34,25 @@
    {:uri "/hello/1234/" :handler (handler [])}])
 
 
+(def pp-all-routes
+  [{:uri "/info/:token/"            :method :get :handler (handler [:path-params]) :name "info"}
+   {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:path-params])}
+   {:uri "/user/:id/profile/:type/"
+    :nested [{:method :get    :handler (handler [:path-params]) :name "get.user.profile"}
+             {:method :patch  :handler (handler [:path-params]) :name "update.user.profile"}
+             {:method :delete :handler (handler [:path-params]) :name "delete.user.profile"}]}
+   {:uri "/user/:id/permissions/"
+    :nested [{:method :get    :handler (handler [:path-params]) :name "get.user.permissions"}
+             {:method :post   :handler (handler [:path-params]) :name "create.user.permission"}
+             {:method :put    :handler (handler [:path-params]) :name "replace.user.permissions"}]}
+   {:uri "/hello/1234/" :handler (handler [])}])
+
+
 (def all-partial-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
-   {:uri "/album/:lid*"  :uri-params :uri-params
+   {:uri "/album/:lid*"
     :nested [{:uri "/artist/:rid/"
-              :uri-params :uri-params
-              :method :get :handler (handler [:uri-params])}]}
+              :method :get :handler (handler [:lid :rid])}]}
    {:uri "/user/:id*"
     :nested [{:uri "/profile/:type/"
               :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
@@ -53,10 +65,33 @@
    {:uri "/hello/1234/" :handler (handler [])}])
 
 
+(def pp-all-partial-routes
+  [{:uri "/info/:token/" :method :get :handler (handler [:path-params]) :name "info"}
+   {:uri "/album/:lid*"
+    :nested [{:uri "/artist/:rid/"
+              :method :get :handler (handler [:path-params])}]}
+   {:uri "/user/:id*"
+    :nested [{:uri "/profile/:type/"
+              :nested [{:method :get    :handler (handler [:path-params]) :name "get.user.profile"}
+                       {:method :patch  :handler (handler [:path-params]) :name "update.user.profile"}
+                       {:method :delete :handler (handler [:path-params]) :name "delete.user.profile"}]}
+             {:uri "/permissions/"
+              :nested [{:method :get    :handler (handler [:path-params]) :name "get.user.permissions"}
+                       {:method :post   :handler (handler [:path-params]) :name "create.user.permission"}
+                       {:method :put    :handler (handler [:path-params]) :name "replace.user.permissions"}]}]}
+   {:uri "/hello/1234/" :handler (handler [])}])
+
+
 (def final-routes (r/compile-routes all-routes))
 
 
+(def pp-final-routes (r/compile-routes pp-all-routes {:params-key :path-params}))
+
+
 (def final-partial-routes (r/compile-routes all-partial-routes))
+
+
+(def pp-final-partial-routes (r/compile-routes pp-all-partial-routes {:params-key :path-params}))
 
 
 (def flat-400 "400 Bad request. URI does not match any available uri-template.
@@ -88,7 +123,8 @@ Available URI templates:
           :body "405 Method not supported. Allowed methods are: GET"}
         (handler {:uri "/info/status/" :request-method :post})))
   (is (= {:request-method :get
-          :uri-params {:lid "10" :rid "20"}}
+          :lid "10"
+          :rid "20"}
         (handler {:uri "/album/10/artist/20/" :request-method :get})))
   (is (= {:request-method :get
           :id "id-1"
@@ -109,12 +145,52 @@ Available URI templates:
         (handler {:uri "/user/123/permissions/"     :request-method :bad}))))
 
 
+(defn pp-routes-helper
+  [handler body-400]
+  (is (= {:request-method :get
+          :path-params {:token "status"}}
+        (handler {:uri "/info/status/" :request-method :get})))
+  (is (= {:status 405
+          :headers {"Allow" "GET" "Content-Type" "text/plain"}
+          :body "405 Method not supported. Allowed methods are: GET"}
+        (handler {:uri "/info/status/" :request-method :post})))
+  (is (= {:request-method :get
+          :path-params {:lid "10"
+                        :rid "20"}}
+        (handler {:uri "/album/10/artist/20/" :request-method :get})))
+  (is (= {:request-method :get
+          :path-params {:id "id-1"
+                        :type "type-2"}}
+        (handler {:uri "/user/id-1/profile/type-2/" :request-method :get})))
+  (is (= {:request-method :post
+          :path-params {:id "id-2"}}
+        (handler {:uri "/user/id-2/permissions/"    :request-method :post})))
+  (is (= {:request-method :get}
+        (handler {:uri "/hello/1234/"               :request-method :get})))
+  (is (= {:status 400
+          :headers {"Content-Type" "text/plain"}
+          :body body-400}
+        (handler {:uri "/bad/uri"          :request-method :get})))
+  (is (= {:status 405
+          :headers {"Allow" "GET, POST, PUT", "Content-Type" "text/plain"}
+          :body "405 Method not supported. Allowed methods are: GET, POST, PUT"}
+        (handler {:uri "/user/123/permissions/"     :request-method :bad}))))
+
+
 (deftest test-routes
   (testing "walker"
     (routes-helper (partial r/dispatch final-routes) flat-400))
+  (testing "walker (path params)"
+    (pp-routes-helper (partial r/dispatch pp-final-routes) flat-400))
   (testing "unrolled"
     (routes-helper (r/make-dispatcher final-routes) flat-400))
+  (testing "unrolled (path params)"
+    (pp-routes-helper (r/make-dispatcher pp-final-routes) flat-400))
   (testing "walker partial"
     (routes-helper (partial r/dispatch final-partial-routes) partial-400))
+  (testing "walker partial (path params)"
+    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400))
   (testing "unrolled partial"
-    (routes-helper (r/make-dispatcher final-partial-routes) partial-400)))
+    (routes-helper (r/make-dispatcher final-partial-routes) partial-400))
+  (testing "unrolled partial (path params)"
+    (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400)))
