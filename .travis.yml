@@ -1,7 +1,6 @@
 language: clojure
 jdk:
   - openjdk7
-  - oraclejdk7
   - oraclejdk8
   - oraclejdk9
   - openjdk10
@@ -14,6 +13,4 @@ script:
 matrix:
   exclude:
   - jdk: openjdk7
-    script: lein with-profile c10 test
-  - jdk: oraclejdk7
     script: lein with-profile c10 test
