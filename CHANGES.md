@@ -11,7 +11,7 @@
   - Account for partial and nested URI templates
 
 
-## 0.7.0 / 2018-December-??
+## 0.7.0 / 2019-January-03
 
 * Routes
   * [BREAKING CHANGE] Allow argument `params-key` instead of looking up route spec

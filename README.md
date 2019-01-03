@@ -8,17 +8,17 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 [The Calf-Path](http://www.poets.org/poetsorg/poem/calf-path) is a poem by _Sam Walter Foss_.)
 
 
-## Why Calfpath?
+## Rationale
 
 - Ring has no built-in routing mechanism; Calfpath delivers this essential feature.
 - Orthogonality - match URI patterns, HTTP methods or anything in a Ring request.
 - Calfpath is fast (benchmarks included) - there is no cost to what you do not use.
-- API is available as both dispatch macros and composable, data-driven routes.
+- API is available as both dispatch macros and extensible, data-driven routes.
 
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.7.0-SNAPSHOT"]` (requires Clojure 1.7 or later)
+Leiningen dependency: `[calfpath "0.7.0"]` (requires Clojure 1.7 or later)
 
 Require namespace:
 ```clojure
