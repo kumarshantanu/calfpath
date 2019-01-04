@@ -11,6 +11,14 @@
   - Account for partial and nested URI templates
 
 
+## 0.7.1 / 2019-January-??
+
+* Routes
+  - [Todo] Add utility fn `calfpath.route/prewalk-routes`
+  - [Todo] Fix reporting "URI templates" in routes fallback-400 handler
+    - Introduce `:full-uri` kwarg in `calfpath.route/compile-routes` as reference key
+
+
 ## 0.7.0 / 2019-January-03
 
 * Routes
