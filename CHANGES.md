@@ -11,7 +11,7 @@
   - Account for partial and nested URI templates
 
 
-## 0.7.1 / 2019-January-??
+## 0.7.1 / 2019-January-04
 
 * Routes
   - Add utility fn `calfpath.route/prewalk-routes`
