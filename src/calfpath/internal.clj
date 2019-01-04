@@ -139,3 +139,10 @@
   ([f x y]        (f x y))
   ([f x y & args] (apply f x y args)))
 
+
+(defn strip-partial-marker
+  [x]
+  (when (string? x)
+    (if (.endsWith ^String x "*")
+      (subs x 0 (dec (count x)))
+      x)))

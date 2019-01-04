@@ -252,6 +252,21 @@
     routes))
 
 
+(defn prewalk-routes
+  "Given a bunch of routes, update every route (recursively) with f, which receives parent route as second arg."
+  [routes parent-route f & args]
+  (when-not (coll? routes)
+    (i/expected "routes to be a collection" routes))
+  (doseq [spec routes]
+    (i/expected map? "route spec to be a map" spec))
+  (mapv (fn [each-route]
+          (let [walked-route (apply f each-route parent-route args)]
+            (if (contains? walked-route :nested)
+              (apply update walked-route :nested prewalk-routes walked-route f args)
+              walked-route)))
+    routes))
+
+
 (defn make-ensurer
   "Given a key and factory fn (accepts route and other args, returns new route), create a route updater fn that applies
   f to the route only when it does not contain the key."
@@ -439,18 +454,20 @@
    :trailing-slash  (keyword) Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect
    :fallback-400?   (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
    :show-uris-400?  (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
+   :full-uri-key    (non-nil) the key to be used to populate full-uri for reporting HTTP 400 (see :show-uris-400?)
    :uri-prefix-400  (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
    :method?         (boolean) true if HTTP methods should be converted to matchers
    :method-key      (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
    :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [uri?            uri-key    fallback-400? show-uris-400? uri-prefix-400
+  ([route-specs {:keys [uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
                         params-key
                         method?         method-key fallback-405?
                         trailing-slash
                         lift-uri?
                         ring-handler? ring-handler-key]
                  :or {uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
+                      full-uri-key    :full-uri
                       method?         true   method-key  :method  fallback-405? true
                       lift-uri?       true
                       trailing-slash  false}
@@ -463,8 +480,17 @@
                   lift-uri?)                update-each-route lift-key-middleware [uri-key] [method-key])
         (when-> (and uri? trailing-slash)   update-each-route trailing-slash-middleware uri-key trailing-slash)
         (when-> (and method? fallback-405?) update-routes update-fallback-405 method-key)
-        (when-> (and uri? fallback-400?)    update-routes update-fallback-400 uri-key {:show-uris? show-uris-400?
-                                                                                       :uri-prefix uri-prefix-400})
+        (when-> (and uri? fallback-400?
+                  show-uris-400?
+                  full-uri-key)             prewalk-routes nil (fn [route parent-route]
+                                                                 (as-> (full-uri-key parent-route) $
+                                                                   (i/strip-partial-marker $)
+                                                                   (str $ (uri-key route))
+                                                                   (assoc route full-uri-key $))))
+        (when-> (and uri? fallback-400?)    update-routes update-fallback-400 (if (and show-uris-400? full-uri-key)
+                                                                                full-uri-key
+                                                                                uri-key) {:show-uris? show-uris-400?
+                                                                                          :uri-prefix uri-prefix-400})
         (when-> method? update-each-route make-method-matcher method-key)
         (when-> uri?    update-each-route make-uri-matcher    uri-key params-key))))
   ([route-specs]
