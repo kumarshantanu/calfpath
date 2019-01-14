@@ -18,7 +18,7 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.7.1"]` (requires Clojure 1.7 or later)
+Leiningen dependency: `[calfpath "0.7.2-SNAPSHOT"]` (requires Clojure 1.7 or later)
 
 Require namespace:
 ```clojure
