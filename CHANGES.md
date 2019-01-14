@@ -12,7 +12,8 @@
 
 ## [WIP] 0.7.2 / 2019-January-??
 
-* [Todo] Add a middleware to add route to the request map
+* Add a middleware to add route to the request map
+  - `calfpath.route/assoc-spec-to-request-middleware`
 * [Todo] Automatic prefix-segmentation using wildcard (performance)
 * [Todo] Add large routes (OpenSensors) to performance benchmarks
 

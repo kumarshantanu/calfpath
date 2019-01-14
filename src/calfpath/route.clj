@@ -409,6 +409,21 @@
     spec))
 
 
+(defn assoc-spec-to-request-middleware
+  "Given a route spec, decorate the handler such that the request has the spec under specified key (:route by default)
+  at runtime."
+  ([spec spec-key]
+    (if (contains? spec :handler)
+      (update spec :handler
+        (fn middleware [f]
+          (fn
+            ([request] (f (assoc request spec-key spec)))
+            ([request respond raise] (f (assoc request spec-key spec) respond raise)))))
+      spec))
+  ([spec]
+    (assoc-spec-to-request-middleware spec :route)))
+
+
 (defn lift-key-middleware
   "Given a route spec, lift keys and one or more conflict keys, if the spec contains both any of the lift-keys and any
   of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested spec."
