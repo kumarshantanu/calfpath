@@ -8,6 +8,10 @@
   - `:id` attribute (in route, later associated with `:handler`) based
   - CLJS compatible (implies: JVM code must stay away in routes definition)
   - Account for partial and nested URI templates
+
+
+## [WIP] 0.8.0 / 2019-January-??
+
 * [Todo] Automatic prefix-segmentation using wildcard (performance)
 * [Todo] Add large routes (OpenSensors) to performance benchmarks
 
