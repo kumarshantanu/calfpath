@@ -14,6 +14,7 @@
 
 * [WIP] Automatic prefix-segmentation using wildcard (performance)
 * [WIP] Add large routes (OpenSensors) to performance benchmarks
+* [TODO - BREAKING CHANGE] Rename `assoc-spec-to-request` to `assoc-route-to-request` in `calfpath.route`
 
 
 ## 0.7.2 / 2019-January-15
