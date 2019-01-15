@@ -4,11 +4,18 @@
 ## TODO
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
-* [TODO] Add a middleware to add route to the request map
 * [TODO] Route based URI-generation from URI pattern (in a route) and params map
   - `:id` attribute (in route, later associated with `:handler`) based
   - CLJS compatible (implies: JVM code must stay away in routes definition)
   - Account for partial and nested URI templates
+* [Todo] Automatic prefix-segmentation using wildcard (performance)
+* [Todo] Add large routes (OpenSensors) to performance benchmarks
+
+
+## 0.7.2 / 2019-January-15
+
+* Add a middleware to add route to the request map
+  - `calfpath.route/assoc-spec-to-request-middleware`
 
 
 ## 0.7.1 / 2019-January-04
