@@ -12,7 +12,7 @@
 
 ## [WIP] 0.8.0 / 2019-January-??
 
-* [Todo] Automatic prefix-segmentation using wildcard (performance)
+* [WIP] Automatic prefix-segmentation using wildcard (performance)
 * [Todo] Add large routes (OpenSensors) to performance benchmarks
 
 

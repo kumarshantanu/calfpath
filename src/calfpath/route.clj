@@ -395,6 +395,20 @@
         spec))))
 
 
+;; ----- routes (bulk) middleware -----
+
+
+(defn routes->wildcard-trie
+  "Given a bunch of routes, segment them by prefix URI-tokens into a trie-like structure for faster match."
+  ([routes {:keys [trie-threshold uri-key]
+            :or {trie-threshold 8
+                 uri-key :uri}
+            :as options}]
+    (i/triefy-all routes trie-threshold uri-key))
+  ([routes]
+    (routes->wildcard-trie routes {})))
+
+
 ;; ----- route middleware -----
 
 
