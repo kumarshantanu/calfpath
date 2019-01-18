@@ -119,19 +119,18 @@
   (reitit/ring-handler
     (reitit/router
       [["/user/:id/profile/:type/" {:get (fn [{{:keys [id type]} :path-params}] (h11 id type))
-                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))}]
-       ["/user/:id/permissions/"   {:get (fn [{{:keys [id]} :path-params}] (h21 id))
-                                    :put (fn [{{:keys [id]} :path-params}] (h22 id))}]
-       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))}]
-       ["/this/is/a/static/route"  {:put (fn [_] (h40))}]])
-    (fn [request]
-      (case (get-in request [:reitit.core/match :template])
-        "/user/:id/profile/:type/" (h1x)
-        "/user/:id/permissions/"   (h2x)
-        "/company/:cid/dept/:did/" (h3x)
-        "/this/is/a/static/route"  (h4x)
-        (hxx)))))
-
+                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))
+                                    :handler (fn [_] (h1x))}]
+       ["/user/:id/permissions/" {:get (fn [{{:keys [id]} :path-params}] (h21 id))
+                                  :put (fn [{{:keys [id]} :path-params}] (h22 id))
+                                  :handler (fn [_] (h2x))}]
+       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))
+                                    :handler (fn [_] (h3x))}]
+       ["/this/is/a/static/route" {:put (fn [_] (h40))
+                                   :handler (fn [_] (h4x))}]])
+    (fn [_] (hxx))
+    ;; benchmark settings
+    {:inject-match? false, :inject-router? false}))
 
 (defmacro cond-let
   [& clauses]
