@@ -18,7 +18,7 @@ A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.8.0-SNAPSHOT"]` (requires Clojure 1.7 or later)
+Leiningen dependency: `[calfpath "0.8.0-SNAPSHOT"]` (requires Clojure 1.8 or later)
 
 Require namespace:
 ```clojure
@@ -132,14 +132,14 @@ Running tests:
 
 ```shell
 $ lein do clean, test
-$ lein with-profile c07 test
+$ lein with-profile c08 test
 ```
 
 Running performance benchmarks:
 
 ```shell
 $ lein do clean, perf-test
-$ lein with-profile c07,perf test  # on specified Clojure version
+$ lein with-profile c08,perf test  # on specified Clojure version
 ```
 
 

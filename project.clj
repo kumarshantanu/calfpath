@@ -9,8 +9,7 @@
   :pedantic? :warn
   :java-source-paths ["java-src"]
   :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
-  :profiles {:provided {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :c07 {:dependencies [[org.clojure/clojure "1.7.0"]]}
+  :profiles {:provided {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :c08 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :c09 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :c10 {:dependencies [[org.clojure/clojure "1.10.0"]]}

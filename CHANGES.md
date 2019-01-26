@@ -12,6 +12,8 @@
 
 ## [WIP] 0.8.0 / 2019-January-??
 
+* [BREAKING CHANGE] Drop support for Clojure 1.7
+  - Use string utility fns introduced in Clojure 1.8
 * [WIP] Automatic prefix-segmentation using wildcard (performance)
 * [WIP] Add large routes (OpenSensors) to performance benchmarks
 * [TODO - BREAKING CHANGE] Rename `assoc-spec-to-request` to `assoc-route-to-request` in `calfpath.route`

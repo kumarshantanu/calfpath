@@ -28,9 +28,9 @@
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
   and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
   [marker-char ^String pattern]
-  (let [[^String path partial?] (if (and (> (.length pattern) 1)
-                                      (.endsWith pattern "*"))
-                                  [(subs pattern 0 (dec (.length pattern))) true]  ; chop off last char
+  (let [[^String path partial?] (if (and (> (count pattern) 1)
+                                      (string/ends-with? pattern "*"))
+                                  [(subs pattern 0 (dec (count pattern))) true]  ; chop off last char
                                   [pattern false])
         n (count path)
         separator \/]
@@ -44,7 +44,7 @@
                      t
                      (keyword t))))
          partial?]
-        (let [ch (.charAt path i)
+        (let [^char ch  (get path i)
               [jn s? r] (if s?
                           (if (= ^char marker-char ch)
                             [(unchecked-inc i) false (conj r (subs path j i))]
@@ -143,7 +143,7 @@
 (defn strip-partial-marker
   [x]
   (when (string? x)
-    (if (.endsWith ^String x "*")
+    (if (string/ends-with? ^String x "*")
       (subs x 0 (dec (count x)))
       x)))
 
@@ -157,7 +157,7 @@
   (reduce (fn [[with-uri no-uri] each-route]
             (if (and (contains? each-route uri-key)
                   ;; wildcard already? then exclude
-                  (not (.endsWith ^String (get each-route uri-key) "*")))
+                  (not (string/ends-with? ^String (get each-route uri-key) "*")))
               [(conj with-uri each-route) no-uri]
               [with-uri (conj no-uri each-route)]))
     [[] []] routes))
@@ -175,11 +175,11 @@
           (let [^String uri-template (get route uri-key)]
             (as-> uri-template $
               (string/split $ #"/")
-              (mapv #(if (.startsWith ^String % ":")
+              (mapv #(if (string/starts-with? ^String % ":")
                        (keyword (subs % 1))
                        %)
                     $)
-              (if (.endsWith uri-template "/")
+              (if (string/ends-with? uri-template "/")
                 (conj $ "")
                 $))))
     routes-with-uri))
