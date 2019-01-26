@@ -210,16 +210,16 @@ Available URI templates:
 
 
 (def trie-routes
-  [{:uri "/info/:token/"            :method :get  :name "info"}
-   {:uri "/album/:lid/artist/:rid/" :method :get }
-   {:uri "/user/:id/*" :nested [{:uri "profile/:type/" :nested [{:method :get     :name "get.user.profile"}
-                                                                {:method :patch   :name "update.user.profile"}
-                                                                {:method :delete  :name "delete.user.profile"}]}
-                                {:uri "permissions/"   :nested [{:method :get     :name "get.user.permissions"}
+  [{:uri "/album/:lid/artist/:rid/" :method :get }
+   {:uri "/hello/1234/"             }
+   {:uri "/info/:token/"            :method :get  :name "info"}
+   {:uri "/user/:id*" :nested [{:uri "/auth"           }
+                               {:uri "/permissions/"   :nested [{:method :get     :name "get.user.permissions"}
                                                                 {:method :post    :name "create.user.permission"}
                                                                 {:method :put     :name "replace.user.permissions"}]}
-                                {:uri "auth"           }]}
-   {:uri "/hello/1234/"             }])
+                               {:uri "/profile/:type/" :nested [{:method :get     :name "get.user.profile"}
+                                                                {:method :patch   :name "update.user.profile"}
+                                                                {:method :delete  :name "delete.user.profile"}]}]}])
 
 
 (deftest test-routes->wildcard-trie
