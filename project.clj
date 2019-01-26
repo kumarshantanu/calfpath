@@ -10,10 +10,27 @@
   :java-source-paths ["java-src"]
   :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.8.0"]]}
+             :cljs {:plugins   [[lein-cljsbuild "1.1.7"]
+                                [lein-doo "0.1.10"]]
+                    :doo       {:build "test"}
+                    :cljsbuild {:builds {:test {:source-paths ["src" "test" "test-doo"]
+                                                :compiler {:main          calfpath.runner
+                                                           :output-dir    "target/out"
+                                                           :output-to     "target/test/core.js"
+                                                           :target        :nodejs
+                                                           :optimizations :none
+                                                           :source-map    true
+                                                           :pretty-print  true}}}}
+                    :prep-tasks [["cljsbuild" "once"]]
+                    :hooks      [leiningen.cljsbuild]}
              :c08 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :c09 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :c10 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :dln {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
+             :s09 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                  [org.clojure/clojurescript "1.9.946"]]}
+             :s10 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                  [org.clojure/clojurescript "1.10.339"]]}
              :perf {:dependencies [[ataraxy   "0.4.2" :exclusions [[org.clojure/clojure]
                                                                    [ring/ring-core]]]
                                    [bidi      "2.1.5" :exclusions [ring/ring-core]]
@@ -24,4 +41,6 @@
                                    [citius    "0.2.4"]]
                     :test-paths ["perf"]
                     :jvm-opts ^:replace ["-server" "-Xms2048m" "-Xmx2048m"]}}
-  :aliases {"perf-test" ["with-profile" "c10,perf" "test"]})
+  :aliases {"clj-test"  ["with-profile" "c08:c09:c10" "test"]
+            "cljs-test" ["with-profile" "cljs,s09:cljs,s10" "doo" "node" "once"]
+            "perf-test" ["with-profile" "c10,perf" "test"]})
