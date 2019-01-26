@@ -8,11 +8,12 @@
 
 
 (ns calfpath.core
+  #?(:cljs (:require-macros calfpath.core))
   (:require
     [clojure.string :as str]
     [calfpath.internal :as i])
-  (:import
-    [calfpath MatchResult Util]))
+  #?(:clj (:import
+            [calfpath MatchResult Util])))
 
 
 (defmacro ->uri

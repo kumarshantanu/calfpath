@@ -8,11 +8,12 @@
 
 
 (ns calfpath.internal
+  #?(:cljs (:require-macros calfpath.internal))
   (:require
     [clojure.string :as string])
-  (:import
-    [java.util Iterator Map Map$Entry]
-    [calfpath MatchResult Util]))
+  #?(:clj (:import
+            [java.util Iterator Map Map$Entry]
+            [calfpath MatchResult Util])))
 
 
 (defn expected

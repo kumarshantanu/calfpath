@@ -9,9 +9,10 @@
 
 (ns calfpath.route-test
   (:require
-    [clojure.pprint :as pp]
-    [clojure.test :refer :all]
-    [calfpath.route :as r]))
+    #?(:cljs [cljs.test    :refer-macros [deftest is testing]]
+        :clj [clojure.test :refer        [deftest is testing]])
+    #?(:cljs [calfpath.route :as r :include-macros true]
+        :clj [calfpath.route :as r])))
 
 
 (defn handler

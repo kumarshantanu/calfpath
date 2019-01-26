@@ -8,12 +8,13 @@
 
 
 (ns calfpath.route
+  #?(:cljs (:require-macros calfpath.route))
   (:require
     [clojure.string :as string]
     [calfpath.internal :as i])
-  (:import
-    [java.util Map]
-    [calfpath MatchResult Util]))
+  #?(:clj (:import
+            [java.util Map]
+            [calfpath MatchResult Util])))
 
 
 (defn dispatch
