@@ -9,10 +9,11 @@
 
 package calfpath;
 
+import java.util.AbstractList;
 import java.util.Collections;
 import java.util.Map;
 
-public class MatchResult {
+public class MatchResult extends AbstractList<Object> {
 
     public static final MatchResult NO_MATCH = null;
 
@@ -60,6 +61,23 @@ public class MatchResult {
     public boolean isFullMatch() {
         return endIndex == FULL_MATCH_INDEX;
     }
+
+    // ----- java.util.List methods -----
+
+    @Override
+    public Object get(int index) {
+        switch (index) {
+        case 0: return params;
+        case 1: return endIndex;
+        default: throw new IllegalArgumentException("Expected index 0 or 1, but found " + index);
+        }
+    }
+
+    @Override
+    public boolean isEmpty() { return false; }
+
+    @Override
+    public int size() { return 2; }
 
     // ----- overridden methods -----
 
