@@ -19,7 +19,8 @@
 (defn expected
   ([expectation found]
     (throw (ex-info
-             (str "Expected " expectation ", but found (" (class found) ") " (pr-str found)))))
+             (str "Expected " expectation ", but found (" (type found) ") " (pr-str found))
+             {:found found})))
   ([pred expectation found]
     (when-not (pred found)
       (expected expectation found))))
@@ -73,12 +74,12 @@
 (def ^:const uri-match-end-index :calfpath/uri-match-end-index)
 
 
-(definline get-uri-match-end-index
+(defmacro get-uri-match-end-index
   [request]
   `(or (get ~request uri-match-end-index) 0))
 
 
-(definline assoc-uri-match-end-index
+(defmacro assoc-uri-match-end-index
   [request end-index]
   `(assoc ~request uri-match-end-index ~end-index))
 
@@ -98,7 +99,7 @@
           default-expr {:status 405
                         :headers {"Allow"        method-string
                                   "Content-Type" "text/plain"}
-                        :body (format "405 Method not supported. Only %s is supported." method-string)}]
+                        :body (str "405 Method not supported. Only " method-string " is supported.")}]
       `(if (identical? ~method-keyword (:request-method ~request))
          ~expr
          ~default-expr)))
@@ -373,7 +374,7 @@
                          (partial-match (persistent! path-params) actual-index))
                        (full-match (persistent! path-params)))
                      (let [token (get pattern-tokens token-index)]
-                       (if (instance? String token)
+                       (if (string? token)
                          ;; string token
                          (when (string/starts-with? actual-uri token)
                            (recur path-params (unchecked-add actual-index (count token)) (unchecked-inc token-index)))
