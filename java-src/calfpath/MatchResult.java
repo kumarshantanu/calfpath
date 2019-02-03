@@ -14,7 +14,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.RandomAccess;
 
-public class MatchResult extends AbstractList<Object> implements RandomAccess {
+import clojure.lang.ILookup;
+
+public class MatchResult extends AbstractList<Object> implements RandomAccess, ILookup {
 
     public static final MatchResult NO_MATCH = null;
 
@@ -79,6 +81,20 @@ public class MatchResult extends AbstractList<Object> implements RandomAccess {
 
     @Override
     public int size() { return 2; }
+
+    // ----- ILookup methods -----
+
+    public Object valAt(Object key) {
+        if (key instanceof Integer) return get((Integer) key);
+        if (key instanceof Long) return get(((Long) key).intValue());
+        return null;
+    }
+
+    public Object valAt(Object key, Object notFound) {
+        if (key instanceof Integer) return get((Integer) key);
+        if (key instanceof Long) return get(((Long) key).intValue());
+        return notFound;
+    }
 
     // ----- overridden methods -----
 
