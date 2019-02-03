@@ -15,9 +15,6 @@
         :clj [calfpath.core :as c])))
 
 
-(def user-profile-path "/user/:id/profile/:type/")
-
-
 (deftest test-->uri
   (testing "No clause"
     (let [request {:uri "/user/1234/profile/compact/"}]
@@ -37,7 +34,7 @@
                                                            :body (format "ID: %s, Type: %s" id type)}))))
       (is (= "ID: 1234, Type: compact"
             (:body (c/->uri request
-                     user-profile-path          [id type] {:status 200
+                     "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}))))))
   (testing "Two clauses (no match)"
     (let [request {:uri "/hello/1234/"}]
