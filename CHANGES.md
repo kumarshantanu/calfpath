@@ -6,7 +6,6 @@
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO] Route based URI-generation from URI pattern (in a route) and params map
   - `:id` attribute (in route, later associated with `:handler`) based
-  - CLJS compatible (implies: JVM code must stay away in routes definition)
   - Account for partial and nested URI templates
 
 
@@ -16,6 +15,7 @@
   - Use string utility fns introduced in Clojure 1.8
 * [WIP] Automatic prefix-segmentation using wildcard (performance)
 * [WIP] Add large routes (OpenSensors) to performance benchmarks
+* [WIP] CLJS compatibility
 * [TODO - BREAKING CHANGE] Rename `assoc-spec-to-request` to `assoc-route-to-request` in `calfpath.route`
 
 

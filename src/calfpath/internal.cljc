@@ -12,14 +12,13 @@
   (:require
     [clojure.string :as string])
   #?(:clj (:import
-            [java.util Iterator Map Map$Entry]
-            [calfpath MatchResult Util])))
+            [java.util Iterator Map Map$Entry])))
 
 
 (defn expected
   ([expectation found]
-    (throw (IllegalArgumentException.
-             (format "Expected %s, but found (%s) %s" expectation (class found) (pr-str found)))))
+    (throw (ex-info
+             (str "Expected " expectation ", but found (" (class found) ") " (pr-str found)))))
   ([pred expectation found]
     (when-not (pred found)
       (expected expectation found))))
@@ -120,17 +119,18 @@
     new-map))
 
 
-(defn reduce-mkv
-  "Same as clojure.core/reduce-kv for java.util.Map instances."
-  [f init ^Map m]
-  (if (or (nil? m) (.isEmpty m))
-    init
-    (let [i (.iterator (.entrySet m))]
-      (loop [last-result init]
-        (if (.hasNext ^Iterator i)
-          (let [^Map$Entry pair (.next i)]
-            (recur (f last-result (.getKey pair) (.getValue pair))))
-          last-result)))))
+#?(:cljs (def reduce-mkv reduce-kv)
+    :clj (defn reduce-mkv
+           "Same as clojure.core/reduce-kv for java.util.Map instances."
+           [f init ^Map m]
+           (if (or (nil? m) (.isEmpty m))
+             init
+             (let [i (.iterator (.entrySet m))]
+               (loop [last-result init]
+                 (if (.hasNext ^Iterator i)
+                   (let [^Map$Entry pair (.next i)]
+                     (recur (f last-result (.getKey pair) (.getValue pair))))
+                   last-result))))))
 
 
 (defn invoke
@@ -316,3 +316,78 @@
         vec
         (into no-uri))
       routes)))
+
+
+;; ----- URI match -----
+
+
+(def ^:const NO-MATCH nil)
+
+
+(def ^:const NO-PARAMS {})
+
+
+(def ^:const FULL-MATCH-INDEX -1)
+
+
+(def FULL-MATCH-NO-PARAMS [NO-PARAMS FULL-MATCH-INDEX])
+
+
+(defn partial-match
+  ([^long end-index]        [NO-PARAMS end-index])
+  ([params ^long end-index] [params end-index]))
+
+
+(defn full-match
+  [params]
+  [params FULL-MATCH-INDEX])
+
+
+(defn match-uri
+  "Match given URI string against URI pattern:
+
+  | Argument               | Description                                       |
+  |------------------------|---------------------------------------------------|
+  | uri                    | the URI string to match                           |
+  | begin-index            | index in the URI string to start matching at      |
+  | pattern-tokens         | URI pattern tokens to match against               |
+  | attempt-partial-match? | flag to indicate whether to attempt partial-match |"
+  [uri ^long begin-index pattern-tokens attempt-partial-match?]
+  (when-not (= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
+    (let [token-count (count pattern-tokens)
+          actual-uri  (subs uri begin-index)
+          actual-len  (count actual-uri)]
+      (if (= token-count 1)  ; if length==1, then token must be string (static URI path)
+        (let [static-path (first pattern-tokens)
+              static-size (count static-path)]
+          (when (string/starts-with? actual-uri static-path)  ; URI begins with the path, so at least partial match exists
+            (if (= (count actual-uri) (count static-path))  ; if full match exists, then return as such
+              FULL-MATCH-NO-PARAMS
+              (when attempt-partial-match?
+                (partial-match static-size)))))
+        (loop [path-params  (transient {})
+               actual-index 0
+               token-index  0]
+          (if (>= token-index token-count)
+            (if (< actual-index actual-len)
+              (when attempt-partial-match?
+                (partial-match (persistent! path-params) actual-index))
+              (full-match (persistent! path-params)))
+            (let [token (get pattern-tokens token-index)]
+              (if (instance? String token)
+                ;; string token
+                (when (string/starts-with? actual-uri token)
+                  (recur path-params (unchecked-add actual-index (count token)) (unchecked-inc token-index)))
+                ;; must be a keyword
+                (let [[u-path-params
+                       u-actual-index] (loop [sb (transient [])  ; string buffer
+                                              j actual-index]
+                                         (if (>= j actual-len)  ; 'separator not found' implies URI has ended
+                                           [(assoc! path-params token (apply str (persistent! sb)))
+                                            actual-len]
+                                           (let [ch (get uri j)]
+                                             (if (= \/ ch)
+                                               [(assoc! path-params token (apply str (persistent! sb)))
+                                                j]
+                                               (recur (conj! sb ch) (unchecked-inc j))))))]
+                  (recur u-path-params (long u-actual-index) (unchecked-inc token-index)))))))))))
