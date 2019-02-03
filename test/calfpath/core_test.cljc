@@ -9,10 +9,15 @@
 
 (ns calfpath.core-test
   (:require
+    #?(:cljs [goog.string :as gstring])
+    #?(:cljs [goog.string.format])
     #?(:cljs [cljs.test    :refer-macros [deftest is testing]]
         :clj [clojure.test :refer        [deftest is testing]])
     #?(:cljs [calfpath.core :as c :include-macros true]
         :clj [calfpath.core :as c])))
+
+
+#?(:cljs (defmacro format [& args] `(gstring/format ~@args)))
 
 
 (deftest test-->uri
