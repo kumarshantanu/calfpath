@@ -12,8 +12,9 @@ package calfpath;
 import java.util.AbstractList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.RandomAccess;
 
-public class MatchResult extends AbstractList<Object> {
+public class MatchResult extends AbstractList<Object> implements RandomAccess {
 
     public static final MatchResult NO_MATCH = null;
 
