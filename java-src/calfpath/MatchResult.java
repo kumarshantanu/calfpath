@@ -69,7 +69,7 @@ public class MatchResult extends AbstractList<Object> {
         switch (index) {
         case 0: return params;
         case 1: return endIndex;
-        default: throw new IllegalArgumentException("Expected index 0 or 1, but found " + index);
+        default: throw new IndexOutOfBoundsException("Expected index 0 or 1, but found " + index);
         }
     }
 
