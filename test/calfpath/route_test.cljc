@@ -183,18 +183,21 @@ Available URI templates:
     (routes-helper (partial r/dispatch final-routes) flat-400))
   (testing "walker (path params)"
     (pp-routes-helper (partial r/dispatch pp-final-routes) flat-400))
-  (testing "unrolled"
-    (routes-helper (r/make-dispatcher final-routes) flat-400))
-  (testing "unrolled (path params)"
-    (pp-routes-helper (r/make-dispatcher pp-final-routes) flat-400))
   (testing "walker partial"
     (routes-helper (partial r/dispatch final-partial-routes) partial-400))
   (testing "walker partial (path params)"
-    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400))
-  (testing "unrolled partial"
-    (routes-helper (r/make-dispatcher final-partial-routes) partial-400))
-  (testing "unrolled partial (path params)"
-    (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400)))
+    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)))
+
+
+#?(:clj (deftest test-unrolled
+          (testing "unrolled"
+            (routes-helper (r/make-dispatcher final-routes) flat-400))
+          (testing "unrolled (path params)"
+            (pp-routes-helper (r/make-dispatcher pp-final-routes) flat-400))
+          (testing "unrolled partial"
+            (routes-helper (r/make-dispatcher final-partial-routes) partial-400))
+          (testing "unrolled partial (path params)"
+            (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400))))
 
 
 (def flat-routes
