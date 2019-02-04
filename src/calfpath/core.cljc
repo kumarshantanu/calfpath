@@ -24,7 +24,8 @@
   (when-not (#{0 1} (rem (count clauses) 3))
     (i/expected "clauses in sets of 3 with an optional default expression" clauses))
   (doseq [[uri-template dav _] (partition 3 clauses)]
-    (i/expected string? "a uri-template string" (eval uri-template))
+    (i/expected string? "a uri-template string" #?(:cljs uri-template
+                                                    :clj (eval uri-template)))
     (when-not (and (vector? dav) (every? symbol? dav))
       (i/expected "destructuring argument vector with symbols" dav)))
   (let [response-400 {:status 400
@@ -35,7 +36,8 @@
         (if (= 1 (count clauses))
           (first clauses)
           (let [[uri-pattern dav expr] clauses
-                [uri-template partial?] (i/parse-uri-template \: (eval uri-pattern))]
+                [uri-template partial?] (i/parse-uri-template \: #?(:cljs uri-pattern
+                                                                     :clj (eval uri-pattern)))]
             `(if-let [match-result# (i/match-uri (:uri ~request)
                                       (int (i/get-uri-match-end-index ~request))
                                       ~uri-template ~partial?)]
