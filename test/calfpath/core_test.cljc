@@ -17,7 +17,7 @@
         :clj [calfpath.core :as c])))
 
 
-#?(:cljs (defmacro format [& args] `(gstring/format ~@args)))
+#?(:cljs (def format gstring/format))
 
 
 (deftest test-->uri
