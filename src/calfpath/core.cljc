@@ -11,9 +11,7 @@
   #?(:cljs (:require-macros calfpath.core))
   (:require
     [clojure.string :as str]
-    [calfpath.internal :as i])
-  #?(:clj (:import
-            [calfpath MatchResult Util])))
+    [calfpath.internal :as i]))
 
 
 (defmacro ->uri
@@ -38,11 +36,11 @@
           (first clauses)
           (let [[uri-pattern dav expr] clauses
                 [uri-template partial?] (i/parse-uri-template \: (eval uri-pattern))]
-            `(if-let [^MatchResult match-result# (Util/matchURI (:uri ~request)
-                                                   (int (i/get-uri-match-end-index ~request))
-                                                   ~uri-template ~partial?)]
-               (let [{:keys ~dav :as ~params} (.getParams match-result#)
-                     ~request (i/assoc-uri-match-end-index ~request (.getEndIndex match-result#))]
+            `(if-let [match-result# (i/match-uri (:uri ~request)
+                                      (int (i/get-uri-match-end-index ~request))
+                                      ~uri-template ~partial?)]
+               (let [{:keys ~dav :as ~params} (get match-result# 0)
+                     ~request (i/assoc-uri-match-end-index ~request (get match-result# 1))]
                  ~expr)
                (->uri ~request ~@(drop 3 clauses))))))
       response-400)))

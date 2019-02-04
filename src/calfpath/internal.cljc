@@ -353,11 +353,10 @@
   | pattern-tokens         | URI pattern tokens to match against               |
   | attempt-partial-match? | flag to indicate whether to attempt partial-match |"
   [uri ^long begin-index pattern-tokens attempt-partial-match?]
-  #?(:cljs (when-not (= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
-             (let [token-count (count pattern-tokens)
-                   actual-uri  (subs uri begin-index)
-                   actual-len  (count actual-uri)]
-               (if (= token-count 1)  ; if length==1, then token must be string (static URI path)
+  #?(:cljs (when (not= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
+             (let [actual-uri (subs uri begin-index)
+                   actual-len (count actual-uri)]
+               (if (= 1 (count pattern-tokens))  ; if length==1, then token must be string (static URI path)
                  (let [static-path (first pattern-tokens)
                        static-size (count static-path)]
                    (when (string/starts-with? actual-uri static-path)  ; URI begins with path, so at least partial match exists
@@ -367,17 +366,13 @@
                          (partial-match static-size)))))
                  (loop [path-params  (transient {})
                         actual-index 0
-                        token-index  0]
-                   (if (>= token-index token-count)
-                     (if (< actual-index actual-len)
-                       (when attempt-partial-match?
-                         (partial-match (persistent! path-params) actual-index))
-                       (full-match (persistent! path-params)))
-                     (let [token (get pattern-tokens token-index)]
+                        next-tokens  (seq pattern-tokens)]
+                   (if (and next-tokens (< actual-index actual-len))
+                     (let [token (first next-tokens)]
                        (if (string? token)
                          ;; string token
-                         (when (string/starts-with? actual-uri token)
-                           (recur path-params (unchecked-add actual-index (count token)) (unchecked-inc token-index)))
+                         (when (string/starts-with? (subs actual-uri actual-index) token)
+                           (recur path-params (unchecked-add actual-index (count token)) (next next-tokens)))
                          ;; must be a keyword
                          (let [[u-path-params
                                 u-actual-index] (loop [sb (transient [])  ; string buffer
@@ -385,10 +380,14 @@
                                                   (if (>= j actual-len)  ; 'separator not found' implies URI has ended
                                                     [(assoc! path-params token (apply str (persistent! sb)))
                                                      actual-len]
-                                                    (let [ch (get uri j)]
+                                                    (let [ch (get actual-uri j)]
                                                       (if (= \/ ch)
                                                         [(assoc! path-params token (apply str (persistent! sb)))
                                                          j]
                                                         (recur (conj! sb ch) (unchecked-inc j))))))]
-                           (recur u-path-params (long u-actual-index) (unchecked-inc token-index))))))))))
+                           (recur u-path-params (long u-actual-index) (next next-tokens)))))
+                     (if (< actual-index actual-len)
+                       (when attempt-partial-match?
+                         (partial-match (persistent! path-params) actual-index))
+                       (full-match (persistent! path-params))))))))
       :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match?)))

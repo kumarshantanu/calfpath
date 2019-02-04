@@ -11,10 +11,7 @@
   #?(:cljs (:require-macros calfpath.route))
   (:require
     [clojure.string :as string]
-    [calfpath.internal :as i])
-  #?(:clj (:import
-            [java.util Map]
-            [calfpath MatchResult Util])))
+    [calfpath.internal :as i]))
 
 
 (defn dispatch
@@ -330,13 +327,13 @@
                 [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
-                                (when-let [^MatchResult match-result (Util/matchURI ^String (:uri request)
-                                                                       (int (i/get-uri-match-end-index request))
-                                                                       uri-template partial?)]
-                                  (let [^Map params (.getParams match-result)
-                                        end-index   (.getEndIndex match-result)]
+                                (when-let [match-result (i/match-uri ^String (:uri request)
+                                                          (int (i/get-uri-match-end-index request))
+                                                          uri-template partial?)]
+                                  (let [params    (get match-result 0)
+                                        end-index (get match-result 1)]
                                     (cond
-                                      (.isEmpty params) (assoc request i/uri-match-end-index end-index)
+                                      (empty? params)   (assoc request i/uri-match-end-index end-index)
                                       (nil? params-key) (as-> request $
                                                           (assoc $ i/uri-match-end-index end-index)
                                                           (i/reduce-mkv assoc $ params))
@@ -344,12 +341,12 @@
                                                           (assoc i/uri-match-end-index end-index)
                                                           (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
-                                `(when-let [^MatchResult match-result# (Util/matchURI ^String (:uri ~request)
-                                                                         (int (i/get-uri-match-end-index ~request))
-                                                                         ~uri-template ~partial?)]
-                                   (let [~params-sym    (.getParams match-result#)
-                                         ~end-index-sym (.getEndIndex match-result#)]
-                                     (if (.isEmpty ~params-sym)
+                                `(when-let [match-result# (i/match-uri (:uri ~request)
+                                                            (int (i/get-uri-match-end-index ~request))
+                                                            ~uri-template ~partial?)]
+                                   (let [~params-sym    (get match-result# 0)
+                                         ~end-index-sym (get match-result# 1)]
+                                     (if (empty? ~params-sym)
                                        (assoc ~request
                                          i/uri-match-end-index ~end-index-sym)
                                        ~(if (nil? params-key)
