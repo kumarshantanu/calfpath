@@ -100,13 +100,23 @@
                         :headers {"Allow"        method-string
                                   "Content-Type" "text/plain"}
                         :body (str "405 Method not supported. Only " method-string " is supported.")}]
-      `(if (identical? ~method-keyword (:request-method ~request))
+      ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+      ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+      ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+      ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+      `(if (~(if (:ns &env) `= `identical?)
+             ~method-keyword (:request-method ~request))
          ~expr
          ~default-expr)))
   ([method-keyword request expr default-expr]
     (when-not (valid-method-keys method-keyword)
       (expected (str "a method key (" valid-method-keys ")") method-keyword))
-    `(if (identical? ~method-keyword (:request-method ~request))
+    ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+    ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+    ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+    ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+    `(if (~(if (:ns &env) `= `identical?)
+           ~method-keyword (:request-method ~request))
        ~expr
        ~default-expr)))
 
