@@ -327,7 +327,7 @@
                 [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
-                                (when-let [match-result (i/match-uri ^String (:uri request)
+                                (when-let [match-result (i/match-uri (:uri request)
                                                           (int (i/get-uri-match-end-index request))
                                                           uri-template partial?)]
                                   (let [params    (get match-result 0)
@@ -376,12 +376,14 @@
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
           (cond
             (keyword? method) (-> spec
-                                ;; Clojure keywords are interned; we can compare identity (faster) instead of equality
+                                ;; Clojure (not CLJS) keywords are interned; compare identity (faster) instead of equality
                                 (assoc :matcher (fn method-matcher [request]
-                                                  (when (identical? (:request-method request) method)
+                                                  (when (#?(:cljs = :clj identical?)
+                                                          (:request-method request) method)
                                                     request)))
                                 (ensure-matchex (fn [request]
-                                                  `(when (identical? (:request-method ~request) ~method)
+                                                  `(when (#?(:cljs = :clj identical?)
+                                                           (:request-method ~request) ~method)
                                                      ~request))))
             (set? method)     (-> spec
                                 (assoc :matcher (fn multiple-method-matcher [request]
@@ -456,15 +458,16 @@
   (i/expected keyword? "URI key to be a keyword" uri-key)
   (i/expected #{:add :remove} "action to be :add or :remove" action)
   (if (contains? spec uri-key)
-    (update spec uri-key (fn [^String uri]
+    (update spec uri-key (fn [uri]
                            (i/expected string? "URI to be a string" uri)
-                           (if (.endsWith uri "*")  ; candidate for partial match?
+                           (if (string/ends-with? uri "*")  ; candidate for partial match?
                              uri                    ; do not change partial-match URIs
-                             (let [trailing? (.endsWith uri "/")]
-                               (if (identical? action :add)
-                                 (if trailing? uri (str uri "/"))              ;; add trailing slash if missing
-                                 (if (and trailing? (> (.length uri) 1))
-                                   (subs uri 0 (unchecked-dec (.length uri)))  ;; remove trailing slash if present
+                             (let [trailing? (string/ends-with? uri "/")
+                                   uri-length (count uri)]
+                               (if (#?(:cljs = :clj identical?) action :add)
+                                 (if trailing? uri (str uri "/"))           ; add trailing slash if missing
+                                 (if (and trailing? (> uri-length 1))
+                                   (subs uri 0 (unchecked-dec uri-length))  ; remove trailing slash if present
                                    uri))))))
     spec))
 

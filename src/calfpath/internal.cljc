@@ -156,7 +156,7 @@
 (defn strip-partial-marker
   [x]
   (when (string? x)
-    (if (string/ends-with? ^String x "*")
+    (if (string/ends-with? x "*")
       (subs x 0 (dec (count x)))
       x)))
 
