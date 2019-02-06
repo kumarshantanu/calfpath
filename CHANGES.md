@@ -9,13 +9,14 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.8.0 / 2019-January-??
+## [WIP] 0.8.0 / 2019-February-??
 
 * [BREAKING CHANGE] Drop support for Clojure 1.7
   - Use string utility fns introduced in Clojure 1.8
 * [WIP] Automatic prefix-segmentation using wildcard (performance)
 * [WIP] Add large routes (OpenSensors) to performance benchmarks
-* [WIP] CLJS compatibility
+* CLJS compatibility
+* [TODO] Bidirectional, ID based route generation
 * [TODO - BREAKING CHANGE] Rename `assoc-spec-to-request` to `assoc-route-to-request` in `calfpath.route`
 
 

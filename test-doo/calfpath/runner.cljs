@@ -10,13 +10,15 @@
 (ns calfpath.runner
   (:require
     [doo.runner :refer-macros [doo-tests]]
-    [calfpath.core-test]))
+    [calfpath.core-test]
+    [calfpath.route-test]))
 
 
 (enable-console-print!)
 
 (try
   (doo-tests
-    'calfpath.core-test)
+    'calfpath.core-test
+    'calfpath.route-test)
   (catch js/Error e
     (.log js/Console (.-stack e))))
