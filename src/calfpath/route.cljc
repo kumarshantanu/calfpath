@@ -171,7 +171,8 @@
   [routes {:keys [allowed-methods method-finder] :as opts}]
   (when (not (or allowed-methods method-finder))
     (i/expected "either :allowed-methods or :method-finder key to be present" opts))
-  (let [as-str (fn [x] (if (instance? clojure.lang.Named x)
+  (let [as-str (fn [x] (if #?(:cljs (cljs.core/implements? INamed x)
+                               :clj (instance? clojure.lang.Named x))
                          (name x)
                          (str x)))
         methods-list (or allowed-methods
