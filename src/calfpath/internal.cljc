@@ -339,20 +339,33 @@
 (def ^:const FULL-MATCH-INDEX -1)
 
 
-(def FULL-MATCH-NO-PARAMS [NO-PARAMS FULL-MATCH-INDEX])
+(def FULL-MATCH-INDEX-OBJECT FULL-MATCH-INDEX)
+
+
+(def ^"[Ljava.lang.Object;" FULL-MATCH-NO-PARAMS (object-array [NO-PARAMS FULL-MATCH-INDEX]))
 
 
 (defn partial-match
-  ([^long end-index]        [NO-PARAMS end-index])
-  ([params ^long end-index] [params end-index]))
+  (^"[Ljava.lang.Object;" [end-index]        #?(:cljs (array NO-PARAMS end-index)
+                                                 :clj (doto ^"[Ljava.lang.Object;" (object-array 2)
+                                                        (aset 0 NO-PARAMS)
+                                                        (aset 1 end-index))))
+  (^"[Ljava.lang.Object;" [params end-index] #?(:cljs (array params end-index)
+                                                 :clj (doto (object-array 2)
+                                                        (aset 0 params)
+                                                        (aset 1 end-index)))))
 
 
 (defn full-match
-  [params]
-  [params FULL-MATCH-INDEX])
+  ^"[Ljava.lang.Object;" [params]
+  #?(:cljs (array params FULL-MATCH-INDEX)
+      :clj (doto ^"[Ljava.lang.Object;" (object-array 2)
+             (aset 0 params)
+             (aset 1 FULL-MATCH-INDEX-OBJECT))))
 
 
 (defn match-uri*
+  ^"[Ljava.lang.Object;"
   [uri ^long begin-index pattern-tokens attempt-partial-match?]
   (when (not= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
     (let [actual-uri (subs uri begin-index)

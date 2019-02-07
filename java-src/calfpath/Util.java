@@ -9,19 +9,32 @@
 
 package calfpath;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Util {
 
-    public static Map<?, String> matchURI(String uri, List<?> patternTokens) {
-        final MatchResult result = matchURI(uri, 0, patternTokens, false);
-        return result == null? null: result.getParams();
+    public static final Object[] NO_URI_MATCH = null;
+
+    @SuppressWarnings("unchecked")
+    public static final Map<?, String> NO_PARAMS = Collections.EMPTY_MAP;
+
+    public static final int FULL_URI_MATCH_INDEX = -1;
+
+    public static final Object[] FULL_URI_MATCH_NO_PARAMS = new Object[] {NO_PARAMS, FULL_URI_MATCH_INDEX};
+
+    public static Object[] partialURIMatch(Map<?, String> params, int endIndex) {
+        return new Object[] {params, endIndex};
     }
 
-    public static MatchResult matchURI(String uri, int beginIndex, List<?> patternTokens) {
-        return matchURI(uri, beginIndex, patternTokens, false);
+    public static Object[] partialURIMatch(int endIndex) {
+        return new Object[] {NO_PARAMS, endIndex};
+    }
+
+    public static Object[] fullURIMatch(Map<?, String> params) {
+        return new Object[] {params, FULL_URI_MATCH_INDEX};
     }
 
     /**
@@ -34,9 +47,9 @@ public class Util {
      * @param attemptPartialMatch whether attempt partial match when full match is not possible
      * @return                    a match result on successful match, {@literal null} otherwise
      */
-    public static MatchResult matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch) {
-        if (beginIndex == MatchResult.FULL_MATCH_INDEX) { // if already a full-match then no need to match further
-            return MatchResult.NO_MATCH;
+    public static Object[] matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch) {
+        if (beginIndex == FULL_URI_MATCH_INDEX) { // if already a full-match then no need to match further
+            return NO_URI_MATCH;
         }
         final int tokenCount = patternTokens.size();
         // if length==1, then token must be string (static URI path)
@@ -44,11 +57,11 @@ public class Util {
             final String staticPath = (String) patternTokens.get(0);
             if (uri.startsWith(staticPath, beginIndex)) {  // URI begins with the path, so at least partial match exists
                 if ((uri.length() - beginIndex) == staticPath.length()) {  // if full match exists, then return as such
-                    return MatchResult.FULL_MATCH_NO_PARAMS;
+                    return FULL_URI_MATCH_NO_PARAMS;
                 }
-                return attemptPartialMatch? MatchResult.partialMatch(staticPath.length()): MatchResult.NO_MATCH;
+                return attemptPartialMatch? partialURIMatch(staticPath.length()): NO_URI_MATCH;
             } else {
-                return MatchResult.NO_MATCH;
+                return NO_URI_MATCH;
             }
         }
         final int uriLength = uri.length();
@@ -57,14 +70,14 @@ public class Util {
         OUTER:
         for (final Object token: patternTokens) {
             if (uriIndex >= uriLength) {
-                return attemptPartialMatch? MatchResult.partialMatch(pathParams, uriIndex): MatchResult.NO_MATCH;
+                return attemptPartialMatch? partialURIMatch(pathParams, uriIndex): NO_URI_MATCH;
             }
             if (token instanceof String) {
                 final String tokenStr = (String) token;
                 if (uri.startsWith(tokenStr, uriIndex)) {
                     uriIndex += tokenStr.length();  // now i==n if last string token
                 } else {  // 'string token mismatch' implies no match
-                    return MatchResult.NO_MATCH;
+                    return NO_URI_MATCH;
                 }
             } else {
                 final StringBuilder sb = new StringBuilder();
@@ -84,9 +97,9 @@ public class Util {
             }
         }
         if (uriIndex < uriLength) {  // 'tokens finished but URI still in progress' implies partial or no match
-            return attemptPartialMatch? MatchResult.partialMatch(pathParams, uriIndex): MatchResult.NO_MATCH;
+            return attemptPartialMatch? partialURIMatch(pathParams, uriIndex): NO_URI_MATCH;
         }
-        return MatchResult.fullMatch(pathParams);
+        return fullURIMatch(pathParams);
     }
 
 }

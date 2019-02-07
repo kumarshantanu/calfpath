@@ -38,11 +38,12 @@
           (let [[uri-pattern dav expr] clauses
                 [uri-template partial?] (i/parse-uri-template \: #?(:cljs uri-pattern
                                                                      :clj (eval uri-pattern)))]
-            `(if-let [match-result# (i/match-uri (:uri ~request)
+            `(if-let [^"[Ljava.lang.Object;"
+                      match-result# (i/match-uri (:uri ~request)
                                       (int (i/get-uri-match-end-index ~request))
                                       ~uri-template ~partial?)]
-               (let [{:keys ~dav :as ~params} (get match-result# 0)
-                     ~request (i/assoc-uri-match-end-index ~request (get match-result# 1))]
+               (let [{:keys ~dav :as ~params} (aget match-result# 0)
+                     ~request (i/assoc-uri-match-end-index ~request (aget match-result# 1))]
                  ~expr)
                (->uri ~request ~@(drop 3 clauses))))))
       response-400)))

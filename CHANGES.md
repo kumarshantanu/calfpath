@@ -18,6 +18,8 @@
 * CLJS compatibility
 * [TODO] Bidirectional, ID based route generation
 * [TODO - BREAKING CHANGE] Rename `assoc-spec-to-request` to `assoc-route-to-request` in `calfpath.route`
+* Performance optimization
+  - Drop `calfpath.MatchResult` in favour of 2-element array
 
 
 ## 0.7.2 / 2019-January-15

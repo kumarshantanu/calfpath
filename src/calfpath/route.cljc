@@ -328,11 +328,12 @@
                 [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
-                                (when-let [match-result (i/match-uri (:uri request)
+                                (when-let [^"[Ljava.lang.Object;"
+                                           match-result (i/match-uri (:uri request)
                                                           (int (i/get-uri-match-end-index request))
                                                           uri-template partial?)]
-                                  (let [params    (get match-result 0)
-                                        end-index (get match-result 1)]
+                                  (let [params    (aget match-result 0)
+                                        end-index (aget match-result 1)]
                                     (cond
                                       (empty? params)   (assoc request i/uri-match-end-index end-index)
                                       (nil? params-key) (as-> request $
@@ -342,11 +343,12 @@
                                                           (assoc i/uri-match-end-index end-index)
                                                           (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
-                                `(when-let [match-result# (i/match-uri (:uri ~request)
+                                `(when-let [^"[Ljava.lang.Object;"
+                                            match-result# (i/match-uri (:uri ~request)
                                                             (int (i/get-uri-match-end-index ~request))
                                                             ~uri-template ~partial?)]
-                                   (let [~params-sym    (get match-result# 0)
-                                         ~end-index-sym (get match-result# 1)]
+                                   (let [~params-sym    (aget match-result# 0)
+                                         ~end-index-sym (aget match-result# 1)]
                                      (if (empty? ~params-sym)
                                        (assoc ~request
                                          i/uri-match-end-index ~end-index-sym)
