@@ -212,7 +212,7 @@
   (c/make-bench-wrapper
     ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
     {:chart-title "Ataraxy/Bidi/Compojure/Clout/Reitit/CalfPath"
-     :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
+     :chart-filename (format "bench-small-routing-table-clj-%s.png" c/clojure-version-str)}))
 
 
 (defmacro test-compare-perf
