@@ -25,7 +25,9 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Reitit" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
+    ["Reitit" "CalfPath-core-macros"
+     "CalfPath-route-walker" "CalfPath-route-unroll"
+     "CalfTrie-route-walker" "CalfTrie-route-unroll"]
     {:chart-title "Reitit/CalfPath"
      :chart-filename (format "bench-large-routing-table-clj-%s.png" c/clojure-version-str)}))
 
@@ -116,62 +118,62 @@
 (defn handler-calfpath [request]
   (cp/->uri request
     "/v2/whoami"                                           []                  (cp/->get request (handler request) nil)
-    "/v2/users/:user-id/datasets"                          [user-id]           (cp/->get request (handler request) nil)
-    "/v2/public/projects/:project-id/datasets"             [project-id]        (cp/->get request (handler request) nil)
-    "/v1/public/topics/:topic"                             [topic]             (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/orgs/:org-id"                      [user-id org-id]    (cp/->get request (handler request) nil)
-    "/v1/search/topics/:term"                              [term]              (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/invitations"                       [user-id]           (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/devices/:batch/:type"                [org-id batch type] (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/topics"                            [user-id]           (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/bookmarks/followers"               [user-id]           (cp/->get request (handler request) nil)
-    "/v2/datasets/:dataset-id"                             [dataset-id]        (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/usage-stats"                         [org-id]            (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/devices/:client-id"                  [org-id client-id]  (cp/->get request (handler request) nil)
-    "/v1/messages/user/:user-id"                           [user-id]           (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/devices"                           [user-id]           (cp/->get request (handler request) nil)
-    "/v1/public/users/:user-id"                            [user-id]           (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/errors"                              [org-id]            (cp/->get request (handler request) nil)
-    "/v1/public/orgs/:org-id"                              [org-id]            (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/invitations"                         [org-id]            (cp/->get request (handler request) nil)
+    "/v2/users/:user-id/datasets"                          [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v2/public/projects/:project-id/datasets"             [project-id]        (cp/->get request (p-handler [project-id]) nil)
+    "/v1/public/topics/:topic"                             [topic]             (cp/->get request (p-handler [topic]) nil)
+    "/v1/users/:user-id/orgs/:org-id"                      [user-id org-id]    (cp/->get request (p-handler [user-id org-id]) nil)
+    "/v1/search/topics/:term"                              [term]              (cp/->get request (p-handler [term]) nil)
+    "/v1/users/:user-id/invitations"                       [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/orgs/:org-id/devices/:batch/:type"                [org-id batch type] (cp/->get request (p-handler [org-id batch type]) nil)
+    "/v1/users/:user-id/topics"                            [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/users/:user-id/bookmarks/followers"               [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v2/datasets/:dataset-id"                             [dataset-id]        (cp/->get request (p-handler [dataset-id]) nil)
+    "/v1/orgs/:org-id/usage-stats"                         [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/orgs/:org-id/devices/:client-id"                  [org-id client-id]  (cp/->get request (p-handler [org-id client-id]) nil)
+    "/v1/messages/user/:user-id"                           [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/users/:user-id/devices"                           [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/public/users/:user-id"                            [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/orgs/:org-id/errors"                              [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/public/orgs/:org-id"                              [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/orgs/:org-id/invitations"                         [org-id]            (cp/->get request (p-handler [org-id]) nil)
     ;;"/v2/public/messages/dataset/bulk"                     []                  (cp/->get request (handler request) nil)
     ;;"/v1/users/:user-id/devices/bulk"                      [user-id]           (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/device-errors"                     [user-id]           (cp/->get request (handler request) nil)
+    "/v1/users/:user-id/device-errors"                     [user-id]           (cp/->get request (p-handler [user-id]) nil)
     "/v2/login"                                            []                  (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/usage-stats"                       [user-id]           (cp/->get request (handler request) nil)
-    "/v2/users/:user-id/devices"                           [user-id]           (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/claim-device/:client-id"           [user-id client-id] (cp/->get request (handler request) nil)
-    "/v2/public/projects/:project-id"                      [project-id]        (cp/->get request (handler request) nil)
-    "/v2/public/datasets/:dataset-id"                      [dataset-id]        (cp/->get request (handler request) nil)
+    "/v1/users/:user-id/usage-stats"                       [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v2/users/:user-id/devices"                           [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/users/:user-id/claim-device/:client-id"           [user-id client-id] (cp/->get request (p-handler [user-id client-id]) nil)
+    "/v2/public/projects/:project-id"                      [project-id]        (cp/->get request (p-handler [project-id]) nil)
+    "/v2/public/datasets/:dataset-id"                      [dataset-id]        (cp/->get request (p-handler [dataset-id]) nil)
     ;;"/v2/users/:user-id/topics/bulk"                       [user-id]           (cp/->get request (handler request) nil)
-    "/v1/messages/device/:client-id"                       [client-id]         (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/owned-orgs"                        [user-id]           (cp/->get request (handler request) nil)
-    "/v1/topics/:topic"                                    [topic]             (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/bookmark/:topic"                   [user-id topic]     (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/members/:user-id"                    [org-id user-id]    (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/devices/:client-id"                [user-id client-id] (cp/->get request (handler request) nil)
-    "/v1/users/:user-id"                                   [user-id]           (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/devices"                             [org-id]            (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/members"                             [org-id]            (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/members/invitation-data/:user-id"    [org-id user-id]    (cp/->get request (handler request) nil)
-    "/v2/orgs/:org-id/topics"                              [org-id]            (cp/->get request (handler request) nil)
+    "/v1/messages/device/:client-id"                       [client-id]         (cp/->get request (p-handler [client-id]) nil)
+    "/v1/users/:user-id/owned-orgs"                        [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/topics/:topic"                                    [topic]             (cp/->get request (p-handler [topic]) nil)
+    "/v1/users/:user-id/bookmark/:topic"                   [user-id topic]     (cp/->get request (p-handler [user-id topic]) nil)
+    "/v1/orgs/:org-id/members/:user-id"                    [org-id user-id]    (cp/->get request (p-handler [org-id user-id]) nil)
+    "/v1/users/:user-id/devices/:client-id"                [user-id client-id] (cp/->get request (p-handler [user-id client-id]) nil)
+    "/v1/users/:user-id"                                   [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/orgs/:org-id/devices"                             [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/orgs/:org-id/members"                             [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/orgs/:org-id/members/invitation-data/:user-id"    [org-id user-id]    (cp/->get request (p-handler [org-id user-id]) nil)
+    "/v2/orgs/:org-id/topics"                              [org-id]            (cp/->get request (p-handler [org-id]) nil)
     "/v1/whoami"                                           []                  (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id"                                     [org-id]            (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/api-key"                           [user-id]           (cp/->get request (handler request) nil)
+    "/v1/orgs/:org-id"                                     [org-id]            (cp/->get request (p-handler [org-id]) nil)
+    "/v1/users/:user-id/api-key"                           [user-id]           (cp/->get request (p-handler [user-id]) nil)
     "/v2/schemas"                                          []                  (cp/->get request (handler request) nil)
-    "/v2/users/:user-id/topics"                            [user-id]           (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/confirm-membership/:token"           [org-id token]      (cp/->get request (handler request) nil)
-    "/v2/topics/:topic"                                    [topic]             (cp/->get request (handler request) nil)
-    "/v1/messages/topic/:topic"                            [topic]             (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/devices/:client-id/reset-password" [user-id client-id] (cp/->get request (handler request) nil)
+    "/v2/users/:user-id/topics"                            [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/orgs/:org-id/confirm-membership/:token"           [org-id token]      (cp/->get request (p-handler [org-id token]) nil)
+    "/v2/topics/:topic"                                    [topic]             (cp/->get request (p-handler [topic]) nil)
+    "/v1/messages/topic/:topic"                            [topic]             (cp/->get request (p-handler [topic]) nil)
+    "/v1/users/:user-id/devices/:client-id/reset-password" [user-id client-id] (cp/->get request (p-handler [user-id client-id]) nil)
     "/v2/topics"                                           []                  (cp/->get request (handler request) nil)
     "/v1/login"                                            []                  (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/orgs"                              [user-id]           (cp/->get request (handler request) nil)
-    "/v2/public/messages/dataset/:dataset-id"              [dataset-id]        (cp/->get request (handler request) nil)
+    "/v1/users/:user-id/orgs"                              [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v2/public/messages/dataset/:dataset-id"              [dataset-id]        (cp/->get request (p-handler [dataset-id]) nil)
     "/v1/topics"                                           []                  (cp/->get request (handler request) nil)
     "/v1/orgs"                                             []                  (cp/->get request (handler request) nil)
-    "/v1/users/:user-id/bookmarks"                         [user-id]           (cp/->get request (handler request) nil)
-    "/v1/orgs/:org-id/topics"                              [org-id]            (cp/->get request (handler request) nil)
+    "/v1/users/:user-id/bookmarks"                         [user-id]           (cp/->get request (p-handler [user-id]) nil)
+    "/v1/orgs/:org-id/topics"                              [org-id]            (cp/->get request (p-handler [org-id]) nil)
     nil))
 
 
@@ -242,15 +244,41 @@
    {:uri "/v1/orgs/:org-id/topics"                              :method :get :handler (fnp [org-id])}])
 
 
-(def compiled-calfpath-routes (r/compile-routes opensensors-calfpath-routes {:show-uris-400? false}))
+(def opensensors-calftrie-routes
+  (-> opensensors-calfpath-routes
+    (r/update-routes r/routes->wildcard-trie {:trie-threshold 4})))
+
+
+;; print trie-routes for debugging
+;;
+;(->> opensensors-calftrie-routes
+;  (mapv (let [update-when (fn [m k & args]
+;                            (if (contains? m k)
+;                              (apply update m k args)
+;                              m))]
+;          (fn cleanup [route]
+;            (-> route
+;              (dissoc :handler)
+;              (update-when :nested #(when (seq %) (mapv cleanup %)))))))
+;  pp/pprint)
+
+
+(def compiled-calfpath-routes (r/compile-routes opensensors-calfpath-routes {:show-uris-400? true}))
+(def compiled-calftrie-routes (r/compile-routes opensensors-calftrie-routes {:show-uris-400? true}))
 
 
 (def handler-calfpath-route-walker
   (partial r/dispatch compiled-calfpath-routes))
 
+(def handler-calftrie-route-walker
+  (partial r/dispatch compiled-calftrie-routes))
+
 
 (def handler-calfpath-route-unroll
   (r/make-dispatcher compiled-calfpath-routes))
+
+(def handler-calftrie-route-unroll
+  (r/make-dispatcher compiled-calftrie-routes))
 
 
 (defmacro test-compare-perf
@@ -261,16 +289,49 @@
        (c/compare-perf ~bench-name ~@exprs))))
 
 
-(deftest test-no-match
-  (testing "no URI match"
+(deftest test-static-path
+  (testing "early"
     (let [request {:request-method :get
-                   :uri "/hello/joe/"}]
-      (test-compare-perf "no URI match"
-        (handler-reitit request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
-  (testing "no method match"
-    (let [request {:request-method :post
-                   :uri "/v1/orgs/1234/topics"}]
-      (test-compare-perf "no method match"
-        (handler-reitit request)
-        (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
+                   :uri "/v2/whoami"}]
+      (test-compare-perf "(early) static URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+  (testing "mid"
+    (let [request {:request-method :get
+                   :uri "/v2/login"}]
+      (test-compare-perf "(mid) static URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+  (testing "late"
+    (let [request {:request-method :get
+                   :uri "/v1/orgs"}]
+      (test-compare-perf "(late) static URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request)))))
+
+
+(deftest test-dynamic-path
+  (testing "early"
+    (let [request {:request-method :get
+                   :uri "/v2/users/1234/datasets"}]
+      (test-compare-perf "(early) dynamic URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request)))
+  (testing "mid"
+    (let [request {:request-method :get
+                   :uri "/v2/public/projects/4567"}]
+      (test-compare-perf "(mid) dynamic URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+  (testing "late"
+    (let [request {:request-method :get
+                   :uri "/v1/orgs/6789/topics"}]
+      (test-compare-perf "(late) dynamic URI"
+        (handler-reitit request) (handler-calfpath request)
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
+        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))))
