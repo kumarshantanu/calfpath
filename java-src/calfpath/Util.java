@@ -48,10 +48,11 @@ public class Util {
      * @return                    a match result on successful match, {@literal null} otherwise
      */
     public static Object[] matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch) {
+        final int tokenCount = patternTokens.size();
         if (beginIndex == FULL_URI_MATCH_INDEX) { // if already a full-match then no need to match further
+            if (tokenCount == 1 && "".equals(patternTokens.get(0))) return FULL_URI_MATCH_NO_PARAMS;
             return NO_URI_MATCH;
         }
-        final int tokenCount = patternTokens.size();
         // if length==1, then token must be string (static URI path)
         if (tokenCount == 1) {
             final String staticPath = (String) patternTokens.get(0);

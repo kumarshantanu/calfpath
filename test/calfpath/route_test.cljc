@@ -51,6 +51,8 @@
 
 (def all-partial-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
+   {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
+   {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:bar-id])}]}
    {:uri "/album/:lid*"
     :nested [{:uri "/artist/:rid/"
               :method :get :handler (handler [:lid :rid])}]}
@@ -68,6 +70,8 @@
 
 (def pp-all-partial-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:path-params]) :name "info"}
+   {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
+   {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:path-params])}]}
    {:uri "/album/:lid*"
     :nested [{:uri "/artist/:rid/"
               :method :get :handler (handler [:path-params])}]}
@@ -109,6 +113,8 @@ Available URI templates:
 
 Available URI templates:
 /info/:token/
+/foo*
+/bar/:bar-id*
 /album/:lid*
 /user/:id*
 /hello/1234/")
@@ -178,15 +184,35 @@ Available URI templates:
         (handler {:uri "/user/123/permissions/"     :request-method :bad}))))
 
 
-(deftest test-routes
+(defn partial-routes-helper
+  [handler body-400]
+  (is (= {:request-method :get}
+        (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
+  (is (= {:request-method :get
+          :bar-id "98"}
+        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar"))
+
+
+(defn pp-partial-routes-helper
+  [handler body-400]
+  (is (= {:request-method :get}
+        (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
+  (is (= {:request-method :get
+          :path-params {:bar-id "98"}}
+        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar"))
+
+
+(deftest test-walker
   (testing "walker"
     (routes-helper (partial r/dispatch final-routes) flat-400))
   (testing "walker (path params)"
     (pp-routes-helper (partial r/dispatch pp-final-routes) flat-400))
   (testing "walker partial"
-    (routes-helper (partial r/dispatch final-partial-routes) partial-400))
+    (routes-helper (partial r/dispatch final-partial-routes) partial-400)
+    (partial-routes-helper (partial r/dispatch final-partial-routes) partial-400))
   (testing "walker partial (path params)"
-    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)))
+    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)
+    (pp-partial-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)))
 
 
 #?(:clj (deftest test-unrolled
@@ -195,9 +221,11 @@ Available URI templates:
           (testing "unrolled (path params)"
             (pp-routes-helper (r/make-dispatcher pp-final-routes) flat-400))
           (testing "unrolled partial"
-            (routes-helper (r/make-dispatcher final-partial-routes) partial-400))
+            (routes-helper (r/make-dispatcher final-partial-routes) partial-400)
+            (partial-routes-helper (r/make-dispatcher final-partial-routes) partial-400))
           (testing "unrolled partial (path params)"
-            (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400))))
+            (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400)
+            (pp-partial-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400))))
 
 
 (def flat-routes
