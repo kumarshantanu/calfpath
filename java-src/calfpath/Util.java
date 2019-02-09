@@ -49,13 +49,14 @@ public class Util {
      */
     public static Object[] matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch) {
         final int tokenCount = patternTokens.size();
+        final Object firstToken = patternTokens.get(0);
         if (beginIndex == FULL_URI_MATCH_INDEX) { // if already a full-match then no need to match further
-            if (tokenCount == 1 && "".equals(patternTokens.get(0))) return FULL_URI_MATCH_NO_PARAMS;
+            if (tokenCount == 1 && "".equals(firstToken)) return FULL_URI_MATCH_NO_PARAMS;
             return NO_URI_MATCH;
         }
-        // if length==1, then token must be string (static URI path)
-        if (tokenCount == 1) {
-            final String staticPath = (String) patternTokens.get(0);
+        // if length==1 and token is string, then it's a static URI
+        if (tokenCount == 1 && firstToken instanceof String) {
+            final String staticPath = (String) firstToken;
             if (uri.startsWith(staticPath, beginIndex)) {  // URI begins with the path, so at least partial match exists
                 if ((uri.length() - beginIndex) == staticPath.length()) {  // if full match exists, then return as such
                     return FULL_URI_MATCH_NO_PARAMS;

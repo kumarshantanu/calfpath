@@ -369,17 +369,17 @@
 (defn match-uri*
   ^"[Ljava.lang.Object;"
   [uri ^long begin-index pattern-tokens attempt-partial-match?]
-  (let [token-count (count pattern-tokens)]
+  (let [token-count (count pattern-tokens)
+        static-path (first pattern-tokens)]
     (if (= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
-      (when (and (= 1 token-count) (= "" (first pattern-tokens)))
+      (when (and (= 1 token-count) (= "" static-path))
         FULL-MATCH-NO-PARAMS)
-      (let [actual-uri (subs uri begin-index)
-            actual-len (count actual-uri)]
-        (if (= 1 token-count)  ; if length==1, then token must be string (static URI path)
-          (let [static-path (first pattern-tokens)
-                static-size (count static-path)]
-            (when (string/starts-with? actual-uri static-path)  ; URI begins with path, so at least partial match exists
-              (if (= (count actual-uri) (count static-path))  ; if full match exists, then return as such
+      (let [actual-uri  (subs uri begin-index)
+            actual-len  (count actual-uri)]
+        (if (and (= 1 token-count) (string? static-path))  ; if length==1 and token is string, then it's a static URI
+          (when (string/starts-with? actual-uri static-path)  ; URI begins with path, so at least partial match exists
+            (let [static-size (count static-path)]
+              (if (= (count actual-uri) static-size)    ; if full match exists, then return as such
                 FULL-MATCH-NO-PARAMS
                 (when attempt-partial-match?
                   (partial-match static-size)))))
