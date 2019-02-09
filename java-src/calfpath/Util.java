@@ -61,7 +61,7 @@ public class Util {
                 if ((uri.length() - beginIndex) == staticPath.length()) {  // if full match exists, then return as such
                     return FULL_URI_MATCH_NO_PARAMS;
                 }
-                return attemptPartialMatch? partialURIMatch(staticPath.length()): NO_URI_MATCH;
+                return attemptPartialMatch? partialURIMatch(beginIndex + staticPath.length()): NO_URI_MATCH;
             } else {
                 return NO_URI_MATCH;
             }

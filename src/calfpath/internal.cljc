@@ -382,7 +382,7 @@
               (if (= (count actual-uri) static-size)    ; if full match exists, then return as such
                 FULL-MATCH-NO-PARAMS
                 (when attempt-partial-match?
-                  (partial-match static-size)))))
+                  (partial-match (unchecked-add begin-index static-size))))))
           (loop [path-params  (transient {})
                  actual-index 0
                  next-tokens  (seq pattern-tokens)]
@@ -407,7 +407,7 @@
                     (recur u-path-params (long u-actual-index) (next next-tokens)))))
               (if (< actual-index actual-len)
                 (when attempt-partial-match?
-                  (partial-match (persistent! path-params) actual-index))
+                  (partial-match (persistent! path-params) (unchecked-add begin-index actual-index)))
                 (full-match (persistent! path-params))))))))))
 
 

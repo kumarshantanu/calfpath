@@ -53,6 +53,7 @@
   [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
    {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
    {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:bar-id])}]}
+   {:uri "/v1*" :nested [{:uri "/orgs*" :nested [{:uri "/:org-id/topics" :handler (handler [:org-id])}]}]}
    {:uri "/album/:lid*"
     :nested [{:uri "/artist/:rid/"
               :method :get :handler (handler [:lid :rid])}]}
@@ -72,6 +73,7 @@
   [{:uri "/info/:token/" :method :get :handler (handler [:path-params]) :name "info"}
    {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
    {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:path-params])}]}
+   {:uri "/v1*" :nested [{:uri "/orgs*" :nested [{:uri "/:org-id/topics" :handler (handler [:path-params])}]}]}
    {:uri "/album/:lid*"
     :nested [{:uri "/artist/:rid/"
               :method :get :handler (handler [:path-params])}]}
@@ -115,6 +117,7 @@ Available URI templates:
 /info/:token/
 /foo*
 /bar/:bar-id*
+/v1*
 /album/:lid*
 /user/:id*
 /hello/1234/")
@@ -190,7 +193,10 @@ Available URI templates:
         (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
   (is (= {:request-method :get
           :bar-id "98"}
-        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar"))
+        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar")
+  (is (= {:request-method :get
+          :org-id "87"}
+        (handler {:uri "/v1/orgs/87/topics" :request-method :get})) "partial termination - v1/org"))
 
 
 (defn pp-partial-routes-helper
@@ -199,7 +205,10 @@ Available URI templates:
         (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
   (is (= {:request-method :get
           :path-params {:bar-id "98"}}
-        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar"))
+        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar")
+  (is (= {:request-method :get
+          :path-params {:org-id "87"}}
+        (handler {:uri "/v1/orgs/87/topics" :request-method :get})) "partial termination - v1/org"))
 
 
 (deftest test-walker
