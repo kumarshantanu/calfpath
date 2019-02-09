@@ -308,9 +308,11 @@
                                            (str $ "*"))
                                  :nested (as-> batch $
                                            (mapv (fn [[r ts ft]]
-                                                   (assoc r uri-key (->> (drop prefix-tokens-count ts)
-                                                                      (string/join "/")
-                                                                      (str "/")))) $)
+                                                   (assoc r uri-key (if-let [toks (seq (drop prefix-tokens-count ts))]
+                                                                      (->> toks
+                                                                        (string/join "/")
+                                                                        (str "/"))
+                                                                      ""))) $)
                                            (triefy-all $ trie-threshold uri-key))}))
                         (->> batch
                           (mapv first)

@@ -201,29 +201,31 @@ Available URI templates:
 
 
 (def flat-routes
-  [{:uri "/info/:token/"            :method :get  :name "info"}
-   {:uri "/album/:lid/artist/:rid/" :method :get }
-   {:uri "/user/:id/profile/:type/" :nested [{:method :get     :name "get.user.profile"}
-                                             {:method :patch   :name "update.user.profile"}
-                                             {:method :delete  :name "delete.user.profile"}]}
-   {:uri "/user/:id/permissions/"   :nested [{:method :get     :name "get.user.permissions"}
-                                             {:method :post    :name "create.user.permission"}
-                                             {:method :put     :name "replace.user.permissions"}]}
-   {:uri "/user/:id/auth"           }
-   {:uri "/hello/1234/"             }])
+  [{:uri "/info/:token/"            :method :get}
+   {:uri "/album/:lid/artist/:rid/" :method :get}
+   {:uri "/user/:id/profile/:type/" :nested [{:method :get   }
+                                             {:method :patch }
+                                             {:method :delete}]}
+   {:uri "/user/:id/permissions/"   :nested [{:method :get   }
+                                             {:method :post  }
+                                             {:method :put   }]}
+   {:uri "/user/:id/auth"}
+   {:uri "/user/:id"     }
+   {:uri "/hello/1234/"  }])
 
 
 (def trie-routes
-  [{:uri "/album/:lid/artist/:rid/" :method :get }
-   {:uri "/hello/1234/"             }
-   {:uri "/info/:token/"            :method :get  :name "info"}
-   {:uri "/user/:id*" :nested [{:uri "/auth"           }
-                               {:uri "/permissions/"   :nested [{:method :get     :name "get.user.permissions"}
-                                                                {:method :post    :name "create.user.permission"}
-                                                                {:method :put     :name "replace.user.permissions"}]}
-                               {:uri "/profile/:type/" :nested [{:method :get     :name "get.user.profile"}
-                                                                {:method :patch   :name "update.user.profile"}
-                                                                {:method :delete  :name "delete.user.profile"}]}]}])
+  [{:uri "/album/:lid/artist/:rid/" :method :get}
+   {:uri "/hello/1234/"                         }
+   {:uri "/info/:token/"            :method :get}
+   {:uri "/user/:id*" :nested [{:uri "/profile/:type/" :nested [{:method :get   }
+                                                                {:method :patch }
+                                                                {:method :delete}]}
+                               {:uri "/permissions/"   :nested [{:method :get   }
+                                                                {:method :post  }
+                                                                {:method :put   }]}
+                               {:uri "/auth"    }
+                               {:uri ""         }]}])
 
 
 (deftest test-routes->wildcard-trie
