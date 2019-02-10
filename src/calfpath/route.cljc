@@ -426,7 +426,7 @@
     spec))
 
 
-(defn assoc-spec-to-request-middleware
+(defn assoc-route-to-request-middleware
   "Given a route spec, decorate the handler such that the request has the spec under specified key (:route by default)
   at runtime."
   ([spec spec-key]
@@ -438,7 +438,7 @@
             ([request respond raise] (f (assoc request spec-key spec) respond raise)))))
       spec))
   ([spec]
-    (assoc-spec-to-request-middleware spec :route)))
+    (assoc-route-to-request-middleware spec :route)))
 
 
 (defn lift-key-middleware
