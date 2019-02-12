@@ -227,28 +227,6 @@
 
 (defn find-discriminator-tokens
   [routes-uri-tokens]
-  (let [max-cut-count (->> routes-uri-tokens
-                        (mapv count)
-                        (apply min))
-        prefix-tokens (find-prefix-tokens routes-uri-tokens)
-        prefix-remain (-> (count prefix-tokens)
-                        dropper
-                        (mapv routes-uri-tokens))
-        delta-tokens  (mapv (comp vector first) prefix-remain)
-        suffix-tokens (when true ;(<= (inc (count prefix-tokens)) max-cut-count)
-                        (->> prefix-remain
-                          (mapv (dropper 1))
-                          find-prefix-tokens))
-        tok-cut-count (+ (count prefix-tokens) 1 (count suffix-tokens))]
-    [(->> delta-tokens
-       (mapv #(-> prefix-tokens
-                (concat % suffix-tokens)
-                vec)))
-     tok-cut-count]))
-
-
-(defn find-discriminator-tokens2
-  [routes-uri-tokens]
   (loop [token-count   1
          token-vectors routes-uri-tokens]
     (cond
@@ -285,7 +263,7 @@
                   (triefy-all $ trie-threshold uri-key))}]
       ;; we need to find URI-prefix groups now
       (let [[first-tokens
-             first-count] (find-discriminator-tokens2 routes-uri-tokens)
+             first-count] (find-discriminator-tokens routes-uri-tokens)
             token-counts  (->> routes-uri-tokens
                             (group-by #(take first-count %))
                             (reduce-kv #(assoc %1 %2 (count %3)) {}))]
