@@ -272,7 +272,7 @@
               (apply =))
           (->> [routes-with-uri routes-uri-tokens first-tokens]
             (apply map vector)
-            (sort-by last)
+            (sort-by (comp str last))  ; turn keywords into string for comparison
             (partition-by last)
             (reduce (fn [result-routes batch]
                       (if (> (count batch) trie-threshold)
