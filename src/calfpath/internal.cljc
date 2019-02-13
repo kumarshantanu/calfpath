@@ -301,7 +301,8 @@
 
 (defn triefy-all
   [routes ^long trie-threshold uri-key]
-  (expected #(> ^long % 1) "value of :trie-threshold must be more than 1" trie-threshold)
+  (expected (every-pred
+              integer? pos?) "value of :trie-threshold must be positive integer" trie-threshold)
   (let [[with-uri no-uri] (split-routes-having-uri routes uri-key)]
     (if (> (count with-uri) trie-threshold)
       (-> (triefy with-uri trie-threshold uri-key)
