@@ -255,8 +255,7 @@ Available URI templates:
   [{:uri "/album/:lid/artist/:rid/" :method :get}
    {:uri "/hello/1234/"                         }
    {:uri "/info/:token/"            :method :get}
-   {:uri "/user/:id*" :nested [
-                               {:uri "/auth"    }
+   {:uri "/user/:id*" :nested [{:uri "/auth"    }
                                {:uri "/permissions/"   :nested [{:method :get   }
                                                                 {:method :post  }
                                                                 {:method :put   }]}
