@@ -230,7 +230,7 @@
   (loop [token-count   1
          token-vectors routes-uri-tokens]
     (cond
-      (some empty?
+      (every? empty?
         token-vectors)   [nil 0]
       (->> token-vectors
         (map first)
