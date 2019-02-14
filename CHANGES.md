@@ -11,11 +11,12 @@
 
 ## [WIP] 0.8.0 / 2019-February-??
 
+* [BREAKING CHANGE] Rename `calfpath.route/assoc-spec-to-request` to `assoc-route-to-request`
 * [BREAKING CHANGE] Drop support for Clojure 1.7
   - Use string utility fns introduced in Clojure 1.8 for CLJS
 * ClojureScript compatibility
+  - Excluding `calfpath.route/make-dispatcher` and matchex optimization (JVM only)
 * [TODO] Bidirectional, ID based route generation
-* [BREAKING CHANGE] Rename `calfpath.route/assoc-spec-to-request` to `assoc-route-to-request`
 * Performance tweaks
   - [WIP] Automatic prefix-segregation using wildcard routing
   - Add large routes (OpenSensors) to performance benchmarks
