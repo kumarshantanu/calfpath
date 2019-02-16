@@ -21,7 +21,8 @@
   - `realize-uri`
   - `template->request`
 * Performance tweaks
-  - [WIP] Automatic prefix-segregation using wildcard routing
+  - Automatic prefix-segregation using wildcard nested routing
+    - See options `:trie?` and `:trie-threshold` in `calfpath.route/compile-routes`
   - Add large routes (OpenSensors) to performance benchmarks
   - Drop `calfpath.MatchResult` in favour of 2-element array
   - [Todo] Add bidirectional routing benchmark

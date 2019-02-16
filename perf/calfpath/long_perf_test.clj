@@ -26,8 +26,7 @@
 (use-fixtures :once
   (c/make-bench-wrapper
     ["Reitit" "CalfPath-core-macros"
-     "CalfPath-route-walker" "CalfPath-route-unroll"
-     "CalfTrie-route-walker" "CalfTrie-route-unroll"]
+     "CalfPath-route-walker" "CalfPath-route-unroll"]
     {:chart-title "Reitit/CalfPath"
      :chart-filename (format "bench-large-routing-table-clj-%s.png" c/clojure-version-str)}))
 
@@ -244,41 +243,29 @@
    {:uri "/v1/orgs/:org-id/topics"                              :method :get :handler (fnp [org-id])}])
 
 
-(def opensensors-calftrie-routes
-  (-> opensensors-calfpath-routes
-    (r/update-routes r/routes->wildcard-trie {:trie-threshold 4})))
+(def compiled-calfpath-routes (r/compile-routes opensensors-calfpath-routes {:show-uris-400? true}))
 
 
 ;; print trie-routes for debugging
 ;;
-;(->> opensensors-calftrie-routes
+;(->> compiled-calfpath-routes
 ;  (mapv (let [update-when (fn [m k & args]
 ;                            (if (contains? m k)
 ;                              (apply update m k args)
 ;                              m))]
 ;          (fn cleanup [route]
 ;            (-> route
-;              (dissoc :handler)
+;              (dissoc :handler :matcher :matchex :full-uri)
 ;              (update-when :nested #(when (seq %) (mapv cleanup %)))))))
 ;  pp/pprint)
-
-
-(def compiled-calfpath-routes (r/compile-routes opensensors-calfpath-routes {:show-uris-400? true}))
-(def compiled-calftrie-routes (r/compile-routes opensensors-calftrie-routes {:show-uris-400? true}))
 
 
 (def handler-calfpath-route-walker
   (partial r/dispatch compiled-calfpath-routes))
 
-(def handler-calftrie-route-walker
-  (partial r/dispatch compiled-calftrie-routes))
-
 
 (def handler-calfpath-route-unroll
   (r/make-dispatcher compiled-calfpath-routes))
-
-(def handler-calftrie-route-unroll
-  (r/make-dispatcher compiled-calftrie-routes))
 
 
 (defmacro test-compare-perf
@@ -295,22 +282,19 @@
                    :uri "/v2/whoami"}]
       (test-compare-perf "(early) static URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "mid"
     (let [request {:request-method :get
                    :uri "/v2/login"}]
       (test-compare-perf "(mid) static URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "late"
     (let [request {:request-method :get
                    :uri "/v1/orgs"}]
       (test-compare-perf "(late) static URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request)))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
 
 
 (deftest test-dynamic-path
@@ -319,19 +303,16 @@
                    :uri "/v2/users/1234/datasets"}]
       (test-compare-perf "(early) dynamic URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request)))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
   (testing "mid"
     (let [request {:request-method :get
                    :uri "/v2/public/projects/4567"}]
       (test-compare-perf "(mid) dynamic URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "late"
     (let [request {:request-method :get
                    :uri "/v1/orgs/6789/topics"}]
       (test-compare-perf "(late) dynamic URI"
         (handler-reitit request) (handler-calfpath request)
-        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)
-        (handler-calftrie-route-walker request) (handler-calftrie-route-unroll request))))))
+        (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))))

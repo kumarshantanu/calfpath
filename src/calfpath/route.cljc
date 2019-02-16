@@ -404,7 +404,7 @@
 (defn routes->wildcard-trie
   "Given a bunch of routes, segment them by prefix URI-tokens into a trie-like structure for faster match."
   ([routes {:keys [trie-threshold uri-key]
-            :or {trie-threshold 8
+            :or {trie-threshold 1  ; agressive by default
                  uri-key :uri}
             :as options}]
     (i/triefy-all routes trie-threshold uri-key))
@@ -481,6 +481,8 @@
 (defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
   Options:
+   :trie?           (boolean) optimize routes by automatically reorganizing routes as tries
+   :trie-threshold  (integer) similar routes more than this number will be grouped together
    :uri?            (boolean) true if URI templates should be converted to matchers
    :uri-key         (non-nil) the key to be used to look up the URI template in a spec
    :params-key      (any)     the key to put URI params under; if nil (default), params map is merged into request
@@ -493,13 +495,15 @@
    :method-key      (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
    :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
+  ([route-specs {:keys [trie?           trie-threshold
+                        uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
                         params-key
                         method?         method-key fallback-405?
                         trailing-slash
                         lift-uri?
                         ring-handler? ring-handler-key]
-                 :or {uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
+                 :or {trie?           true   trie-threshold 1
+                      uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
                       full-uri-key    :full-uri
                       method?         true   method-key  :method  fallback-405? true
                       lift-uri?       true
@@ -509,6 +513,8 @@
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> trie?                       update-routes routes->wildcard-trie {:trie-threshold trie-threshold
+                                                                                 :uri-key uri-key})
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware [uri-key] [method-key])
         (when-> (and uri? trailing-slash)   update-each-route trailing-slash-middleware uri-key trailing-slash)
@@ -528,6 +534,9 @@
         (when-> uri?    update-each-route make-uri-matcher    uri-key params-key))))
   ([route-specs]
     (compile-routes route-specs {})))
+
+
+;; ----- reverse routing (Ring request generation) -----
 
 
 (defn make-index
