@@ -403,3 +403,43 @@
   [uri ^long begin-index pattern-tokens attempt-partial-match?]
   #?(:cljs (match-uri* uri begin-index pattern-tokens attempt-partial-match?)
       :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match?)))
+
+
+;; ----- routes indexing -----
+
+
+(defn build-routes-index
+  "Given a collection of routes, index them returning a map {:id the-route}."
+  [context routes {:keys [index-key
+                          uri-key
+                          method-key]
+                   :or {index-key  :id
+                        uri-key    :uri
+                        method-key :method}
+                   :as options}]
+  (expected map? "a context map" context)
+  (expected coll? "collection of routes" routes)
+  (reduce (fn [{:keys [uri-prefix] :as context} each-route]
+            (expected map? "every route to be a map" each-route)
+            (let [is-key? (fn [k] (contains? each-route k))
+                  uri-now (if (contains? each-route uri-key)
+                            (->> (get each-route uri-key)
+                              strip-partial-marker
+                              (str uri-prefix))
+                            uri-prefix)]
+              (cond-> context
+                (is-key? method-key) (update :method        (fn [_]    (get each-route method-key)))
+                (is-key? :handler)   (as-> $
+                                       (update $ :index-map (fn [imap] (if-let [index-val (get each-route index-key)]
+                                                                         (assoc imap index-val
+                                                                           {:uri (->> (strip-partial-marker uri-now)
+                                                                                   (parse-uri-template \:)
+                                                                                   first)
+                                                                            :request-method (:method $)})
+                                                                         imap))))
+                (is-key? :nested)    (as-> $
+                                       (update $ :index-map (fn [imap] (:index-map
+                                                                         (build-routes-index
+                                                                           (assoc $ :uri-prefix uri-now)
+                                                                           (:nested each-route) options))))))))
+    context routes))

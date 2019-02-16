@@ -528,3 +528,39 @@
         (when-> uri?    update-each-route make-uri-matcher    uri-key params-key))))
   ([route-specs]
     (compile-routes route-specs {})))
+
+
+(defn make-index
+  "Given a collection of routes, index them returning a map {:id route-template}."
+  ([routes options]
+    (:index-map (i/build-routes-index {:index-map  {}
+                                       :uri-prefix ""
+                                       :method     nil} routes options)))
+  ([routes]
+    (make-index routes {})))
+
+
+(defn realize-uri
+  "Given a vector of the form ['/users' :user-id '/profile/' :profile '/'] fill in the param values returning a URI."
+  [uri-template uri-params]
+  (->> uri-template
+    (reduce (fn [uri token]
+              (if (string? token)
+                #?(:cljs (str uri token)
+                    :clj (.append ^StringBuilder uri ^String token))
+                (if (contains? uri-params token)
+                  #?(:cljs (str uri (get uri-params token))
+                      :clj (.append ^StringBuilder uri (str (get uri-params token))))
+                  (i/expected (str "URI param for key " token) uri-params))))
+      #?(:cljs ""
+          :clj (StringBuilder. (unchecked-multiply 5 (count uri-template)))))
+    str))
+
+
+(defn template->request
+  "Given a request template, realize the attributes to create a minimal Ring request."
+  [request-template uri-params]
+  (-> request-template
+    (update :uri realize-uri uri-params)
+    (update :request-method #(-> (if (set? %) (first %) %)
+                               (or :get)))))
