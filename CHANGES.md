@@ -16,6 +16,8 @@
   - Use string utility fns introduced in Clojure 1.8 for CLJS
 * ClojureScript compatibility
   - Excluding `calfpath.route/make-dispatcher` and matchex optimization (JVM only)
+* Data-driven routing
+  - Show URI patterns in sorted order on no URI match (HTTP 400)
 * Bidirectional routing - ID based Ring request generation (ns `calfpath.route`)
   - `make-index`
   - `realize-uri`
@@ -23,13 +25,14 @@
 * Performance tweaks
   - Automatic prefix-segregation using wildcard nested routing
     - See options `:trie?` and `:trie-threshold` in `calfpath.route/compile-routes`
+    - [Todo] Add more benchmarks comparing with other libraries
   - Add large routes (OpenSensors) to performance benchmarks
   - Drop `calfpath.MatchResult` in favour of 2-element array
   - [Todo] Add bidirectional routing benchmark
- * Documentation overhaul
-   - [Todo] Existing features
-   - [Todo] Bidirectional routing
-   - [Todo] HOWTO document
+* Documentation overhaul
+  - [Todo] Existing features
+  - [Todo] Bidirectional routing
+  - [Todo] HOWTO document
 
 
 ## 0.7.2 / 2019-January-15

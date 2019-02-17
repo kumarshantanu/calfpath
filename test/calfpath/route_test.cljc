@@ -104,23 +104,22 @@
 (def flat-400 "400 Bad request. URI does not match any available uri-template.
 
 Available URI templates:
-/info/:token/
 /album/:lid/artist/:rid/
-/user/:id/profile/:type/
-/user/:id/permissions/
-/hello/1234/")
+/hello/1234/
+/info/:token/
+/user/:id*")
 
 
 (def partial-400 "400 Bad request. URI does not match any available uri-template.
 
 Available URI templates:
-/info/:token/
-/foo*
-/bar/:bar-id*
-/v1*
 /album/:lid*
+/bar/:bar-id*
+/foo*
+/hello/1234/
+/info/:token/
 /user/:id*
-/hello/1234/")
+/v1*")
 
 
 (defn routes-helper

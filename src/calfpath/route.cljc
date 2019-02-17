@@ -154,6 +154,7 @@
                          (->> (filter uri-finder routes)
                            (map uri-finder)
                            (map (partial str uri-prefix))
+                           sort
                            (cons "Available URI templates:")
                            (string/join \newline)
                            (str "\n\n")))
