@@ -9,7 +9,7 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.8.0 / 2019-February-??
+## 0.8.0-alpha1 / 2019-February-19
 
 * [BREAKING CHANGE] Rename `calfpath.route/assoc-spec-to-request` to `assoc-route-to-request`
 * [BREAKING CHANGE] Drop support for Clojure 1.7
