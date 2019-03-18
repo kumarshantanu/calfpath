@@ -15,6 +15,7 @@
     [compojure.core :refer [defroutes rfn routes context GET POST PUT ANY]]
     [clout.core     :as l]
     [reitit.ring    :as reitit]
+    [reitit.trie]
     [calfpath.core  :refer [->uri ->method ->get ->head ->options ->put ->post ->delete]]
     [calfpath.internal :as i]
     [calfpath.route :as r]
@@ -114,23 +115,29 @@
     (ANY "/" request (h4x)))
   (rfn request (hxx)))
 
+(defmacro handle [[& [f & args]]]
+  (let [request (gensym)
+        path-params (gensym)]
+    `(fn [~request]
+       (let [~path-params (:path-params ~request)]
+         (~f ~@(map (fn [p] `(~p ~path-params)) args))))))
 
 (def handler-reitit
   (reitit/ring-handler
     (reitit/router
-      [["/user/:id/profile/:type/" {:get (fn [{{:keys [id type]} :path-params}] (h11 id type))
-                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))
-                                    :handler (fn [_] (h1x))}]
-       ["/user/:id/permissions/" {:get (fn [{{:keys [id]} :path-params}] (h21 id))
-                                  :put (fn [{{:keys [id]} :path-params}] (h22 id))
-                                  :handler (fn [_] (h2x))}]
-       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))
-                                    :handler (fn [_] (h3x))}]
-       ["/this/is/a/static/route" {:put (fn [_] (h40))
-                                   :handler (fn [_] (h4x))}]])
-    (fn [_] (hxx))
+      [["/user/:id/profile/:type/" {:get (handle (h11 :id :type))
+                                    :put (handle (h12 :id :type))
+                                    :handler (constantly (h1x))}]
+       ["/user/:id/permissions/" {:get (handle (h21 :id))
+                                  :put (handle (h22 :id))
+                                  :handler (constantly (h2x))}]
+       ["/company/:cid/dept/:did/" {:put (handle (h30 :cid :did))
+                                    :handler (constantly (h3x))}]
+       ["/this/is/a/static/route" {:put (constantly (h40))
+                                   :handler (constantly (h4x))}]])
+    (constantly (hxx))
     ;; benchmark settings
-    {:inject-match? false, :inject-router? false}))
+    {:inject-match? false, :inject-router? false, :reitit.trie/parameters reitit.trie/record-parameters}))
 
 (defmacro cond-let
   [& clauses]
