@@ -124,11 +124,15 @@
 (defn conj-maps
   "Merge two maps efficiently using conj."
   [old-map new-map]
-  (conj
-    (if (nil? old-map)
-      {}
-      old-map)
-    new-map))
+  #?(:cljs (conj
+             (if (nil? old-map)
+               {}
+               old-map)
+             new-map)
+      :clj (.cons ^clojure.lang.APersistentMap (if (nil? old-map)
+                                                 {}
+                                                 old-map)
+             new-map)))
 
 
 #?(:cljs (def reduce-mkv reduce-kv)
@@ -443,3 +447,10 @@
                                                                            (assoc $ :uri-prefix uri-now)
                                                                            (:nested each-route) options))))))))
     context routes))
+
+
+(defn dassoc
+  "Direct assoc"
+  [a k v]
+  #?(:cljs (assoc a k v)
+      :clj (.assoc ^clojure.lang.Associative a k v)))

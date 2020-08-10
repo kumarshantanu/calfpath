@@ -11,7 +11,8 @@
   #?(:cljs (:require-macros calfpath.route))
   (:require
     [clojure.string :as string]
-    [calfpath.internal :as i]))
+    [calfpath.internal :as i])
+  #?(:clj (:import [clojure.lang Associative])))
 
 
 (defn dispatch
@@ -336,12 +337,12 @@
                                   (let [params    (aget match-result 0)
                                         end-index (aget match-result 1)]
                                     (cond
-                                      (empty? params)   (assoc request i/uri-match-end-index end-index)
+                                      (empty? params)   (i/dassoc request i/uri-match-end-index end-index)
                                       (nil? params-key) (as-> request $
-                                                          (assoc $ i/uri-match-end-index end-index)
-                                                          (i/reduce-mkv assoc $ params))
+                                                          (i/dassoc $ i/uri-match-end-index end-index)
+                                                          (i/reduce-mkv i/dassoc $ params))
                                       :otherwise        (-> request
-                                                          (assoc i/uri-match-end-index end-index)
+                                                          (i/dassoc i/uri-match-end-index end-index)
                                                           (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
                                 `(when-let [^"[Ljava.lang.Object;"
@@ -351,14 +352,14 @@
                                    (let [~params-sym    (aget match-result# 0)
                                          ~end-index-sym (aget match-result# 1)]
                                      (if (empty? ~params-sym)
-                                       (assoc ~request
+                                       (i/dassoc ~request
                                          i/uri-match-end-index ~end-index-sym)
                                        ~(if (nil? params-key)
                                           `(as-> ~request $#
-                                             (assoc $# i/uri-match-end-index ~end-index-sym)
-                                             (i/reduce-mkv assoc $# ~params-sym))
+                                             (i/dassoc $# i/uri-match-end-index ~end-index-sym)
+                                             (i/reduce-mkv i/dassoc $# ~params-sym))
                                           `(-> ~request
-                                             (assoc i/uri-match-end-index ~end-index-sym)
+                                             (i/dassoc i/uri-match-end-index ~end-index-sym)
                                              (update ~params-key i/conj-maps ~params-sym)))))))))))
         spec))))
 
