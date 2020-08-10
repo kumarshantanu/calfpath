@@ -23,7 +23,8 @@ Leiningen dependency: `[calfpath "0.8.0-alpha2-SNAPSHOT"]` (requires Clojure 1.8
 
 Require namespace:
 ```clojure
-(require '[calfpath.core  :refer [->uri ->method ->get ->head ->options ->patch ->put ->post ->delete]])
+(require '[calfpath.core  :refer [->uri ->method
+                                  ->get ->head ->options ->patch ->put ->post ->delete]])
 (require '[calfpath.route :as r])
 ```
 
