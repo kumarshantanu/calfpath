@@ -1,6 +1,7 @@
 # calfpath
 
 [![Build Status](https://travis-ci.org/kumarshantanu/calfpath.svg)](https://travis-ci.org/kumarshantanu/calfpath)
+[![cljdoc badge](https://cljdoc.org/badge/calfpath/calfpath)](https://cljdoc.org/d/calfpath/calfpath)
 
 A Clojure library for _à la carte_ (orthogonal) [Ring](https://github.com/ring-clojure/ring) request matching and routing.
 
