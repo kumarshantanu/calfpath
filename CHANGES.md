@@ -9,7 +9,11 @@
   - Account for partial and nested URI templates
 
 
-## [WIP] 0.8.0-alpha2 / 2020-August-??
+## [WIP] 0.8.0-alpha2 / 2020-September-??
+
+* Documentation
+  - [WIP] Existing features
+  - [Todo] Bidirectional routing
 
 
 ## 0.8.0-alpha1 / 2019-February-19
