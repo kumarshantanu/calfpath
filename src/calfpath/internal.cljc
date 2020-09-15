@@ -129,10 +129,10 @@
                {}
                old-map)
              new-map)
-      :clj (.cons ^clojure.lang.APersistentMap (if (nil? old-map)
-                                                 {}
-                                                 old-map)
-             new-map)))
+     :clj (let [^clojure.lang.APersistentMap apmap (if (nil? old-map)
+                                                     {}
+                                                     old-map)]
+            (.cons apmap new-map))))
 
 
 #?(:cljs (def reduce-mkv reduce-kv)
