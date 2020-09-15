@@ -49,7 +49,7 @@
 ;
 ;(let [m0 (:matcher (get routes 0))
 ;      h0 (or (:handler (get routes 0))
-;           (make-handler (:nested (get routes 0)))) 
+;           (make-handler (:nested (get routes 0))))
 ;      m1 ; similar to m0, for element 1
 ;      h1 ; similar to h0, for element 1
 ;      ....]
@@ -381,7 +381,7 @@
             (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
           (cond
             (keyword? method) (-> spec
-                                ;; Clojure (not CLJS) keywords are interned; compare identity (faster) instead of equality
+                                ;; Clojure (not CLJS) keywords are interned; compare identity (faster), not equality
                                 (assoc :matcher (fn method-matcher [request]
                                                   (when (#?(:cljs = :clj identical?)
                                                           (:request-method request) method)
