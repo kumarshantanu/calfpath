@@ -9,6 +9,7 @@
 
 (ns calfpath.route-test
   (:require
+    [clojure.walk :as walk]
     #?(:cljs [cljs.test    :refer-macros [deftest is testing]]
         :clj [clojure.test :refer        [deftest is testing]])
     #?(:cljs [calfpath.route :as r :include-macros true]
@@ -236,6 +237,23 @@ Available URI templates:
             (pp-partial-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400))))
 
 
+(def pp-handler (handler [:path-params :uri]))
+
+
+(def easy-routes
+  [{["/album/:lid/artist/:rid/" :get] pp-handler}
+   {"/hello/1234/"                    pp-handler}
+   {["/info/:token/"            :get] pp-handler}
+   {"/user/:id*" [{"/auth" pp-handler}
+                  {"/permissions/" [{:get  pp-handler}
+                                    {:post pp-handler}
+                                    {:put  pp-handler}]}
+                  {"/profile/:type/" [{:get    pp-handler}
+                                      {:patch  pp-handler}
+                                      {:delete pp-handler}]}
+                  {"" pp-handler}]}])
+
+
 (def flat-routes
   [{:uri "/info/:token/"            :method :get}
    {:uri "/album/:lid/artist/:rid/" :method :get}
@@ -262,6 +280,21 @@ Available URI templates:
                                                                 {:method :patch }
                                                                 {:method :delete}]}
                                {:uri ""         }]}])
+
+
+(defn deep-dissoc [data k]
+  (walk/prewalk (fn [node]
+                  (if (map? node)
+                    (dissoc node k)
+                    node))
+          data))
+
+
+(deftest test-easy-routes
+  (is (= trie-routes
+        (deep-dissoc
+          (r/easy-routes easy-routes :uri :method)
+          :handler))))
 
 
 (deftest test-routes->wildcard-trie

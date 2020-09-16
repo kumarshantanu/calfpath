@@ -10,6 +10,7 @@
 (ns calfpath.route
   #?(:cljs (:require-macros calfpath.route))
   (:require
+    [clojure.set :as set]
     [clojure.string :as string]
     [calfpath.internal :as i])
   #?(:clj (:import [clojure.lang Associative])))
@@ -403,6 +404,56 @@
 ;; ----- routes (bulk) middleware -----
 
 
+(defn easy-routes
+  "Allow easy, recursively applied, route definition as in the following examples:
+
+  | Definition                         | Translated into                                       |
+  |------------------------------------|-------------------------------------------------------|
+  |`{\"/docs/:id/info\" [...]}`        |`{:uri \"/docs/:id/info\" :nested [...]}`              |
+  |`{\"/docs/:id/info\" (fn [req])}`   |`{:uri \"/docs/:id/info\" :handler (fn [req])}`        |
+  |`{:delete (fn [request])}`          |`{:method :delete :handler (fn [request])}`            |
+  |`{[\"/docs/:id\" :get] (fn [req])}` |`{:uri \"/docs/:id\" :method :get :handler (fn [req])}`|"
+  [routes uri-key method-key]
+  (i/expected vector? "routes to be a vector of routes" routes)
+  (let [add-assoc  (fn add-assoc*  ; additive assoc - do not replace existing keys
+                     ([m k v]
+                      (if (contains? m k) m (assoc m k v)))
+                     ([m k v & pairs]
+                      (let [base (add-assoc* m k v)]
+                        (if (seq pairs)
+                          (recur base (first pairs) (second pairs) (nnext pairs))
+                          base))))
+        replace-kv (fn [m k v] (-> m
+                                 (add-assoc k v)
+                                 (dissoc v)))
+        add-key    (fn add-key* [m k]
+                     (cond
+                       (string? k)               (replace-kv m uri-key k)
+                       (i/valid-method-keys k)   (replace-kv m method-key k)
+                       (and (set? k)
+                         (set/subset? k
+                           i/valid-method-keys)) (replace-kv m method-key k)
+                       (and (vector? k) (seq k)) (as-> m $
+                                                   (reduce add-key* $ k)
+                                                   (dissoc $ k))
+                       :otherwise                m))
+        add-target (fn add-target* [m target]
+                     (cond
+                       (vector? target) (as-> target $
+                                          (easy-routes $ uri-key method-key)
+                                          (add-assoc m :nested $))
+                       (fn? target)     (add-assoc m :handler target)
+                       :otherwise       (i/expected "target to be a routes vector or function" target)))]
+    (mapv (fn [each-route]
+            (reduce-kv (fn xform [m k v]
+                         (let [m-with-k (add-key m k)]
+                           (if (= m m-with-k)
+                             m
+                             (add-target m-with-k v))))
+              each-route each-route))
+      routes)))
+
+
 (defn routes->wildcard-trie
   "Given a bunch of routes, segment them by prefix URI-tokens into a trie-like structure for faster match."
   ([routes {:keys [trie-threshold uri-key]
@@ -483,6 +534,7 @@
 (defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
   Options:
+   :easy?           (boolean) allow easy defnition of routes that translate into regular routes
    :trie?           (boolean) optimize routes by automatically reorganizing routes as tries
    :trie-threshold  (integer) similar routes more than this number will be grouped together
    :uri?            (boolean) true if URI templates should be converted to matchers
@@ -497,14 +549,16 @@
    :method-key      (non-nil) the key to be used to look up the method key/set in a spec
    :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
    :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
-  ([route-specs {:keys [trie?           trie-threshold
+  ([route-specs {:keys [easy?
+                        trie?           trie-threshold
                         uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
                         params-key
                         method?         method-key fallback-405?
                         trailing-slash
                         lift-uri?
                         ring-handler? ring-handler-key]
-                 :or {trie?           true   trie-threshold 1
+                 :or {easy?           true
+                      trie?           true   trie-threshold 1
                       uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
                       full-uri-key    :full-uri
                       method?         true   method-key  :method  fallback-405? true
@@ -515,6 +569,7 @@
                                              (apply f specs args)
                                              specs))]
       (-> route-specs
+        (when-> easy?                       easy-routes uri-key method-key)
         (when-> trie?                       update-routes routes->wildcard-trie {:trie-threshold trie-threshold
                                                                                  :uri-key uri-key})
         (when-> (and uri? method?
