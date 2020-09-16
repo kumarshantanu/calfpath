@@ -13,7 +13,7 @@
 ## Routing with convenience macros
 
 Calfpath provides some convenience macros to match routes against request and invokes the
-corresponding handler code.
+corresponding handler code. For data driven routing (recommended), see the next section.
 
 ```clojure
 (defn handler
@@ -153,9 +153,35 @@ The routes vector must be turned into a Ring handler before it can be used.
 ```
 
 
-### Applying middleware
+### Applying route middleware
 
-TODO
+Let us say you want to measure and log the total time taken by a route handler. How would you do that without
+modifying every handler function or the routes vector? Using route middleware, as shown below:
+
+```clojure
+(defn tme-tracking-middleware
+  [handler]
+  (fn [request]
+    (let [start (System/currentTimeMillis)
+          taken (fn [] (unchecked-subtract (System/currentTimeMillis) start))]
+      (try
+        (let [result (handler request)]
+          (println "Time taken" (taken) "ms")
+          result)
+        (catch Exception e
+          (println "Time taken" (taken) "ms, exception thrown:" e)
+          (throw e))))))
+```
+
+This middleware needs to be applied to only the `:handler` value in all routes, which can be done as follows:
+
+```clojure
+(calfpath.route/update-in-each-route
+  routes :handler time-tracking-middleware)
+```
+
+Should you need to inspect the entire route before updating anything, consider `calfpath.route/update-each-route`.
+Note that you need to apply all middleware before making a Ring handler out of the routes.
 
 
 ### From route to request (bi-directional routing)
