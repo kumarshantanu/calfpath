@@ -15,7 +15,6 @@
   - [Todo] Put route params in a separate map
   - Support for easy route syntax
 * Documentation
-  - [Todo] Easy route syntax
   - [WIP] Existing features
   - [Todo] Bidirectional routing
 

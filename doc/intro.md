@@ -99,6 +99,18 @@ A route handler is a function with same arity and semantics as a Ring handler.
 A routes definition is a vector of route maps.
 
 ```clojure
+(def easy-routes
+  "Routes defined using a short, easy notation."
+  [; partial URI match, implied by trailing '*'
+   {"/users/:user-id*" [{["/jobs/"        :get] list-user-jobs}
+                        {["/permissions/" :get] permissions-handler}]}
+   {["/orders/:order-id/confirm/" :post] confirm-order}
+   {"/health/" health-status}])
+```
+
+The easy routes definition above is translated as the longer notation below during route compilation:
+
+```clojure
 (def app-routes
   "Vector of application routes. To be processed by calfpath.route/compile-routes to generate matchers."
   [; partial URI match, implied by trailing '*'
@@ -119,13 +131,13 @@ Calfpath routes may be used to serve static resources using wrapped handlers.
 ```clojure
 (def static-routes
   "Vector of static web resources"
-  [{:uri "/static/*"
-    :handler (-> (fn [_] {:status 400 :body "No such file"})          ; fallback
-                   ;; the following requires [ring/ring-core "version"] dependency in your project
-                   (ring.middleware.resource/wrap-resource "public")  ; serve files from classpath
-                   (ring.middleware.file/wrap-file "/var/www/public") ; serve files from filesystem
-                   (ring.middleware.content-type/wrap-content-type)   ; detect and put content type
-                   (ring.middleware.not-modified/wrap-not-modified))}])
+  [{["/static/*" :get]
+    (-> (fn [_] {:status 400 :body "No such file"})          ; fallback
+          ;; the following requires [ring/ring-core "version"] dependency in your project
+          (ring.middleware.resource/wrap-resource "public")  ; serve files from classpath
+          (ring.middleware.file/wrap-file "/var/www/public") ; serve files from filesystem
+          (ring.middleware.content-type/wrap-content-type)   ; detect and put content type
+          (ring.middleware.not-modified/wrap-not-modified))}])
 ```
 
 
@@ -147,10 +159,5 @@ TODO
 
 
 ### From route to request (bi-directional routing)
-
-TODO
-
-
-### Routing for Websites
 
 TODO
