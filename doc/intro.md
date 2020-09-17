@@ -186,4 +186,57 @@ Note that you need to apply all middleware before making a Ring handler out of t
 
 ### From route to request (bi-directional routing)
 
-TODO
+Bi-directional routing is when you can not only find a matching route for a given request, but you can generate one
+given a route and the template parameters. To make routes bi-directiional you need to add unique identifier in every
+route. Consider the following (easy notation) routes example:
+
+```clojure
+(def indexable-routes
+  [{["/info/:token"             :get] identity :id :info}
+   {["/album/:lid/artist/:rid/" :get] identity :id :album}
+   {"/user/:id*" [{"/auth" identity :id :auth-user}
+                  {"/permissions/"   [{:get    identity :id :read-perms}
+                                      {:post   identity :id :save-perms}
+                                      {:put    identity :id :update-perms}]}
+                  {"/profile/:type/" [{:get    identity :id :read-profile}
+                                      {:patch  identity :id :patch-profile}
+                                      {:delete identity :id :remove-profile}]}
+                  {:uri ""           identity}]}])
+```
+
+Every route (except the last one) having a handler function also has a unique ID that we can refer the route with.
+Now we can build a reverse index:
+
+```clojure
+(calfpath.route/make-index indexable-routes)
+```
+
+It returns a reverse index looking like as follows:
+
+```clojure
+{:info           {:uri ["/info/" :token]                    :request-method :get}
+ :album          {:uri ["/album/" :lid "/artist/" :rid "/"] :request-method :get}
+ :auth-user      {:uri ["/user/" :id "/auth"]               :request-method :get}
+ :read-perms     {:uri ["/user/" :id "/permissions/"]       :request-method :get}
+ :save-perms     {:uri ["/user/" :id "/permissions/"]       :request-method :post}
+ :update-perms   {:uri ["/user/" :id "/permissions/"]       :request-method :put}
+ :read-profile   {:uri ["/user/" :id "/profile/" :type "/"] :request-method :get}
+ :patch-profile  {:uri ["/user/" :id "/profile/" :type "/"] :request-method :patch}
+ :remove-profile {:uri ["/user/" :id "/profile/" :type "/"] :request-method :delete}}
+```
+
+Now we can create a request based on any of the indexed routes:
+
+```clojure
+(-> (:album routes-index)
+  (calfpath.route/template->request {:lid 10 :rid 20}))
+```
+
+It returns a request map looking like the one below:
+
+```clojure
+{:uri "/album/10/artist/20/"
+ :request-method :get}
+```
+
+This structure matches the Ring request SPEC attributes.
