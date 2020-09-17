@@ -210,7 +210,7 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
+    ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
     {:chart-title "Ataraxy/Bidi/Compojure/Clout/Reitit/CalfPath"
      :chart-filename (format "bench-small-routing-table-clj-%s.png" c/clojure-version-str)}))
 
