@@ -332,14 +332,16 @@ Available URI templates:
     (is (= {:uri "/album/10/artist/20/"
             :request-method :get}
           (-> (:album routing-index)
-            (r/template->request {:lid 10 :rid 20}))))
-    (is (= {:uri "/user/10/permissions/"
+            (r/template->request {:uri-params {:lid 10 :rid 20}}))))
+    (is (= {:uri "https://myapp.com/user/10/permissions/?q=beer&country=in"
             :request-method :post}
           (-> (:save-perms routing-index)
-            (r/template->request {:id 10}))))
+            (r/template->request {:uri-params {:id 10}
+                                  :uri-prefix "https://myapp.com"
+                                  :uri-suffix "?q=beer&country=in"}))))
     (is (thrown-with-msg?
           #?(:cljs js/Error
               :clj clojure.lang.ExceptionInfo)
           #"Expected URI param for key \:id, but found .*"
           (-> (:save-perms routing-index)
-            (r/template->request {:user-id 10}))))))
+            (r/template->request {:uri-params {:user-id 10}}))))))

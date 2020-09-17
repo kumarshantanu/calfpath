@@ -5,9 +5,6 @@
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO - BREAKING CHANGE] Consider `clojure.walk` as routes navigation tool
-* [TODO] Route based URI-generation from URI pattern (in a route) and params map
-  - `:id` attribute (in route, later associated with `:handler`) based
-  - Account for partial and nested URI templates
 
 
 ## [WIP] 0.8.0-alpha2 / 2020-September-??

@@ -229,7 +229,7 @@ Now we can create a request based on any of the indexed routes:
 
 ```clojure
 (-> (:album routes-index)
-  (calfpath.route/template->request {:lid 10 :rid 20}))
+  (calfpath.route/template->request {:uri-params {:lid 10 :rid 20}}))
 ```
 
 It returns a request map looking like the one below:

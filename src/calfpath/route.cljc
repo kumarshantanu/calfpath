@@ -597,7 +597,17 @@
 
 
 (defn make-index
-  "Given a collection of routes, index them returning a map {:id route-template}."
+  "Given a collection of routes, index them returning a map {:id route-template}.
+
+  Options:
+
+  | Kwarg       | Description                                      |
+  |-------------|--------------------------------------------------|
+  |`:index-key` |The index key in given routes, default `:id`      |
+  |`:uri-key`   |The URI key in given routes, default `:uri`       |
+  |`:method-key`|HTTP method key in given routes, default `:method`|
+
+  See: [[template->request]]"
   ([routes options]
     (:index-map (i/build-routes-index {:index-map  {}
                                        :uri-prefix ""
@@ -607,9 +617,14 @@
 
 
 (defn realize-uri
-  "Given a vector of the form ['/users' :user-id '/profile/' :profile '/'] fill in the param values returning a URI."
-  [uri-template uri-params]
-  (->> uri-template
+  "Given a vector of the form ['/users' :user-id '/profile/' :profile '/'] fill in the param values returning a URI.
+
+  See: [[template->request]]"
+  [uri-template {:keys [uri-params
+                        uri-prefix
+                        uri-suffix]
+                 :as options}]
+  (as-> uri-template $
     (reduce (fn [uri token]
               (if (string? token)
                 #?(:cljs (str uri token)
@@ -619,14 +634,31 @@
                       :clj (.append ^StringBuilder uri (str (get uri-params token))))
                   (i/expected (str "URI param for key " token) uri-params))))
       #?(:cljs ""
-          :clj (StringBuilder. (unchecked-multiply 5 (count uri-template)))))
-    str))
+         :clj (StringBuilder. (unchecked-multiply 5 (count uri-template))))
+      $)
+    (str uri-prefix $ uri-suffix)))
 
 
 (defn template->request
-  "Given a request template, realize the attributes to create a minimal Ring request."
-  [request-template uri-params]
-  (-> request-template
-    (update :uri realize-uri uri-params)
-    (update :request-method #(-> (if (set? %) (first %) %)
-                               (or :get)))))
+  "Given a request template, realize the attributes to create a minimal Ring request.
+  A request template may be found from a reverse index built using [[make-index]].
+
+  Options:
+
+  | Kwarg       | Description                                    |
+  |-------------|------------------------------------------------|
+  |`:uri-params`|map of URI param values, e.g. `{:lid 5 :rid 18}`|
+  |`:uri-prefix`|URI prefix string, e.g. `\"https://myapp.com/\"`|
+  |`:uri-suffix`|URI suffix string, e.g. `\"?q=beer&country=in\"`|
+
+  See: [[make-index]]"
+  ([request-template]
+   (template->request request-template {}))
+  ([request-template {:keys [uri-params
+                             uri-prefix
+                             uri-suffix]
+                      :as options}]
+   (-> request-template
+     (update :uri realize-uri options)
+     (update :request-method #(-> (if (set? %) (first %) %)
+                                (or :get))))))
