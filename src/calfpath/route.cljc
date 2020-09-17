@@ -24,7 +24,9 @@
                        :nested  vector of child routes       ; either :handler or :nested key must be present
                        :handler Ring handler for route}
   1. A matcher is (fn [request]) that returns a potentially-updated request on successful match, nil otherwise.
-  2. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
+  2. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request.
+
+  See: [[compile-routes]], [[make-dispatcher]] (Clojure/JVM only)"
   ([routes request f] ;; (f handler updated-request)
     (loop [routes (seq routes)]
       (when routes
@@ -82,7 +84,9 @@
   2. A matchex is (fn [request-sym]) that returns expression to eval instead of calling matcher. The matchex is used
      only when :matcher is also present. Expr should return a value similar to matcher.
   3. A matchex is for optimization only, which may be disabled by setting a false or nil value for the :matchex key.
-  4. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request."
+  4. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request.
+
+  See: [[compile-routes]], [[dispatch]]"
           [routes]
           (let [routes (->> routes
                          (map (fn [spec]
@@ -149,6 +153,7 @@
 
 
 (defn conj-fallback-400
+  "Given a route vector append a matcher that always matches, and a handler that returns HTTP 400 response."
   ([routes {:keys [show-uris? uri-finder uri-prefix] :as opts}]
     (when (and show-uris? (not uri-finder))
       (i/expected ":show-uris? key to be accompanied by :uri-finder key" opts))
@@ -171,6 +176,7 @@
 
 
 (defn conj-fallback-405
+  "Given a route vector append a matcher that always matches, and a handler that returns HTTP 405 response."
   [routes {:keys [allowed-methods method-finder] :as opts}]
   (when (not (or allowed-methods method-finder))
     (i/expected "either :allowed-methods or :method-finder key to be present" opts))
@@ -533,22 +539,28 @@
 
 (defn compile-routes
   "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
-  Options:
-   :easy?           (boolean) allow easy defnition of routes that translate into regular routes
-   :trie?           (boolean) optimize routes by automatically reorganizing routes as tries
-   :trie-threshold  (integer) similar routes more than this number will be grouped together
-   :uri?            (boolean) true if URI templates should be converted to matchers
-   :uri-key         (non-nil) the key to be used to look up the URI template in a spec
-   :params-key      (any)     the key to put URI params under; if nil (default), params map is merged into request
-   :trailing-slash  (keyword) Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect
-   :fallback-400?   (boolean) whether to add a fallback route to respond with HTTP status 400 for unmatched URIs
-   :show-uris-400?  (boolean) whether to add URI templates in the HTTP 400 response (see :fallback-400?)
-   :full-uri-key    (non-nil) the key to be used to populate full-uri for reporting HTTP 400 (see :show-uris-400?)
-   :uri-prefix-400  (string?) the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)
-   :method?         (boolean) true if HTTP methods should be converted to matchers
-   :method-key      (non-nil) the key to be used to look up the method key/set in a spec
-   :fallback-405?   (boolean) whether to add a fallback route to respond with HTTP status 405 for unmatched methods
-   :lift-uri?       (boolean) whether lift URI attributes from mixed specs and move the rest into nested specs"
+
+  ### Options
+
+  | Kwarg           | Type  | Description                                                                            |
+  |-----------------|-------|----------------------------------------------------------------------------------------|
+  |:easy?`          |boolean|allow easy defnition of routes that translate into regular routes                       |
+  |`:trie?`         |boolean|optimize routes by automatically reorganizing routes as tries                           |
+  |`:trie-threshold`|integer|similar routes more than this number will be grouped together                           |
+  |`:uri?`          |boolean|true if URI templates should be converted to matchers                                   |
+  |`:uri-key`       |non-nil|the key to be used to look up the URI template in a spec                                |
+  |`:params-key`    |any    |the key to put URI params under; if nil (default), params map is merged into request    |
+  |`:trailing-slash`|keyword|Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect|
+  |`:fallback-400?` |boolean|whether to add a fallback route to respond with HTTP status 400 for unmatched URIs      |
+  |`:show-uris-400?`|boolean|whether to add URI templates in the HTTP 400 response (see :fallback-400?)              |
+  |`:full-uri-key`  |non-nil|the key to be used to populate full-uri for reporting HTTP 400 (see :show-uris-400?)    |
+  |`:uri-prefix-400`|string?|the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)      |
+  |`:method?`       |boolean|true if HTTP methods should be converted to matchers                                    |
+  |`:method-key`    |non-nil|the key to be used to look up the method key/set in a spec                              |
+  |`:fallback-405?` |boolean|whether to add a fallback route to respond with HTTP status 405 for unmatched methods   |
+  |`:lift-uri?`     |boolean|whether lift URI attributes from mixed specs and move the rest into nested specs        |
+
+  See: [[dispatch]], [[make-dispatcher]] (Clojure/JVM only), [[make-index]]"
   ([route-specs {:keys [easy?
                         trie?           trie-threshold
                         uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
@@ -607,7 +619,7 @@
   |`:uri-key`   |The URI key in given routes, default `:uri`       |
   |`:method-key`|HTTP method key in given routes, default `:method`|
 
-  See: [[template->request]]"
+  See: [[compile-routes]], [[template->request]]"
   ([routes options]
     (:index-map (i/build-routes-index {:index-map  {}
                                        :uri-prefix ""
