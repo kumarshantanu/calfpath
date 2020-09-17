@@ -10,7 +10,8 @@
 ## [WIP] 0.8.0-alpha2 / 2020-September-??
 
 * Routes
-  - [Todo] Put route params in a separate map
+  - [Todo] Put URI params under `:path-params` in request
+  - [Todo] Deprecate routing macros in `calfpath.core`
   - Support for easy route syntax
 * Documentation
   - Dispatch macros
