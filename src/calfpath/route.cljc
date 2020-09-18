@@ -120,13 +120,16 @@
                                        expr)
                                      ([expr idx]
                                        (let [matcher-sym (get matcher-syms idx)
+                                             matcher-val (:matcher (get routes idx))
                                              matcher-exp (if-let [matchex (:matchex (get routes idx))]
                                                            (matchex request-sym)
                                                            `(~matcher-sym ~request-sym))
                                              handler-sym (get handler-syms idx)]
-                                         `(if-let [request# ~matcher-exp]
-                                            (~invoke-sym ~handler-sym request#)
-                                            ~expr))))
+                                         (if (= identity matcher-val)  ; identity matcher would always match
+                                           `(~invoke-sym ~handler-sym ~matcher-exp)  ; so optimize
+                                           `(if-let [request# ~matcher-exp]
+                                              (~invoke-sym ~handler-sym request#)
+                                              ~expr)))))
                              `nil))
                 fn-form  `(let [~@bindings]
                             (fn ~dispatch-sym

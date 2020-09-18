@@ -13,6 +13,8 @@
   - [Todo] Put URI params under `:path-params` in request
   - [Todo] Deprecate routing macros in `calfpath.core`
   - Support for easy route syntax
+* Performance tweaks
+  - Matchex optimization: Direct handler invocation for identity matcher
 * Documentation
   - Dispatch macros
   - Data driven routes
