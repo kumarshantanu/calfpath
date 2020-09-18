@@ -87,61 +87,49 @@
   4. Handler is a Ring handler (fn [request] [request respond raise]) that responds to a Ring request.
 
   See: [[compile-routes]], [[dispatch]]"
-          [routes]
-          (let [routes (->> routes
-                         (map (fn [spec]
-                                (when-not (:matcher spec)
-                                  (i/expected ":matcher key to be present" spec))
-                                (cond
-                                  (contains? spec :handler) spec
-                                  (contains? spec :nested)  (assoc spec
-                                                              :handler (make-dispatcher (:nested spec)))
-                                  :otherwise                (i/expected ":nested or :handler key to be present in route"
-                                                              spec))))
-                         vec)
-                routes-sym   (gensym "routes-")
-                dispatch-sym (gensym "dispatch-")
-                request-sym  (gensym "request-")
-                invoke-sym   (gensym "invoke-handler-")
-                n            (count routes)
-                matcher-syms (mapv (fn [idx] (gensym (str "matcher-" idx "-"))) (range n))
-                handler-syms (mapv (fn [idx] (gensym (str "handler-" idx "-"))) (range n))
-                bindings (->> (range n)
-                           (mapcat (fn [idx]
-                                     `[~(get matcher-syms idx) (:matcher (get ~routes-sym ~idx))
-                                       ~(get handler-syms idx) (:handler (get ~routes-sym ~idx))]))
-                           ;; eval-forms can only access information via root-level vars
-                           ;; so we use the dynamic var *routes* here
-                           (into `[~routes-sym ~'calfpath.route/*routes*]))
-                all-exps (->> (range n)
-                           reverse
-                           (reduce (fn
-                                     ([expr]
-                                       expr)
-                                     ([expr idx]
-                                       (let [matcher-sym (get matcher-syms idx)
-                                             matcher-val (:matcher (get routes idx))
-                                             matcher-exp (if-let [matchex (:matchex (get routes idx))]
-                                                           (matchex request-sym)
-                                                           `(~matcher-sym ~request-sym))
-                                             handler-sym (get handler-syms idx)]
-                                         (if (= identity matcher-val)  ; identity matcher would always match
-                                           `(~invoke-sym ~handler-sym ~matcher-exp)  ; so optimize
-                                           `(if-some [request# ~matcher-exp]
-                                              (~invoke-sym ~handler-sym request#)
-                                              ~expr)))))
-                             `nil))
-                fn-form  `(let [~@bindings]
-                            (fn ~dispatch-sym
-                              ([~request-sym ~invoke-sym]
-                                ~all-exps)
-                              ([~request-sym]
-                                (~dispatch-sym ~request-sym i/invoke))
-                              ([~request-sym respond# raise#]
-                                (~dispatch-sym ~request-sym (fn [handler# updated-request#]
-                                                              (handler# updated-request# respond# raise#))))))]
-            (binding [*routes* routes]
-              (eval fn-form)))))
+          ([routes]
+            (make-dispatcher routes {}))
+          ([routes {:keys [uri-key method-key]
+                    :or {uri-key :uri
+                         method-key :method}
+                    :as options}]
+            (let [routes (->> routes
+                           (map (fn [spec]
+                                  (when-not (:matcher spec)
+                                    (i/expected ":matcher key to be present" spec))
+                                  (condp #(contains? %2 %1) spec
+                                    :handler spec
+                                    :nested  (assoc spec :handler (make-dispatcher (:nested spec)))
+                                    (i/expected ":nested or :handler key to be present in route"
+                                      spec))))
+                           vec)
+                  routes-sym   (gensym "routes-")
+                  dispatch-sym (gensym "dispatch-")
+                  request-sym  (gensym "request-")
+                  invoke-sym   (gensym "invoke-handler-")
+                  n            (count routes)
+                  matcher-syms (mapv (fn [idx] (gensym (str "matcher-" idx "-"))) (range n))
+                  handler-syms (mapv (fn [idx] (gensym (str "handler-" idx "-"))) (range n))
+                  bindings (->> (range n)
+                             (mapcat (fn [idx]
+                                       `[~(get matcher-syms idx) (:matcher (get ~routes-sym ~idx))
+                                         ~(get handler-syms idx) (:handler (get ~routes-sym ~idx))]))
+                             ;; eval-forms can only access information via root-level vars
+                             ;; so we use the dynamic var *routes* here
+                             (into `[~routes-sym ~'calfpath.route/*routes*]))
+                  options  {:uri-key uri-key :method-key method-key}
+                  all-exps (i/make-dispatcher-expr routes matcher-syms handler-syms request-sym invoke-sym options)
+                  fn-form  `(let [~@bindings]
+                              (fn ~dispatch-sym
+                                ([~request-sym ~invoke-sym]
+                                 ~all-exps)
+                                ([~request-sym]
+                                 (~dispatch-sym ~request-sym i/invoke))
+                                ([~request-sym respond# raise#]
+                                 (~dispatch-sym ~request-sym (fn [handler# updated-request#]
+                                                               (handler# updated-request# respond# raise#))))))]
+              (binding [*routes* routes]
+                (eval fn-form))))))
 
 
 ;; ----- fallback route match -----

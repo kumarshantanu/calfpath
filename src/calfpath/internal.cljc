@@ -10,6 +10,7 @@
 (ns calfpath.internal
   #?(:cljs (:require-macros calfpath.internal))
   (:require
+    [clojure.set :as set]
     [clojure.string :as string])
   #?(:clj (:import
             [java.util Map Map$Entry]
@@ -119,6 +120,77 @@
            ~method-keyword (:request-method ~request))
        ~expr
        ~default-expr)))
+
+
+(defn dispatch-expr-methods
+  "Bulk methods match"
+  [routes
+   matcher-syms
+   handler-syms
+   request-sym
+   invoke-sym
+   {:keys [method-key]
+    :as options}]
+  (let [case-rows (->> routes
+                    (map vector handler-syms)
+                    (reduce
+                      (fn [expr [each-handler-sym each-route]]
+                        (let [method  (get each-route method-key) ; FIXME no hardcoding, get method-key
+                              matcher (:matcher each-route)
+                              invoker `(~invoke-sym ~each-handler-sym ~request-sym)]
+                          (cond
+                            (valid-method-keys
+                              method)               (concat expr `[~method ~invoker])
+                            (and (set? method)
+                              (set/subset? method
+                                valid-method-keys)) (concat expr `[~(list* method) ~invoker])
+                            (= identity matcher)    (reduced (concat expr `[~invoker]))
+                            :otherwise              (throw (ex-info "Neither method, nor identity handler"
+                                                             {:route each-route})))))
+                      []))]
+    `(case (:request-method ~request-sym)
+       ~@case-rows)))
+
+
+(defn dispatch-expr-generic
+  "Generic (fallback) match"
+  [routes
+   matcher-syms
+   handler-syms
+   request-sym
+   invoke-sym]
+  (->> (count routes)
+    range
+    reverse
+    (reduce (fn
+              ([expr]
+               expr)
+              ([expr idx]
+               (let [matcher-sym (get matcher-syms idx)
+                     matcher-val (:matcher (get routes idx))
+                     matcher-exp (if-let [matchex (:matchex (get routes idx))]
+                                   (matchex request-sym)
+                                   `(~matcher-sym ~request-sym))
+                     handler-sym (get handler-syms idx)]
+                 (if (= identity matcher-val)  ; identity matcher would always match
+                   `(~invoke-sym ~handler-sym ~matcher-exp)  ; so optimize
+                   `(if-some [request# ~matcher-exp]
+                      (~invoke-sym ~handler-sym request#)
+                      ~expr)))))
+      `nil)))
+
+
+(defn make-dispatcher-expr
+  "Emit code that matches route and invokes handler"
+  [routes
+   matcher-syms
+   handler-syms
+   request-sym
+   invoke-sym
+   options]
+  (if (every? (some-fn :method #(= identity (:matcher %))) routes)
+    (dispatch-expr-methods routes matcher-syms handler-syms request-sym invoke-sym options)
+    (dispatch-expr-generic routes matcher-syms handler-syms request-sym invoke-sym)))
 
 
 (defn conj-maps
