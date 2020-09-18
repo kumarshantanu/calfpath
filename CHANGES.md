@@ -11,12 +11,11 @@
 
 * Routes
   - [Todo] Put URI params under `:path-params` in request
-  - [Todo] Deprecate routing macros in `calfpath.core`
   - Support for easy route syntax
   - Accept `options` argument in function `calfpath.route/make-dispatcher`
 * Performance tweaks (matchex)
   - Direct handler invocation for identity matcher
-  - Use `if-some` instead of `if-let` for valid request match
+  - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere
   - Use bulk methods matcher when all routes match methods
 * Documentation
   - Dispatch macros

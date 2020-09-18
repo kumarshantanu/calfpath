@@ -168,7 +168,7 @@
               ([expr idx]
                (let [matcher-sym (get matcher-syms idx)
                      matcher-val (:matcher (get routes idx))
-                     matcher-exp (if-let [matchex (:matchex (get routes idx))]
+                     matcher-exp (if-some [matchex (:matchex (get routes idx))]
                                    (matchex request-sym)
                                    `(~matcher-sym ~request-sym))
                      handler-sym (get handler-syms idx)]
@@ -362,7 +362,7 @@
                                            (str $ "*"))
                                  :nested (as-> batch $
                                            (mapv (fn [[r ts ft]]
-                                                   (assoc r uri-key (if-let [toks (seq (drop prefix-tokens-count ts))]
+                                                   (assoc r uri-key (if-some [toks (seq (drop prefix-tokens-count ts))]
                                                                       (->> toks
                                                                         (string/join "/")
                                                                         (str "/"))
@@ -506,7 +506,7 @@
               (cond-> context
                 (is-key? method-key) (update :method        (fn [_]    (get each-route method-key)))
                 (is-key? :handler)   (as-> $
-                                       (update $ :index-map (fn [imap] (if-let [index-val (get each-route index-key)]
+                                       (update $ :index-map (fn [imap] (if-some [index-val (get each-route index-key)]
                                                                          (assoc imap index-val
                                                                            {:uri (->> (strip-partial-marker uri-now)
                                                                                    (parse-uri-template \:)

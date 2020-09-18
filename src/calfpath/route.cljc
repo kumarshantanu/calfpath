@@ -31,8 +31,8 @@
     (loop [routes (seq routes)]
       (when routes
         (let [current-route (first routes)]
-          (if-let [matcher (get current-route :matcher)]
-            (if-let [updated-request (matcher request)]
+          (if-some [matcher (get current-route :matcher)]
+            (if-some [updated-request (matcher request)]
               (cond
                 (contains? current-route :handler) (f (:handler current-route) updated-request)
                 (contains? current-route :nested)  (dispatch (:nested current-route) updated-request)
@@ -58,9 +58,9 @@
 ;      ....]
 ;  (fn dispatcher
 ;    [original-request] ; or [original-request respond raise] for async handlers
-;    (if-let [updated-request (m0 original-request)]
+;    (if-some [updated-request (m0 original-request)]
 ;      (h0 updated-request) ; or (h0 updated-request respond raise) for async handlers
-;      (if-let [....] ; similar to m0, for element 1
+;      (if-some [....] ; similar to m0, for element 1
 ;        .... ; similar to h0, for element 1
 ;        ....))))
 ;
@@ -318,7 +318,7 @@
   (make-ensurer :matcher
     (fn [spec uri-finder params-key]
       (i/expected map? "route spec to be a map" spec)
-      (if-let [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
+      (if-some [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
         (do
           (when-not (string? uri-pattern)
             (i/expected "URI pattern to be a string" spec))
@@ -328,10 +328,10 @@
                 [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
             (-> spec
               (assoc :matcher (fn uri-matcher [request]
-                                (when-let [^"[Ljava.lang.Object;"
-                                           match-result (i/match-uri (:uri request)
-                                                          (int (i/get-uri-match-end-index request))
-                                                          uri-template partial?)]
+                                (when-some [^"[Ljava.lang.Object;"
+                                            match-result (i/match-uri (:uri request)
+                                                           (int (i/get-uri-match-end-index request))
+                                                           uri-template partial?)]
                                   (let [params    (aget match-result 0)
                                         end-index (aget match-result 1)]
                                     (cond
@@ -343,10 +343,10 @@
                                                           (i/dassoc i/uri-match-end-index end-index)
                                                           (update params-key i/conj-maps params)))))))
               (ensure-matchex (fn [request]
-                                `(when-let [^"[Ljava.lang.Object;"
-                                            match-result# (i/match-uri (:uri ~request)
-                                                            (int (i/get-uri-match-end-index ~request))
-                                                            ~uri-template ~partial?)]
+                                `(when-some [^"[Ljava.lang.Object;"
+                                             match-result# (i/match-uri (:uri ~request)
+                                                             (int (i/get-uri-match-end-index ~request))
+                                                             ~uri-template ~partial?)]
                                    (let [~params-sym    (aget match-result# 0)
                                          ~end-index-sym (aget match-result# 1)]
                                      (if (empty? ~params-sym)
@@ -371,7 +371,7 @@
     (fn [spec method-finder]
       (when-not (map? spec)
         (i/expected "route spec to be a map" spec))
-      (if-let [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
+      (if-some [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
         (do
           (when-not (or (keyword? method)
                       (and (set? method)

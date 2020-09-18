@@ -38,10 +38,10 @@
           (let [[uri-pattern dav expr] clauses
                 [uri-template partial?] (i/parse-uri-template \: #?(:cljs uri-pattern
                                                                      :clj (eval uri-pattern)))]
-            `(if-let [^"[Ljava.lang.Object;"
-                      match-result# (i/match-uri (:uri ~request)
-                                      (int (i/get-uri-match-end-index ~request))
-                                      ~uri-template ~partial?)]
+            `(if-some [^"[Ljava.lang.Object;"
+                       match-result# (i/match-uri (:uri ~request)
+                                       (int (i/get-uri-match-end-index ~request))
+                                       ~uri-template ~partial?)]
                (let [{:keys ~dav :as ~params} (aget match-result# 0)
                      ~request (i/assoc-uri-match-end-index ~request (aget match-result# 1))]
                  ~expr)
