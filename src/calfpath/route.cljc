@@ -127,7 +127,7 @@
                                              handler-sym (get handler-syms idx)]
                                          (if (= identity matcher-val)  ; identity matcher would always match
                                            `(~invoke-sym ~handler-sym ~matcher-exp)  ; so optimize
-                                           `(if-let [request# ~matcher-exp]
+                                           `(if-some [request# ~matcher-exp]
                                               (~invoke-sym ~handler-sym request#)
                                               ~expr)))))
                              `nil))

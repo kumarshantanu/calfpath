@@ -15,6 +15,7 @@
   - Support for easy route syntax
 * Performance tweaks
   - Matchex optimization: Direct handler invocation for identity matcher
+  - Matchex optimization: Use `if-some` instead of `if-let` for valid request match
 * Documentation
   - Dispatch macros
   - Data driven routes
