@@ -15,6 +15,7 @@
   - Accept `options` argument in function `calfpath.route/make-dispatcher`
 * Performance tweaks
   - Faster match for static URI string (full/partial)
+  - Use mutable URI end-index for tracking URI match
   - Matchex
     - Direct handler invocation for identity matcher
     - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere

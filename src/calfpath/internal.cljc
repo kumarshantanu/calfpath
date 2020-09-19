@@ -84,12 +84,19 @@
 
 (defmacro get-uri-match-end-index
   [request]
-  `(or (get ~request uri-match-end-index) 0))
+  `(if-some [v# (get ~request uri-match-end-index)]
+     @v#
+     0))
 
 
 (defmacro assoc-uri-match-end-index
   [request end-index]
-  `(dassoc ~request uri-match-end-index ~end-index))
+  `(let [request# ~request]
+     (if-some [v# (get request# uri-match-end-index)]
+       (do
+         (vreset! v# ~end-index)
+         request#)
+       (dassoc request# uri-match-end-index (volatile! ~end-index)))))
 
 
 (def path-params :calfpath/path-params)
