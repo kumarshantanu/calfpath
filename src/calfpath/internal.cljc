@@ -394,6 +394,7 @@
 
 
 (def ^:const FULL-MATCH-INDEX -1)
+(def ^:const NO-MATCH-INDEX -2)
 
 
 (def FULL-MATCH-INDEX-OBJECT FULL-MATCH-INDEX)
@@ -479,6 +480,59 @@
   [uri ^long begin-index pattern-tokens attempt-partial-match?]
   #?(:cljs (match-uri* uri begin-index pattern-tokens attempt-partial-match?)
       :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match?)))
+
+
+(defn partial-match-uri-string*
+  ^long [uri ^long begin-index string-token]
+  (cond
+    (zero? begin-index) (if (string/starts-with? uri string-token)
+                          (let [token-length (count string-token)]
+                            (if (= (count uri) token-length)
+                              FULL-MATCH-INDEX
+                              token-length))
+                          NO-MATCH-INDEX)
+    (pos? begin-index)  (let [sub-uri (subs uri begin-index)]
+                          (if (string/starts-with? sub-uri string-token)
+                            (let [token-length (count string-token)]
+                              (if (= (count sub-uri) token-length)
+                                FULL-MATCH-INDEX
+                                (unchecked-add begin-index token-length)))
+                            NO-MATCH-INDEX))
+    (= FULL-MATCH-INDEX
+      begin-index)      (if (= "" string-token)
+                          FULL-MATCH-INDEX
+                          NO-MATCH-INDEX)
+    :otherwise          NO-MATCH-INDEX))
+
+
+(defn partial-match-uri-string
+  ^long [uri ^long begin-index string-token]
+  #?(:cljs (partial-match-uri-string* uri begin-index string-token)
+      :clj (Util/partialMatchURIString uri begin-index string-token)))
+
+
+(defn full-match-uri-string*
+  ^long [uri ^long begin-index string-token]
+  (cond
+    (zero? begin-index) (if (= uri string-token)
+                          FULL-MATCH-INDEX
+                          NO-MATCH-INDEX)
+    (pos? begin-index)  (let [sub-uri (subs uri begin-index)]
+                          (if (and (string/starts-with? sub-uri string-token)
+                                (= (count sub-uri) (count string-token)))
+                            FULL-MATCH-INDEX
+                            NO-MATCH-INDEX))
+    (= FULL-MATCH-INDEX
+      begin-index)      (if (= "" string-token)
+                          FULL-MATCH-INDEX
+                          NO-MATCH-INDEX)
+    :otherwise          NO-MATCH-INDEX))
+
+
+(defn full-match-uri-string
+  ^long [uri ^long begin-index string-token]
+  #?(:cljs (full-match-uri-string* uri begin-index string-token)
+      :clj (Util/fullMatchURIString uri begin-index string-token)))
 
 
 ;; ----- routes indexing -----

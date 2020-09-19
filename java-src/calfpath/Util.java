@@ -104,4 +104,67 @@ public class Util {
         return fullURIMatch(pathParams);
     }
 
+    public static final int NO_URI_MATCH_INDEX = -2;
+
+    /**
+     * Match given URI against string token and return {@code beginIndex} as follows:
+     * incremented : partial match
+     * {@code -1}  : full match
+     * {@code -2}  : no match
+     * Attempt partial match when full match is not possible.
+     * @param uri the URI string to match
+     * @param beginIndex beginning index in the URI string to match
+     * @param token URI token string to match against
+     * @return incremented (partial match), -1 (full match) or -2 (no match)
+     */
+    public static int partialMatchURIString(String uri, int beginIndex, String token) {
+        if (beginIndex == 0) {
+            if (uri.startsWith(token)) {
+                final int tokenLength = token.length();
+                return (uri.length() == tokenLength)? FULL_URI_MATCH_INDEX: tokenLength;
+            } else {
+                return NO_URI_MATCH_INDEX;
+            }
+        }
+        if (beginIndex > 0) {
+            if (uri.startsWith(token, beginIndex)) {
+                if ((uri.length() - beginIndex) == token.length()) {
+                    return FULL_URI_MATCH_INDEX;     // full URI match
+                }
+                return beginIndex + token.length();  // partial URI match
+            } else {
+                return NO_URI_MATCH_INDEX;
+            }
+        }
+        if (beginIndex == FULL_URI_MATCH_INDEX) {
+            if ("".equals(token)) return FULL_URI_MATCH_INDEX;
+            return NO_URI_MATCH_INDEX;
+        }
+        return NO_URI_MATCH_INDEX;                  // no URI match
+    }
+
+    /**
+     * Match given URI against string token and return {@code beginIndex} as follows:
+     * {@code -1}  : full match
+     * {@code -2}  : no match
+     * Do not attempt partial match - only attempt full match.
+     * @param uri the URI string to match
+     * @param beginIndex beginning index in the URI string to match
+     * @param token URI token string to match against
+     * @return -1 (full match) or -2 (no match)
+     */
+    public static int fullMatchURIString(String uri, int beginIndex, String token) {
+        if (beginIndex == 0) {
+            return uri.equals(token)? FULL_URI_MATCH_INDEX: NO_URI_MATCH_INDEX;
+        }
+        if (beginIndex > 0) {
+            return (uri.startsWith(token, beginIndex) && (uri.length() - beginIndex) == token.length())?
+                    FULL_URI_MATCH_INDEX: NO_URI_MATCH_INDEX;
+        }
+        if (beginIndex == FULL_URI_MATCH_INDEX) {
+            return ("".equals(token))? FULL_URI_MATCH_INDEX: NO_URI_MATCH_INDEX;
+        }
+        return NO_URI_MATCH_INDEX;                  // no URI match
+    }
+
 }

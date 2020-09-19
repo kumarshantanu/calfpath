@@ -325,40 +325,75 @@
           (let [params-sym    (-> (gensym "uri-params-")
                                 (vary-meta assoc :tag "java.util.Map"))
                 end-index-sym (gensym "end-index-")
-                [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)]
+                [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)
+                uri-str-token (first uri-template)
+                uri-string?   (and (= 1 (count uri-template))
+                                (string? uri-str-token))]
             (-> spec
-              (assoc :matcher (fn uri-matcher [request]
-                                (when-some [^"[Ljava.lang.Object;"
-                                            match-result (i/match-uri (:uri request)
-                                                           (int (i/get-uri-match-end-index request))
-                                                           uri-template partial?)]
-                                  (let [params    (aget match-result 0)
-                                        end-index (aget match-result 1)]
-                                    (cond
-                                      (empty? params)   (i/dassoc request i/uri-match-end-index end-index)
-                                      (nil? params-key) (as-> request $
-                                                          (i/dassoc $ i/uri-match-end-index end-index)
-                                                          (i/reduce-mkv i/dassoc $ params))
-                                      :otherwise        (-> request
-                                                          (i/dassoc i/uri-match-end-index end-index)
-                                                          (update params-key i/conj-maps params)))))))
-              (ensure-matchex (fn [request]
-                                `(when-some [^"[Ljava.lang.Object;"
-                                             match-result# (i/match-uri (:uri ~request)
-                                                             (int (i/get-uri-match-end-index ~request))
-                                                             ~uri-template ~partial?)]
-                                   (let [~params-sym    (aget match-result# 0)
-                                         ~end-index-sym (aget match-result# 1)]
-                                     (if (empty? ~params-sym)
-                                       (i/dassoc ~request
-                                         i/uri-match-end-index ~end-index-sym)
-                                       ~(if (nil? params-key)
-                                          `(as-> ~request $#
-                                             (i/dassoc $# i/uri-match-end-index ~end-index-sym)
-                                             (i/reduce-mkv i/dassoc $# ~params-sym))
-                                          `(-> ~request
-                                             (i/dassoc i/uri-match-end-index ~end-index-sym)
-                                             (update ~params-key i/conj-maps ~params-sym)))))))))))
+              (assoc :matcher (if uri-string?
+                                (if partial?
+                                  (fn uri-matcher-token-partial [request]
+                                    (let [end-index (int (i/get-uri-match-end-index request))
+                                          new-index (i/partial-match-uri-string (:uri request)
+                                                      end-index
+                                                      uri-str-token)]
+                                      (when (>= new-index i/FULL-MATCH-INDEX)
+                                        (i/dassoc request i/uri-match-end-index new-index))))
+                                  (fn uri-matcher-token-full [request]
+                                    (let [end-index (int (i/get-uri-match-end-index request))
+                                          new-index (i/full-match-uri-string (:uri request)
+                                                      end-index
+                                                      uri-str-token)]
+                                      (when (= new-index i/FULL-MATCH-INDEX)
+                                        (i/dassoc request i/uri-match-end-index new-index)))))
+                                (fn uri-matcher [request]
+                                  (when-some [^"[Ljava.lang.Object;"
+                                              match-result (i/match-uri (:uri request)
+                                                             (int (i/get-uri-match-end-index request))
+                                                             uri-template partial?)]
+                                    (let [params    (aget match-result 0)
+                                          end-index (aget match-result 1)]
+                                      (cond
+                                        (empty? params)   (i/dassoc request i/uri-match-end-index end-index)
+                                        (nil? params-key) (as-> request $
+                                                            (i/dassoc $ i/uri-match-end-index end-index)
+                                                            (i/reduce-mkv i/dassoc $ params))
+                                        :otherwise        (-> request
+                                                            (i/dassoc i/uri-match-end-index end-index)
+                                                            (update params-key i/conj-maps params))))))))
+              (ensure-matchex (if uri-string?
+                                (if partial?
+                                  (fn uri-matcher-token-partial [request]
+                                    `(let [end-index# (int (i/get-uri-match-end-index ~request))
+                                           new-index# (i/partial-match-uri-string (:uri ~request)
+                                                        end-index#
+                                                        ~uri-str-token)]
+                                      (when (>= new-index# i/FULL-MATCH-INDEX)
+                                        (i/dassoc ~request i/uri-match-end-index new-index#))))
+                                  (fn uri-matcher-token-full [request]
+                                    `(let [end-index# (int (i/get-uri-match-end-index ~request))
+                                           new-index# (i/full-match-uri-string (:uri ~request)
+                                                        end-index#
+                                                      ~uri-str-token)]
+                                       (when (= new-index# i/FULL-MATCH-INDEX)
+                                         (i/dassoc ~request i/uri-match-end-index new-index#)))))
+                                (fn [request]
+                                  `(when-some [^"[Ljava.lang.Object;"
+                                               match-result# (i/match-uri (:uri ~request)
+                                                               (int (i/get-uri-match-end-index ~request))
+                                                               ~uri-template ~partial?)]
+                                     (let [~params-sym    (aget match-result# 0)
+                                           ~end-index-sym (aget match-result# 1)]
+                                       (if (empty? ~params-sym)
+                                         (i/dassoc ~request
+                                           i/uri-match-end-index ~end-index-sym)
+                                         ~(if (nil? params-key)
+                                            `(as-> ~request $#
+                                               (i/dassoc $# i/uri-match-end-index ~end-index-sym)
+                                               (i/reduce-mkv i/dassoc $# ~params-sym))
+                                            `(-> ~request
+                                               (i/dassoc i/uri-match-end-index ~end-index-sym)
+                                               (update ~params-key i/conj-maps ~params-sym))))))))))))
         spec))))
 
 

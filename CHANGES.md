@@ -13,10 +13,12 @@
   - [Todo] Put URI params under `:path-params` in request
   - Support for easy route syntax
   - Accept `options` argument in function `calfpath.route/make-dispatcher`
-* Performance tweaks (matchex)
-  - Direct handler invocation for identity matcher
-  - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere
-  - Use bulk methods matcher when all routes match methods
+* Performance tweaks
+  - Faster match for static URI string (full/partial)
+  - Matchex
+    - Direct handler invocation for identity matcher
+    - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere
+    - Use bulk methods matcher when all routes match methods
 * Documentation
   - Dispatch macros
   - Data driven routes
