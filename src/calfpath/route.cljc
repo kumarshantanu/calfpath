@@ -338,14 +338,14 @@
                                                       end-index
                                                       uri-str-token)]
                                       (when (>= new-index i/FULL-MATCH-INDEX)
-                                        (i/dassoc request i/uri-match-end-index new-index))))
+                                        (i/assoc-uri-match-end-index request new-index))))
                                   (fn uri-matcher-token-full [request]
                                     (let [end-index (int (i/get-uri-match-end-index request))
                                           new-index (i/full-match-uri-string (:uri request)
                                                       end-index
                                                       uri-str-token)]
                                       (when (= new-index i/FULL-MATCH-INDEX)
-                                        (i/dassoc request i/uri-match-end-index new-index)))))
+                                        (i/assoc-uri-match-end-index request new-index)))))
                                 (fn uri-matcher [request]
                                   (when-some [^"[Ljava.lang.Object;"
                                               match-result (i/match-uri (:uri request)
@@ -354,12 +354,12 @@
                                     (let [params    (aget match-result 0)
                                           end-index (aget match-result 1)]
                                       (cond
-                                        (empty? params)   (i/dassoc request i/uri-match-end-index end-index)
+                                        (empty? params)   (i/assoc-uri-match-end-index request end-index)
                                         (nil? params-key) (as-> request $
-                                                            (i/dassoc $ i/uri-match-end-index end-index)
+                                                            (i/assoc-uri-match-end-index $ end-index)
                                                             (i/reduce-mkv i/dassoc $ params))
                                         :otherwise        (-> request
-                                                            (i/dassoc i/uri-match-end-index end-index)
+                                                            (i/assoc-uri-match-end-index end-index)
                                                             (update params-key i/conj-maps params))))))))
               (ensure-matchex (if uri-string?
                                 (if partial?
@@ -369,14 +369,14 @@
                                                         end-index#
                                                         ~uri-str-token)]
                                       (when (>= new-index# i/FULL-MATCH-INDEX)
-                                        (i/dassoc ~request i/uri-match-end-index new-index#))))
+                                        (i/assoc-uri-match-end-index ~request new-index#))))
                                   (fn uri-matcher-token-full [request]
                                     `(let [end-index# (int (i/get-uri-match-end-index ~request))
                                            new-index# (i/full-match-uri-string (:uri ~request)
                                                         end-index#
                                                       ~uri-str-token)]
                                        (when (= new-index# i/FULL-MATCH-INDEX)
-                                         (i/dassoc ~request i/uri-match-end-index new-index#)))))
+                                         (i/assoc-uri-match-end-index ~request new-index#)))))
                                 (fn [request]
                                   `(when-some [^"[Ljava.lang.Object;"
                                                match-result# (i/match-uri (:uri ~request)
@@ -385,14 +385,13 @@
                                      (let [~params-sym    (aget match-result# 0)
                                            ~end-index-sym (aget match-result# 1)]
                                        (if (empty? ~params-sym)
-                                         (i/dassoc ~request
-                                           i/uri-match-end-index ~end-index-sym)
+                                         (i/assoc-uri-match-end-index ~request ~end-index-sym)
                                          ~(if (nil? params-key)
                                             `(as-> ~request $#
-                                               (i/dassoc $# i/uri-match-end-index ~end-index-sym)
+                                               (i/assoc-uri-match-end-index $# ~end-index-sym)
                                                (i/reduce-mkv i/dassoc $# ~params-sym))
                                             `(-> ~request
-                                               (i/dassoc i/uri-match-end-index ~end-index-sym)
+                                               (i/assoc-uri-match-end-index ~end-index-sym)
                                                (update ~params-key i/conj-maps ~params-sym))))))))))))
         spec))))
 

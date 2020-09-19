@@ -27,6 +27,13 @@
       (expected expectation found))))
 
 
+(defn dassoc
+  "Direct assoc"
+  [a k v]
+  #?(:cljs (assoc a k v)
+     :clj (.assoc ^clojure.lang.Associative a k v)))
+
+
 (defn parse-uri-template
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
   and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
@@ -82,7 +89,7 @@
 
 (defmacro assoc-uri-match-end-index
   [request end-index]
-  `(assoc ~request uri-match-end-index ~end-index))
+  `(dassoc ~request uri-match-end-index ~end-index))
 
 
 (def path-params :calfpath/path-params)
@@ -573,10 +580,3 @@
                                                                            (assoc $ :uri-prefix uri-now)
                                                                            (:nested each-route) options))))))))
     context routes))
-
-
-(defn dassoc
-  "Direct assoc"
-  [a k v]
-  #?(:cljs (assoc a k v)
-      :clj (.assoc ^clojure.lang.Associative a k v)))
