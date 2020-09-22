@@ -353,14 +353,11 @@
                                                              uri-template partial?)]
                                     (let [params    (aget match-result 0)
                                           end-index (aget match-result 1)]
-                                      (cond
-                                        (empty? params)   (i/assoc-uri-match-end-index request end-index)
-                                        (nil? params-key) (as-> request $
-                                                            (i/assoc-uri-match-end-index $ end-index)
-                                                            (i/reduce-mkv i/dassoc $ params))
-                                        :otherwise        (-> request
-                                                            (i/assoc-uri-match-end-index end-index)
-                                                            (update params-key i/conj-maps params))))))))
+                                      (if (empty? params)
+                                        (i/assoc-uri-match-end-index request end-index)
+                                        (-> request
+                                          (i/assoc-uri-match-end-index end-index)
+                                          (update params-key i/conj-maps params))))))))
               (ensure-matchex (if uri-string?
                                 (if partial?
                                   (fn uri-matcher-token-partial [request]
@@ -386,13 +383,9 @@
                                            ~end-index-sym (aget match-result# 1)]
                                        (if (empty? ~params-sym)
                                          (i/assoc-uri-match-end-index ~request ~end-index-sym)
-                                         ~(if (nil? params-key)
-                                            `(as-> ~request $#
-                                               (i/assoc-uri-match-end-index $# ~end-index-sym)
-                                               (i/reduce-mkv i/dassoc $# ~params-sym))
-                                            `(-> ~request
-                                               (i/assoc-uri-match-end-index ~end-index-sym)
-                                               (update ~params-key i/conj-maps ~params-sym))))))))))))
+                                         (-> ~request
+                                           (i/assoc-uri-match-end-index ~end-index-sym)
+                                           (update ~params-key i/conj-maps ~params-sym)))))))))))
         spec))))
 
 
@@ -569,12 +562,12 @@
 
   | Kwarg           | Type  | Description                                                                            |
   |-----------------|-------|----------------------------------------------------------------------------------------|
-  |:easy?`          |boolean|allow easy defnition of routes that translate into regular routes                       |
+  |`:easy?`         |boolean|allow easy defnition of routes that translate into regular routes                       |
   |`:trie?`         |boolean|optimize routes by automatically reorganizing routes as tries                           |
   |`:trie-threshold`|integer|similar routes more than this number will be grouped together                           |
   |`:uri?`          |boolean|true if URI templates should be converted to matchers                                   |
   |`:uri-key`       |non-nil|the key to be used to look up the URI template in a spec                                |
-  |`:params-key`    |any    |the key to put URI params under; if nil (default), params map is merged into request    |
+  |`:params-key`    |non-nil|the key to put URI params under in the request map                                      |
   |`:trailing-slash`|keyword|Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect|
   |`:fallback-400?` |boolean|whether to add a fallback route to respond with HTTP status 400 for unmatched URIs      |
   |`:show-uris-400?`|boolean|whether to add URI templates in the HTTP 400 response (see :fallback-400?)              |
@@ -597,6 +590,7 @@
                  :or {easy?           true
                       trie?           true   trie-threshold 1
                       uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
+                      params-key      :path-params
                       full-uri-key    :full-uri
                       method?         true   method-key  :method  fallback-405? true
                       lift-uri?       true

@@ -184,16 +184,16 @@
 
 
 (def calfpath-routes
-  [{:uri "/user/:id/profile/:type/" :nested [{:method :get :handler (fn [{:keys [id type]}] (h11 id type))}
-                                             {:method :put :handler (fn [{:keys [id type]}] (h12 id type))}
-                                             {:matcher identity :handler (fn [_] (h1x))}]}
-   {:uri "/user/:id/permissions/"   :nested [{:method :get :handler (fn [{:keys [id] :as request}] (h21 id))}
-                                             {:method :put :handler (fn [{:keys [id] :as request}] (h22 id))}
+  [{"/user/:id/profile/:type/" [{:get (fn [{{:keys [id type]} :path-params}] (h11 id type))}
+                                {:put (fn [{{:keys [id type]} :path-params}] (h12 id type))}
+                                {:matcher identity :handler (fn [_] (h1x))}]}
+   {:uri "/user/:id/permissions/"   :nested [{:method :get :handler (fn [{{:keys [id]} :path-params}] (h21 id))}
+                                             {:method :put :handler (fn [{{:keys [id]} :path-params}] (h22 id))}
                                              {:matcher identity :handler (fn [_] (h2x))}]}
-   {:uri "/company/:cid/dept/:did/" :nested [{:method :put :handler (fn [{:keys [cid did] :as request}] (h30 {}))}
-                                             {:matcher identity :handler (fn [_] (h3x))}]}
-   {:uri "/this/is/a/static/route"  :nested [{:method :put :handler (fn [request] (h40))}
-                                             {:matcher identity :handler (fn [_] (h4x))}]}
+   {"/company/:cid/dept/:did/" [{:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))}
+                                {:matcher identity :handler (fn [_] (h3x))}]}
+   {"/this/is/a/static/route"  [{:put (fn [request] (h40))}
+                                {:matcher identity :handler (fn [_] (h4x))}]}
    {:matcher identity :handler (fn [_] (hxx))}])
 
 

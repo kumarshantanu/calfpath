@@ -10,12 +10,13 @@
 ## [WIP] 0.8.0-alpha2 / 2020-September-??
 
 * Routes
-  - [Todo] Put URI params under `:path-params` in request
+  - [BREAKING CHANGE] Put URI params under `:path-params` key in request
   - Support for easy route syntax
   - Accept `options` argument in function `calfpath.route/make-dispatcher`
 * Performance tweaks
   - Faster match for static URI string (full/partial)
   - Use mutable URI end-index for tracking URI match
+  - [Todo] Use mutable map for params (JVM: HashMap, CLJS: transient map)
   - Matchex
     - Direct handler invocation for identity matcher
     - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere

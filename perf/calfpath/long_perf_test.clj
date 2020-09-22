@@ -184,63 +184,63 @@
 
 
 (def opensensors-calfpath-routes
-  [{:uri "/v2/whoami"                                           :method :get :handler handler}
-   {:uri "/v2/users/:user-id/datasets"                          :method :get :handler (fnp [user-id])}
-   {:uri "/v2/public/projects/:project-id/datasets"             :method :get :handler (fnp [project-id])}
-   {:uri "/v1/public/topics/:topic"                             :method :get :handler (fnp [topic])}
-   {:uri "/v1/users/:user-id/orgs/:org-id"                      :method :get :handler (fnp [user-id org-id])}
-   {:uri "/v1/search/topics/:term"                              :method :get :handler (fnp [term])}
-   {:uri "/v1/users/:user-id/invitations"                       :method :get :handler (fnp [user-id])}
-   {:uri "/v1/orgs/:org-id/devices/:batch/:type"                :method :get :handler (fnp [org-id batch type])}
-   {:uri "/v1/users/:user-id/topics"                            :method :get :handler (fnp [user-id])}
-   {:uri "/v1/users/:user-id/bookmarks/followers"               :method :get :handler (fnp [user-id])}
-   {:uri "/v2/datasets/:dataset-id"                             :method :get :handler (fnp [dataset-id])}
-   {:uri "/v1/orgs/:org-id/usage-stats"                         :method :get :handler (fnp [org-id])}
-   {:uri "/v1/orgs/:org-id/devices/:client-id"                  :method :get :handler (fnp [org-id client-id])}
-   {:uri "/v1/messages/user/:user-id"                           :method :get :handler (fnp [user-id])}
-   {:uri "/v1/users/:user-id/devices"                           :method :get :handler (fnp [user-id])}
-   {:uri "/v1/public/users/:user-id"                            :method :get :handler (fnp [user-id])}
-   {:uri "/v1/orgs/:org-id/errors"                              :method :get :handler (fnp [org-id])}
-   {:uri "/v1/public/orgs/:org-id"                              :method :get :handler (fnp [org-id])}
-   {:uri "/v1/orgs/:org-id/invitations"                         :method :get :handler (fnp [org-id])}
-   ;;{:uri "/v2/public/messages/dataset/bulk"                     :method :get :handler handler}
-   ;;{:uri "/v1/users/:user-id/devices/bulk"                      :method :get :handler (fnp [user-id])}
-   {:uri "/v1/users/:user-id/device-errors"                     :method :get :handler (fnp [user-id])}
-   {:uri "/v2/login"                                            :method :get :handler handler}
-   {:uri "/v1/users/:user-id/usage-stats"                       :method :get :handler (fnp [user-id])}
-   {:uri "/v2/users/:user-id/devices"                           :method :get :handler (fnp [user-id])}
-   {:uri "/v1/users/:user-id/claim-device/:client-id"           :method :get :handler (fnp [user-id client-id])}
-   {:uri "/v2/public/projects/:project-id"                      :method :get :handler (fnp [project-id])}
-   {:uri "/v2/public/datasets/:dataset-id"                      :method :get :handler (fnp [dataset-id])}
-   ;;{:uri "/v2/users/:user-id/topics/bulk"                       :method :get :handler (fnp [user-id])}
-   {:uri "/v1/messages/device/:client-id"                       :method :get :handler (fnp [client-id])}
-   {:uri "/v1/users/:user-id/owned-orgs"                        :method :get :handler (fnp [user-id])}
-   {:uri "/v1/topics/:topic"                                    :method :get :handler (fnp [topic])}
-   {:uri "/v1/users/:user-id/bookmark/:topic"                   :method :get :handler (fnp [user-id topic])}
-   {:uri "/v1/orgs/:org-id/members/:user-id"                    :method :get :handler (fnp [org-id user-id])}
-   {:uri "/v1/users/:user-id/devices/:client-id"                :method :get :handler (fnp [user-id client-id])}
-   {:uri "/v1/users/:user-id"                                   :method :get :handler (fnp [user-id])}
-   {:uri "/v1/orgs/:org-id/devices"                             :method :get :handler (fnp [org-id])}
-   {:uri "/v1/orgs/:org-id/members"                             :method :get :handler (fnp [org-id])}
-   {:uri "/v1/orgs/:org-id/members/invitation-data/:user-id"    :method :get :handler (fnp [org-id user-id])}
-   {:uri "/v2/orgs/:org-id/topics"                              :method :get :handler (fnp [org-id])}
-   {:uri "/v1/whoami"                                           :method :get :handler handler}
-   {:uri "/v1/orgs/:org-id"                                     :method :get :handler (fnp [org-id])}
-   {:uri "/v1/users/:user-id/api-key"                           :method :get :handler (fnp [user-id])}
-   {:uri "/v2/schemas"                                          :method :get :handler handler}
-   {:uri "/v2/users/:user-id/topics"                            :method :get :handler (fnp [user-id])}
-   {:uri "/v1/orgs/:org-id/confirm-membership/:token"           :method :get :handler (fnp [org-id token])}
-   {:uri "/v2/topics/:topic"                                    :method :get :handler (fnp [topic])}
-   {:uri "/v1/messages/topic/:topic"                            :method :get :handler (fnp [topic])}
-   {:uri "/v1/users/:user-id/devices/:client-id/reset-password" :method :get :handler (fnp [user-id client-id])}
-   {:uri "/v2/topics"                                           :method :get :handler handler}
-   {:uri "/v1/login"                                            :method :get :handler handler}
-   {:uri "/v1/users/:user-id/orgs"                              :method :get :handler (fnp [user-id])}
-   {:uri "/v2/public/messages/dataset/:dataset-id"              :method :get :handler (fnp [dataset-id])}
-   {:uri "/v1/topics"                                           :method :get :handler handler}
-   {:uri "/v1/orgs"                                             :method :get :handler handler}
-   {:uri "/v1/users/:user-id/bookmarks"                         :method :get :handler (fnp [user-id])}
-   {:uri "/v1/orgs/:org-id/topics"                              :method :get :handler (fnp [org-id])}])
+  [{["/v2/whoami"                                           :get] handler}
+   {["/v2/users/:user-id/datasets"                          :get] (fnpp [user-id])}
+   {["/v2/public/projects/:project-id/datasets"             :get] (fnpp [project-id])}
+   {["/v1/public/topics/:topic"                             :get] (fnpp [topic])}
+   {["/v1/users/:user-id/orgs/:org-id"                      :get] (fnpp [user-id org-id])}
+   {["/v1/search/topics/:term"                              :get] (fnpp [term])}
+   {["/v1/users/:user-id/invitations"                       :get] (fnpp [user-id])}
+   {["/v1/orgs/:org-id/devices/:batch/:type"                :get] (fnpp [org-id batch type])}
+   {["/v1/users/:user-id/topics"                            :get] (fnpp [user-id])}
+   {["/v1/users/:user-id/bookmarks/followers"               :get] (fnpp [user-id])}
+   {["/v2/datasets/:dataset-id"                             :get] (fnpp [dataset-id])}
+   {["/v1/orgs/:org-id/usage-stats"                         :get] (fnpp [org-id])}
+   {["/v1/orgs/:org-id/devices/:client-id"                  :get] (fnpp [org-id client-id])}
+   {["/v1/messages/user/:user-id"                           :get] (fnpp [user-id])}
+   {["/v1/users/:user-id/devices"                           :get] (fnpp [user-id])}
+   {["/v1/public/users/:user-id"                            :get] (fnpp [user-id])}
+   {["/v1/orgs/:org-id/errors"                              :get] (fnpp [org-id])}
+   {["/v1/public/orgs/:org-id"                              :get] (fnpp [org-id])}
+   {["/v1/orgs/:org-id/invitations"                         :get] (fnpp [org-id])}
+   ;;{["/v2/public/messages/dataset/bulk"                     :get] handler}
+   ;;{["/v1/users/:user-id/devices/bulk"                      :get] (fnpp [user-id])}
+   {["/v1/users/:user-id/device-errors"                     :get] (fnpp [user-id])}
+   {["/v2/login"                                            :get] handler}
+   {["/v1/users/:user-id/usage-stats"                       :get] (fnpp [user-id])}
+   {["/v2/users/:user-id/devices"                           :get] (fnpp [user-id])}
+   {["/v1/users/:user-id/claim-device/:client-id"           :get] (fnpp [user-id client-id])}
+   {["/v2/public/projects/:project-id"                      :get] (fnpp [project-id])}
+   {["/v2/public/datasets/:dataset-id"                      :get] (fnpp [dataset-id])}
+   ;;{["/v2/users/:user-id/topics/bulk"                       :get] (fnpp [user-id])}
+   {["/v1/messages/device/:client-id"                       :get] (fnpp [client-id])}
+   {["/v1/users/:user-id/owned-orgs"                        :get] (fnpp [user-id])}
+   {["/v1/topics/:topic"                                    :get] (fnpp [topic])}
+   {["/v1/users/:user-id/bookmark/:topic"                   :get] (fnpp [user-id topic])}
+   {["/v1/orgs/:org-id/members/:user-id"                    :get] (fnpp [org-id user-id])}
+   {["/v1/users/:user-id/devices/:client-id"                :get] (fnpp [user-id client-id])}
+   {["/v1/users/:user-id"                                   :get] (fnpp [user-id])}
+   {["/v1/orgs/:org-id/devices"                             :get] (fnpp [org-id])}
+   {["/v1/orgs/:org-id/members"                             :get] (fnpp [org-id])}
+   {["/v1/orgs/:org-id/members/invitation-data/:user-id"    :get] (fnpp [org-id user-id])}
+   {["/v2/orgs/:org-id/topics"                              :get] (fnpp [org-id])}
+   {["/v1/whoami"                                           :get] handler}
+   {["/v1/orgs/:org-id"                                     :get] (fnpp [org-id])}
+   {["/v1/users/:user-id/api-key"                           :get] (fnpp [user-id])}
+   {["/v2/schemas"                                          :get] handler}
+   {["/v2/users/:user-id/topics"                            :get] (fnpp [user-id])}
+   {["/v1/orgs/:org-id/confirm-membership/:token"           :get] (fnpp [org-id token])}
+   {["/v2/topics/:topic"                                    :get] (fnpp [topic])}
+   {["/v1/messages/topic/:topic"                            :get] (fnpp [topic])}
+   {["/v1/users/:user-id/devices/:client-id/reset-password" :get] (fnpp [user-id client-id])}
+   {["/v2/topics"                                           :get] handler}
+   {["/v1/login"                                            :get] handler}
+   {["/v1/users/:user-id/orgs"                              :get] (fnpp [user-id])}
+   {["/v2/public/messages/dataset/:dataset-id"              :get] (fnpp [dataset-id])}
+   {["/v1/topics"                                           :get] handler}
+   {["/v1/orgs"                                             :get] handler}
+   {["/v1/users/:user-id/bookmarks"                         :get] (fnpp [user-id])}
+   {["/v1/orgs/:org-id/topics"                              :get] (fnpp [org-id])}])
 
 
 (def compiled-calfpath-routes (r/compile-routes opensensors-calfpath-routes {:show-uris-400? true}))

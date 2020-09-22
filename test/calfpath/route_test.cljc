@@ -23,20 +23,6 @@
 
 
 (def all-routes
-  [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
-   {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:lid :rid])}
-   {:uri "/user/:id/profile/:type/"
-    :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
-             {:method :patch  :handler (handler [:id :type]) :name "update.user.profile"}
-             {:method :delete :handler (handler [:id :type]) :name "delete.user.profile"}]}
-   {:uri "/user/:id/permissions/"
-    :nested [{:method :get    :handler (handler [:id]) :name "get.user.permissions"}
-             {:method :post   :handler (handler [:id]) :name "create.user.permission"}
-             {:method :put    :handler (handler [:id]) :name "replace.user.permissions"}]}
-   {:uri "/hello/1234/" :handler (handler [])}])
-
-
-(def pp-all-routes
   [{:uri "/info/:token/"            :method :get :handler (handler [:path-params]) :name "info"}
    {:uri "/album/:lid/artist/:rid/" :method :get :handler (handler [:path-params])}
    {:uri "/user/:id/profile/:type/"
@@ -51,26 +37,6 @@
 
 
 (def all-partial-routes
-  [{:uri "/info/:token/" :method :get :handler (handler [:token]) :name "info"}
-   {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
-   {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:bar-id])}]}
-   {:uri "/v1*" :nested [{:uri "/orgs*" :nested [{:uri "/:org-id/topics" :handler (handler [:org-id])}]}]}
-   {:uri "/album/:lid*"
-    :nested [{:uri "/artist/:rid/"
-              :method :get :handler (handler [:lid :rid])}]}
-   {:uri "/user/:id*"
-    :nested [{:uri "/profile/:type/"
-              :nested [{:method :get    :handler (handler [:id :type]) :name "get.user.profile"}
-                       {:method :patch  :handler (handler [:id :type]) :name "update.user.profile"}
-                       {:method :delete :handler (handler [:id :type]) :name "delete.user.profile"}]}
-             {:uri "/permissions/"
-              :nested [{:method :get    :handler (handler [:id]) :name "get.user.permissions"}
-                       {:method :post   :handler (handler [:id]) :name "create.user.permission"}
-                       {:method :put    :handler (handler [:id]) :name "replace.user.permissions"}]}]}
-   {:uri "/hello/1234/" :handler (handler [])}])
-
-
-(def pp-all-partial-routes
   [{:uri "/info/:token/" :method :get :handler (handler [:path-params]) :name "info"}
    {:uri "/foo*"         :nested [{:method :get :uri "" :handler (handler [])}]}
    {:uri "/bar/:bar-id*" :nested [{:method :get :uri "" :handler (handler [:path-params])}]}
@@ -90,16 +56,10 @@
    {:uri "/hello/1234/" :handler (handler [])}])
 
 
-(def final-routes (r/compile-routes all-routes))
+(def final-routes (r/compile-routes all-routes {:params-key :path-params}))
 
 
-(def pp-final-routes (r/compile-routes pp-all-routes {:params-key :path-params}))
-
-
-(def final-partial-routes (r/compile-routes all-partial-routes))
-
-
-(def pp-final-partial-routes (r/compile-routes pp-all-partial-routes {:params-key :path-params}))
+(def final-partial-routes (r/compile-routes all-partial-routes {:params-key :path-params}))
 
 
 (def flat-400 "400 Bad request. URI does not match any available uri-template.
@@ -124,38 +84,6 @@ Available URI templates:
 
 
 (defn routes-helper
-  [handler body-400]
-  (is (= {:request-method :get
-          :token "status"}
-        (handler {:uri "/info/status/" :request-method :get})))
-  (is (= {:status 405
-          :headers {"Allow" "GET" "Content-Type" "text/plain"}
-          :body "405 Method not supported. Allowed methods are: GET"}
-        (handler {:uri "/info/status/" :request-method :post})))
-  (is (= {:request-method :get
-          :lid "10"
-          :rid "20"}
-        (handler {:uri "/album/10/artist/20/" :request-method :get})))
-  (is (= {:request-method :get
-          :id "id-1"
-          :type "type-2"}
-        (handler {:uri "/user/id-1/profile/type-2/" :request-method :get})))
-  (is (= {:request-method :post
-          :id "id-2"}
-        (handler {:uri "/user/id-2/permissions/"    :request-method :post})))
-  (is (= {:request-method :get}
-        (handler {:uri "/hello/1234/"               :request-method :get})))
-  (is (= {:status 400
-          :headers {"Content-Type" "text/plain"}
-          :body body-400}
-        (handler {:uri "/bad/uri"          :request-method :get})))
-  (is (= {:status 405
-          :headers {"Allow" "GET, POST, PUT", "Content-Type" "text/plain"}
-          :body "405 Method not supported. Allowed methods are: GET, POST, PUT"}
-        (handler {:uri "/user/123/permissions/"     :request-method :bad}))))
-
-
-(defn pp-routes-helper
   [handler body-400]
   (is (= {:request-method :get
           :path-params {:token "status"}}
@@ -192,18 +120,6 @@ Available URI templates:
   (is (= {:request-method :get}
         (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
   (is (= {:request-method :get
-          :bar-id "98"}
-        (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar")
-  (is (= {:request-method :get
-          :org-id "87"}
-        (handler {:uri "/v1/orgs/87/topics" :request-method :get})) "partial termination - v1/org"))
-
-
-(defn pp-partial-routes-helper
-  [handler body-400]
-  (is (= {:request-method :get}
-        (handler {:uri "/foo" :request-method :get})) "partial termination - foo")
-  (is (= {:request-method :get
           :path-params {:bar-id "98"}}
         (handler {:uri "/bar/98" :request-method :get})) "partial termination - bar")
   (is (= {:request-method :get
@@ -212,46 +128,36 @@ Available URI templates:
 
 
 (deftest test-walker
-  (testing "walker"
-    (routes-helper (partial r/dispatch final-routes) flat-400))
   (testing "walker (path params)"
-    (pp-routes-helper (partial r/dispatch pp-final-routes) flat-400))
-  (testing "walker partial"
-    (routes-helper (partial r/dispatch final-partial-routes) partial-400)
-    (partial-routes-helper (partial r/dispatch final-partial-routes) partial-400))
+    (routes-helper (partial r/dispatch final-routes) flat-400))
   (testing "walker partial (path params)"
-    (pp-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)
-    (pp-partial-routes-helper (partial r/dispatch pp-final-partial-routes) partial-400)))
+    (routes-helper (partial r/dispatch final-partial-routes) partial-400)
+    (partial-routes-helper (partial r/dispatch final-partial-routes) partial-400)))
 
 
 #?(:clj (deftest test-unrolled
-          (testing "unrolled"
-            (routes-helper (r/make-dispatcher final-routes) flat-400))
           (testing "unrolled (path params)"
-            (pp-routes-helper (r/make-dispatcher pp-final-routes) flat-400))
-          (testing "unrolled partial"
-            (routes-helper (r/make-dispatcher final-partial-routes) partial-400)
-            (partial-routes-helper (r/make-dispatcher final-partial-routes) partial-400))
+            (routes-helper (r/make-dispatcher final-routes) flat-400))
           (testing "unrolled partial (path params)"
-            (pp-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400)
-            (pp-partial-routes-helper (r/make-dispatcher pp-final-partial-routes) partial-400))))
+            (routes-helper (r/make-dispatcher final-partial-routes) partial-400)
+            (partial-routes-helper (r/make-dispatcher final-partial-routes) partial-400))))
 
 
-(def pp-handler (handler [:path-params :uri]))
+(def er-handler (handler [:path-params :uri]))
 
 
 (def easy-routes
-  [{["/album/:lid/artist/:rid/" :get] pp-handler}
-   {"/hello/1234/"                    pp-handler}
-   {["/info/:token/"            :get] pp-handler}
-   {"/user/:id*" [{"/auth" pp-handler}
-                  {"/permissions/" [{:get  pp-handler}
-                                    {:post pp-handler}
-                                    {:put  pp-handler}]}
-                  {"/profile/:type/" [{:get    pp-handler}
-                                      {:patch  pp-handler}
-                                      {:delete pp-handler}]}
-                  {"" pp-handler}]}])
+  [{["/album/:lid/artist/:rid/" :get] er-handler}
+   {"/hello/1234/"                    er-handler}
+   {["/info/:token/"            :get] er-handler}
+   {"/user/:id*" [{"/auth" er-handler}
+                  {"/permissions/" [{:get  er-handler}
+                                    {:post er-handler}
+                                    {:put  er-handler}]}
+                  {"/profile/:type/" [{:get    er-handler}
+                                      {:patch  er-handler}
+                                      {:delete er-handler}]}
+                  {"" er-handler}]}])
 
 
 (def flat-routes
