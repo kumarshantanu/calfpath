@@ -361,8 +361,7 @@
                                           (i/assoc-uri-match-end-index request end-index)
                                           (-> request
                                             (i/assoc-uri-match-end-index end-index)
-                                            (i/assoc-path-params params-key params)
-                                            #_(update params-key i/conj-maps params)))))))))
+                                            (i/assoc-path-params params-key params)))))))))
               (ensure-matchex (if uri-string?
                                 (if partial?
                                   (fn uri-matcher-token-partial [request]
@@ -394,8 +393,7 @@
                                            (i/assoc-uri-match-end-index ~request ~end-index-sym)
                                            (-> ~request
                                              (i/assoc-uri-match-end-index ~end-index-sym)
-                                             (i/assoc-path-params ~params-key ~params-sym)
-                                             #_(update ~params-key i/conj-maps ~params-sym))))))))))))
+                                             (i/assoc-path-params ~params-key ~params-sym))))))))))))
         spec))))
 
 

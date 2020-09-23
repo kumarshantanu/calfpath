@@ -204,34 +204,6 @@
     (dispatch-expr-generic routes matcher-syms handler-syms request-sym invoke-sym)))
 
 
-(defn conj-maps
-  "Merge two maps efficiently using conj."
-  [old-map new-map]
-  #?(:cljs (conj
-             (if (nil? old-map)
-               {}
-               old-map)
-             new-map)
-     :clj (let [^clojure.lang.APersistentMap apmap (if (nil? old-map)
-                                                     {}
-                                                     old-map)]
-            (.cons apmap new-map))))
-
-
-#?(:cljs (def reduce-mkv reduce-kv)
-    :clj (defn reduce-mkv
-           "Same as clojure.core/reduce-kv for java.util.Map instances."
-           [f init ^Map m]
-           (if (or (nil? m) (.isEmpty m))
-             init
-             (let [i (.iterator (.entrySet m))]
-               (loop [last-result init]
-                 (if (.hasNext i)
-                   (let [^Map$Entry pair (.next i)]
-                     (recur (f last-result (.getKey pair) (.getValue pair))))
-                   last-result))))))
-
-
 (defn invoke
   "Invoke first arg as a function on remaing args."
   ([f]            (f))
