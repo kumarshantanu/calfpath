@@ -16,7 +16,7 @@
 * Performance tweaks
   - Faster match for static URI string (full/partial)
   - Use mutable URI end-index for tracking URI match
-  - [Todo] Use mutable map for params (JVM: HashMap, CLJS: transient map)
+  - Use passthrough params-map from request to add new URI params
   - Matchex
     - Direct handler invocation for identity matcher
     - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere

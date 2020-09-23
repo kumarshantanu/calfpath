@@ -99,9 +99,6 @@
        (dassoc request# uri-match-end-index (volatile! ~end-index)))))
 
 
-(def path-params :calfpath/path-params)
-
-
 (def valid-method-keys #{:get :head :options :patch :put :post :delete})
 
 
@@ -438,7 +435,7 @@
 
 (defn match-uri*
   ^"[Ljava.lang.Object;"
-  [uri ^long begin-index pattern-tokens attempt-partial-match?]
+  [uri begin-index pattern-tokens attempt-partial-match? params-map]
   (let [token-count (count pattern-tokens)
         static-path (first pattern-tokens)]
     (if (= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
@@ -453,7 +450,7 @@
                 FULL-MATCH-NO-PARAMS
                 (when attempt-partial-match?
                   (partial-match (unchecked-add begin-index static-size))))))
-          (loop [path-params  (transient {})
+          (loop [path-params  (transient (or params-map {}))
                  actual-index 0
                  next-tokens  (seq pattern-tokens)]
             (if (and next-tokens (< actual-index actual-len))
@@ -491,9 +488,19 @@
   | begin-index            | index in the URI string to start matching at      |
   | pattern-tokens         | URI pattern tokens to match against               |
   | attempt-partial-match? | flag to indicate whether to attempt partial-match |"
-  [uri ^long begin-index pattern-tokens attempt-partial-match?]
-  #?(:cljs (match-uri* uri begin-index pattern-tokens attempt-partial-match?)
-      :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match?)))
+  ([uri begin-index pattern-tokens attempt-partial-match?]
+   (match-uri uri begin-index pattern-tokens attempt-partial-match? nil))
+  ([uri begin-index pattern-tokens attempt-partial-match? params-map]
+   #?(:cljs (match-uri* uri begin-index pattern-tokens attempt-partial-match? params-map)
+       :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match? params-map))))
+
+
+(defn assoc-path-params
+  [request params-key params-map]
+  #?(:cljs (dassoc request params-key params-map)
+      :clj (if (contains? request params-key)
+             request
+             (dassoc request params-key params-map))))
 
 
 (defn partial-match-uri-string*

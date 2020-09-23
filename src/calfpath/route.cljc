@@ -347,17 +347,22 @@
                                       (when (= new-index i/FULL-MATCH-INDEX)
                                         (i/assoc-uri-match-end-index request new-index)))))
                                 (fn uri-matcher [request]
-                                  (when-some [^"[Ljava.lang.Object;"
-                                              match-result (i/match-uri (:uri request)
-                                                             (int (i/get-uri-match-end-index request))
-                                                             uri-template partial?)]
-                                    (let [params    (aget match-result 0)
-                                          end-index (aget match-result 1)]
-                                      (if (empty? params)
-                                        (i/assoc-uri-match-end-index request end-index)
-                                        (-> request
-                                          (i/assoc-uri-match-end-index end-index)
-                                          (update params-key i/conj-maps params))))))))
+                                  (let [begin-index (int (i/get-uri-match-end-index request))
+                                        params-map (if (zero? begin-index)
+                                                     nil
+                                                     (get request params-key))]
+                                    (when-some [^"[Ljava.lang.Object;"
+                                                match-result (i/match-uri (:uri request)
+                                                               begin-index
+                                                               uri-template partial? params-map)]
+                                      (let [params    (aget match-result 0)
+                                            end-index (aget match-result 1)]
+                                        (if (empty? params)
+                                          (i/assoc-uri-match-end-index request end-index)
+                                          (-> request
+                                            (i/assoc-uri-match-end-index end-index)
+                                            (i/assoc-path-params params-key params)
+                                            #_(update params-key i/conj-maps params)))))))))
               (ensure-matchex (if uri-string?
                                 (if partial?
                                   (fn uri-matcher-token-partial [request]
@@ -375,17 +380,22 @@
                                        (when (= new-index# i/FULL-MATCH-INDEX)
                                          (i/assoc-uri-match-end-index ~request new-index#)))))
                                 (fn [request]
-                                  `(when-some [^"[Ljava.lang.Object;"
-                                               match-result# (i/match-uri (:uri ~request)
-                                                               (int (i/get-uri-match-end-index ~request))
-                                                               ~uri-template ~partial?)]
-                                     (let [~params-sym    (aget match-result# 0)
-                                           ~end-index-sym (aget match-result# 1)]
-                                       (if (empty? ~params-sym)
-                                         (i/assoc-uri-match-end-index ~request ~end-index-sym)
-                                         (-> ~request
-                                           (i/assoc-uri-match-end-index ~end-index-sym)
-                                           (update ~params-key i/conj-maps ~params-sym)))))))))))
+                                  `(let [begin-index# (int (i/get-uri-match-end-index ~request))
+                                         params-map# (if (zero? begin-index#)
+                                                       nil
+                                                       (get ~request ~params-key))]
+                                     (when-some [^"[Ljava.lang.Object;"
+                                                 match-result# (i/match-uri (:uri ~request)
+                                                                 begin-index#
+                                                                 ~uri-template ~partial? params-map#)]
+                                       (let [~params-sym    (aget match-result# 0)
+                                             ~end-index-sym (aget match-result# 1)]
+                                         (if (empty? ~params-sym)
+                                           (i/assoc-uri-match-end-index ~request ~end-index-sym)
+                                           (-> ~request
+                                             (i/assoc-uri-match-end-index ~end-index-sym)
+                                             (i/assoc-path-params ~params-key ~params-sym)
+                                             #_(update ~params-key i/conj-maps ~params-sym))))))))))))
         spec))))
 
 

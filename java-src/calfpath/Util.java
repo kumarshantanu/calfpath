@@ -47,7 +47,8 @@ public class Util {
      * @param attemptPartialMatch whether attempt partial match when full match is not possible
      * @return                    a match result on successful match, {@literal null} otherwise
      */
-    public static Object[] matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch) {
+    public static Object[] matchURI(String uri, int beginIndex, List<?> patternTokens, boolean attemptPartialMatch,
+            Map<Object, String> paramsMap) {
         final int tokenCount = patternTokens.size();
         final Object firstToken = patternTokens.get(0);
         if (beginIndex == FULL_URI_MATCH_INDEX) { // if already a full-match then no need to match further
@@ -67,7 +68,8 @@ public class Util {
             }
         }
         final int uriLength = uri.length();
-        final Map<Object, String> pathParams = new HashMap<Object, String>(tokenCount);
+        final Map<Object, String> pathParams = (paramsMap == null || paramsMap.isEmpty())?
+                new HashMap<Object, String>(tokenCount): paramsMap;
         int uriIndex = beginIndex;
         OUTER:
         for (final Object token: patternTokens) {
