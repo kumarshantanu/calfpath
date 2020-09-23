@@ -66,7 +66,7 @@ Example:
 ```edn
 [{:matcher m1 :nested [{:matcher m1-1 :handler h1-1}
                        {:matcher m1-2 :handler h1-2}]}
- {:matcher m1 :handler h1}]
+ {:matcher m2 :handler h2}]
 ```
 
 Synopsis:
@@ -89,7 +89,7 @@ A route handler is a function with same arity and semantics as a Ring handler.
 ```clojure
 (defn list-user-jobs
   "Route handler for listing user jobs."
-  [{:keys [user-id] :as request}]
+  [{{:keys [user-id] :path-params} :as request}]
   [:job-id 1
    :job-id 2])
 ```
