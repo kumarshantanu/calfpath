@@ -408,7 +408,8 @@
 (defn match-uri*
   ^"[Ljava.lang.Object;"
   [uri begin-index pattern-tokens attempt-partial-match? params-map]
-  (let [token-count (count pattern-tokens)
+  (let [begin-index (int begin-index)
+        token-count (count pattern-tokens)
         static-path (first pattern-tokens)]
     (if (= begin-index FULL-MATCH-INDEX)  ; if already a full-match then no need to match any further
       (when (and (= 1 token-count) (= "" static-path))
