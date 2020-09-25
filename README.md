@@ -20,7 +20,7 @@ routing and reverse-routing.
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.8.0-alpha2-SNAPSHOT"]` (requires Clojure 1.8 or later)
+Leiningen dependency: `[calfpath "0.8.0-alpha2"]` (requires Clojure 1.8 or later)
 
 Require namespace:
 ```clojure
@@ -28,7 +28,6 @@ Require namespace:
                                   ->get ->head ->options ->patch ->put ->post ->delete]])
 (require '[calfpath.route :as r])
 ```
-
 
 ### Direct HTTP URI/method dispatch
 
@@ -64,8 +63,7 @@ When you need to dispatch on URI pattern with convenient API:
                                             :body "output"})))
 ```
 
-
-### Data-driven Routes abstraction
+### Data-driven routes
 
 Calfpath supports data-driven _routes_ where every route is a map of certain keys. Routes are easy to
 extend and re-purpose. See an example below (where route-handler has the same arity as a Ring handler):
@@ -99,9 +97,10 @@ extend and re-purpose. See an example below (where route-handler has the same ar
     r/make-dispatcher))
 ```
 
+
 ## Documentation
 
-See [documentation page](doc/intro.md) for concepts and examples.
+See [documentation page](doc/intro.md) for concepts, examples and more features.
 
 
 ## Development

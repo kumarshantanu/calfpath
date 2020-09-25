@@ -5,9 +5,11 @@
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO - BREAKING CHANGE] Consider `clojure.walk` as routes navigation tool
+* [TODO] Change internal `spec` references to route
+* [TODO] Include [quickstart] complete server examples using Ring and Machhiato
 
 
-## [WIP] 0.8.0-alpha2 / 2020-September-??
+## 0.8.0-alpha2 / 2020-September-25
 
 * Routes
   - [BREAKING CHANGE] Put URI params under `:path-params` key in request

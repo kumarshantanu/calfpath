@@ -1,4 +1,4 @@
-(defproject calfpath "0.8.0-alpha2-SNAPSHOT"
+(defproject calfpath "0.8.0-alpha2"
   :description "A la carte ring request matching"
   :url "https://github.com/kumarshantanu/calfpath"
   :license {:name "Eclipse Public License"
