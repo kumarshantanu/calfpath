@@ -130,7 +130,11 @@
         "/user/:id/permissions/"   (h2x)
         "/company/:cid/dept/:did/" (h3x)
         "/this/is/a/static/route"  (h4x)
-        (hxx)))))
+        (hxx)))
+    ;; as per https://github.com/kumarshantanu/calfpath/pull/12
+    {;; :inject-match? false
+     :inject-router? false
+     :reitit.trie/parameters reitit.trie/record-parameters}))
 
 
 (defmacro cond-let
