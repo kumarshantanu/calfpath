@@ -9,6 +9,11 @@
 * [TODO] Include [quickstart] complete server examples using Ring and Machhiato
 
 
+## [WIP] 0.8.0-alpha3 / 2020-October-??
+
+* [Todo] Update Reitit benchmark parameters
+
+
 ## 0.8.0-alpha2 / 2020-September-25
 
 * Routes
