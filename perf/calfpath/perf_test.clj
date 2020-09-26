@@ -119,20 +119,18 @@
   (reitit/ring-handler
     (reitit/router
       [["/user/:id/profile/:type/" {:get (fn [{{:keys [id type]} :path-params}] (h11 id type))
-                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))}]
+                                    :put (fn [{{:keys [id type]} :path-params}] (h12 id type))
+                                    :handler (constantly (h1x))}]
        ["/user/:id/permissions/"   {:get (fn [{{:keys [id]} :path-params}] (h21 id))
-                                    :put (fn [{{:keys [id]} :path-params}] (h22 id))}]
-       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))}]
-       ["/this/is/a/static/route"  {:put (fn [_] (h40))}]])
-    (fn [request]
-      (case (get-in request [:reitit.core/match :template])
-        "/user/:id/profile/:type/" (h1x)
-        "/user/:id/permissions/"   (h2x)
-        "/company/:cid/dept/:did/" (h3x)
-        "/this/is/a/static/route"  (h4x)
-        (hxx)))
-    ;; as per https://github.com/kumarshantanu/calfpath/pull/12
-    {;; :inject-match? false
+                                    :put (fn [{{:keys [id]} :path-params}] (h22 id))
+                                    :handler (constantly (h2x))}]
+       ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))
+                                    :handler (constantly (h3x))}]
+       ["/this/is/a/static/route"  {:put (fn [_] (h40))
+                                    :handler (constantly (h4x))}]])
+    (constantly (hxx))
+    ;; as per https://github.com/kumarshantanu/calfpath/pull/12 comments
+    {:inject-match? false
      :inject-router? false
      :reitit.trie/parameters reitit.trie/record-parameters}))
 

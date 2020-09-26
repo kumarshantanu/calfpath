@@ -111,7 +111,12 @@
        ["/v1/topics"                                           {:get handler}]
        ["/v1/orgs"                                             {:get handler}]
        ["/v1/users/:user-id/bookmarks"                         {:get (fnpp [user-id])}]
-       ["/v1/orgs/:org-id/topics"                              {:get (fnpp [org-id])}]])))
+       ["/v1/orgs/:org-id/topics"                              {:get (fnpp [org-id])}]])
+    nil
+    ;; as per https://github.com/kumarshantanu/calfpath/pull/12 comments
+    {:inject-match? false
+     :inject-router? false
+     :reitit.trie/parameters reitit.trie/record-parameters}))
 
 
 (defn handler-calfpath [request]
