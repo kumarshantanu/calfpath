@@ -442,7 +442,7 @@
                 (full-match (persistent! path-params))))))))))
 
 
-(defn match-uri
+(defmacro match-uri
   "Match given URI string against URI pattern, returning a vector `[params-map ^int end-index]` on success,
   and `nil` on no match.
 
@@ -453,18 +453,32 @@
   | pattern-tokens         | URI pattern tokens to match against               |
   | attempt-partial-match? | flag to indicate whether to attempt partial-match |"
   ([uri begin-index pattern-tokens attempt-partial-match?]
-   (match-uri uri begin-index pattern-tokens attempt-partial-match? nil))
+   `(match-uri ~uri ~begin-index ~pattern-tokens ~attempt-partial-match? nil))
   ([uri begin-index pattern-tokens attempt-partial-match? params-map]
-   #?(:cljs (match-uri* uri begin-index pattern-tokens attempt-partial-match? params-map)
-       :clj (Util/matchURI uri begin-index pattern-tokens attempt-partial-match? params-map))))
+   ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+   ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+   ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+   ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+   (if (:ns &env)
+     ;; CLJS
+     `(match-uri* ~uri ~begin-index ~pattern-tokens ~attempt-partial-match? ~params-map)
+     ;; CLJ
+     `(Util/matchURI ~uri ~begin-index ~pattern-tokens ~attempt-partial-match? ~params-map))))
 
 
-(defn assoc-path-params
+(defmacro assoc-path-params
   [request params-key params-map]
-  #?(:cljs (dassoc request params-key params-map)
-      :clj (if (contains? request params-key)
-             request
-             (dassoc request params-key params-map))))
+  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+  (if (:ns &env)
+    ;; CLJS
+    `(dassoc ~request ~params-key ~params-map)
+    ;; CLJ
+    `(if (contains? ~request ~params-key)
+       ~request
+       (dassoc ~request ~params-key ~params-map))))
 
 
 (defn partial-match-uri-string*
@@ -490,10 +504,17 @@
     :otherwise          NO-MATCH-INDEX))
 
 
-(defn partial-match-uri-string
-  ^long [uri ^long begin-index string-token]
-  #?(:cljs (partial-match-uri-string* uri begin-index string-token)
-      :clj (Util/partialMatchURIString uri begin-index string-token)))
+(defmacro partial-match-uri-string
+  [uri begin-index string-token]
+  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+  (if (:ns &env)
+    ;; CLJS
+    `(partial-match-uri-string* ~uri ~begin-index ~string-token)
+    ;; CLJ
+    `(Util/partialMatchURIString ~uri ~begin-index ~string-token)))
 
 
 (defn full-match-uri-string*
