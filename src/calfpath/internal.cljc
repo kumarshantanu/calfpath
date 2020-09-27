@@ -15,7 +15,7 @@
   #?(:clj (:import
             [java.util Map Map$Entry]
             [clojure.lang Associative]
-            [calfpath Util])))
+            [calfpath Util VolatileInt])))
 
 
 (defn expected
@@ -85,20 +85,41 @@
 
 (defmacro get-uri-match-end-index
   [request]
-  `(if-some [v# (get ~request uri-match-end-index)]
-     @v#
-     0))
+  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+  (let [vsym (gensym)]
+    `(if-some [~vsym (get ~request uri-match-end-index)]
+       ~(if (:ns &env)
+          ;; CLJS
+          `(deref ~vsym)
+          ;; CLJ
+          `(VolatileInt/deref ~vsym))
+       0)))
 
 
 (defmacro assoc-uri-match-end-index
   [request end-index]
-  `(let [request# ~request]
-     (if-some [v# (get request# uri-match-end-index)]
-       (do
-         (vreset! v# ~end-index)
-         request#)
-       (dassoc request# uri-match-end-index (volatile! ~end-index)))))
-
+  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
+  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
+  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
+  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
+  (let [vsym (gensym)]
+    `(let [request# ~request]
+       (if-some [~vsym (get request# uri-match-end-index)]
+         (do
+           ~(if (:ns &env)
+              ;; CLJS
+              `(vreset! ~vsym ~end-index)
+              ;; CLJ
+              `(VolatileInt/reset ~vsym ~end-index))
+           request#)
+         (dassoc request# uri-match-end-index ~(if (:ns &env)
+                                                 ;; CLJS
+                                                 `(volatile! ~end-index)
+                                                 ;; CLJ
+                                                 `(VolatileInt/create ~end-index)))))))
 
 (def valid-method-keys #{:get :head :options :patch :put :post :delete})
 

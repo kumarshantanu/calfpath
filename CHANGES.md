@@ -11,7 +11,12 @@
 
 ## [WIP] 0.8.0-alpha3 / 2020-October-??
 
-* [Todo] Update Reitit benchmark parameters
+* Performance tweaks
+  - Update Reitit benchmark parameters
+  - Use macros for better inlining
+  - Use `VolatileInt` as a mutable container for index
+  - [Todo] Optimized matcher for trie-fied routes
+    - Constant time dispatch for string tokens
 
 
 ## 0.8.0-alpha2 / 2020-September-25
