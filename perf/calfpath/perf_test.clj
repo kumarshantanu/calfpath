@@ -229,14 +229,14 @@
   (testing "no URI match"
     (let [request {:request-method :get
                    :uri "/hello/joe/"}]
-      (test-compare-perf "no URI match"
+      (test-compare-perf (str "no URI match: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "no method match"
     (let [request {:request-method :post
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "no method match"
+      (test-compare-perf (str "no method match: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
@@ -246,20 +246,20 @@
   (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (test-compare-perf "static URI match, 1 method"
+      (test-compare-perf (str "static URI match, 1 method: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "pattern URI match, 2 methods"
+      (test-compare-perf (str "pattern URI match, 2 methods: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
-      (test-compare-perf "pattern URI match, 1 method"
+      (test-compare-perf (str "pattern URI match, 1 method: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))

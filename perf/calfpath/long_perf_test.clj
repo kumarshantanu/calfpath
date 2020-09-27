@@ -285,19 +285,19 @@
   (testing "early"
     (let [request {:request-method :get
                    :uri "/v2/whoami"}]
-      (test-compare-perf "(early) static URI"
+      (test-compare-perf (str "(early) static URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "mid"
     (let [request {:request-method :get
                    :uri "/v2/login"}]
-      (test-compare-perf "(mid) static URI"
+      (test-compare-perf (str "(mid) static URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "late"
     (let [request {:request-method :get
                    :uri "/v1/orgs"}]
-      (test-compare-perf "(late) static URI"
+      (test-compare-perf (str "(late) static URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
 
@@ -306,18 +306,18 @@
   (testing "early"
     (let [request {:request-method :get
                    :uri "/v2/users/1234/datasets"}]
-      (test-compare-perf "(early) dynamic URI"
+      (test-compare-perf (str "(early) dynamic URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
   (testing "mid"
     (let [request {:request-method :get
                    :uri "/v2/public/projects/4567"}]
-      (test-compare-perf "(mid) dynamic URI"
+      (test-compare-perf (str "(mid) dynamic URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "late"
     (let [request {:request-method :get
                    :uri "/v1/orgs/6789/topics"}]
-      (test-compare-perf "(late) dynamic URI"
+      (test-compare-perf (str "(late) dynamic URI: " (pr-str request))
         (handler-reitit request) (handler-calfpath request)
         (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))))
