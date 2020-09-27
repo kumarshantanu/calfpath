@@ -14,6 +14,7 @@
     [clojure.string :as string])
   #?(:clj (:import
             [java.util Map Map$Entry]
+            [clojure.lang Associative]
             [calfpath Util])))
 
 
@@ -31,7 +32,7 @@
   "Direct assoc"
   [a k v]
   #?(:cljs (assoc a k v)
-     :clj (.assoc ^clojure.lang.Associative a k v)))
+      :clj (.assoc ^clojure.lang.Associative a k v)))
 
 
 (defn parse-uri-template
