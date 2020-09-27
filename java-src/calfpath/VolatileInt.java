@@ -25,7 +25,7 @@ public class VolatileInt {
         return value;
     }
 
-    public static int deref(VolatileInt v) {
+    public static long deref(VolatileInt v) {
         return v.value;
     }
 
