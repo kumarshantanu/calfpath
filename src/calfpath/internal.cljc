@@ -380,29 +380,20 @@
 (def ^:const NO-MATCH-INDEX -2)
 
 
-(def FULL-MATCH-INDEX-OBJECT FULL-MATCH-INDEX)
-
-
 (def ^"[Ljava.lang.Object;" FULL-MATCH-NO-PARAMS (object-array [NO-PARAMS FULL-MATCH-INDEX]))
 
 
 (defn partial-match
   (^"[Ljava.lang.Object;" [end-index]        #?(:cljs (array NO-PARAMS end-index)
-                                                 :clj (doto ^"[Ljava.lang.Object;" (object-array 2)
-                                                        (aset 0 NO-PARAMS)
-                                                        (aset 1 end-index))))
+                                                 :clj (Util/array NO-PARAMS end-index)))
   (^"[Ljava.lang.Object;" [params end-index] #?(:cljs (array params end-index)
-                                                 :clj (doto (object-array 2)
-                                                        (aset 0 params)
-                                                        (aset 1 end-index)))))
+                                                 :clj (Util/array params end-index))))
 
 
 (defn full-match
   ^"[Ljava.lang.Object;" [params]
   #?(:cljs (array params FULL-MATCH-INDEX)
-      :clj (doto ^"[Ljava.lang.Object;" (object-array 2)
-             (aset 0 params)
-             (aset 1 FULL-MATCH-INDEX-OBJECT))))
+      :clj (Util/array params FULL-MATCH-INDEX)))
 
 
 (defn match-uri*

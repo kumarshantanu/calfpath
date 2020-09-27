@@ -169,4 +169,8 @@ public class Util {
         return NO_URI_MATCH_INDEX;                  // no URI match
     }
 
+    public static Object[] array(Object obj1, Object obj2) {
+        return new Object[] {obj1, obj2};
+    }
+
 }
