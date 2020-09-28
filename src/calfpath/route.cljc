@@ -13,7 +13,9 @@
     [clojure.set :as set]
     [clojure.string :as string]
     [calfpath.internal :as i])
-  #?(:clj (:import [clojure.lang Associative])))
+  #?(:clj (:import
+            [clojure.lang Associative]
+            [calfpath Util])))
 
 
 (defn dispatch
@@ -335,7 +337,9 @@
                                 (if partial?
                                   (fn static-uri-matcher-partial [request]
                                     (let [end-index (int (i/get-uri-match-end-index request))
-                                          new-index (i/partial-match-uri-string (:uri request)
+                                          new-index (#?(:cljs i/partial-match-uri-string
+                                                        :clj  Util/partialMatchURIString)
+                                                      (:uri request)
                                                       end-index
                                                       uri-str-token)]
                                       (when (>= new-index i/FULL-MATCH-INDEX)
@@ -379,7 +383,7 @@
                                 (if partial?
                                   (fn uri-matcher-token-partial [request]
                                     `(let [end-index# (int (i/get-uri-match-end-index ~request))
-                                           new-index# (i/partial-match-uri-string (:uri ~request)
+                                           new-index# (Util/partialMatchURIString (:uri ~request)
                                                         end-index#
                                                         ~uri-str-token)]
                                        (when (>= new-index# i/FULL-MATCH-INDEX)
