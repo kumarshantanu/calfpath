@@ -17,7 +17,6 @@
   - Rename fn `calfpath.route/routes->wildcard-trie` to `routes->wildcard-tidy`
 * Performance tweaks
   - Update Reitit benchmark parameters
-  - Use macros for better inlining
   - Use `VolatileInt` as a mutable container for index
 
 
