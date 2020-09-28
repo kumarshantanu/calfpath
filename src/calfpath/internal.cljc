@@ -242,7 +242,7 @@
       x)))
 
 
-;; helpers for `routes -> wildcard trie`
+;; helpers for `routes -> wildcard tidy`
 
 
 (defn split-routes-having-uri
@@ -321,14 +321,14 @@
                           token-count])))
 
 
-(declare triefy-all)
+(declare tidyfy-all)
 
 
-(defn triefy [routes-with-uri ^long trie-threshold uri-key]  ; return vector of routes
+(defn tidyfy [routes-with-uri ^long tidy-threshold uri-key]  ; return vector of routes
   (expected vector?          "vector of routes" routes-with-uri)
   (expected #(every? map? %) "vector of route-maps" routes-with-uri)
   (expected (every-pred
-              integer? pos?) "a positive integer" trie-threshold)
+              integer? pos?) "a positive integer" tidy-threshold)
   (expected some?            "a non-nil uri-key" uri-key)
   (let [routes-uri-tokens (tokenize-routes-uris routes-with-uri uri-key)  ; [ [t1 t2 ..] [t1 t2 ..] ...]
         [prefix-tokens
@@ -341,7 +341,7 @@
         :nested (as-> token-vectors $
                   (mapv (fn [route tokens]
                           (assoc route uri-key (string/join "/" tokens))) routes-with-uri $)
-                  (triefy-all $ trie-threshold uri-key))}]
+                  (tidyfy-all $ tidy-threshold uri-key))}]
       ;; we need to find URI-prefix groups now
       (let [[first-tokens
              first-count] (find-discriminator-tokens routes-uri-tokens)
@@ -356,7 +356,7 @@
             (sort-by (comp str last))  ; turn keywords into string for comparison
             (partition-by last)
             (reduce (fn [result-routes batch]
-                      (if (> (count batch) trie-threshold)
+                      (if (> (count batch) tidy-threshold)
                         (let [[sub-prefix-tokens _] (-> (mapv first batch)
                                                       (tokenize-routes-uris uri-key)  ; [ [t1 t2 ..] [t1 t2 ..] ...]
                                                       (find-prefix-tokens-pair))      ; look-ahead prefix tokens
@@ -372,7 +372,7 @@
                                                                         (string/join "/")
                                                                         (str "/"))
                                                                       ""))) $)
-                                           (triefy-all $ trie-threshold uri-key))}))
+                                           (tidyfy-all $ tidy-threshold uri-key))}))
                         (->> batch
                           (mapv first)
                           (into result-routes))))
@@ -380,13 +380,13 @@
           routes-with-uri)))))
 
 
-(defn triefy-all
-  [routes ^long trie-threshold uri-key]
+(defn tidyfy-all
+  [routes ^long tidy-threshold uri-key]
   (expected (every-pred
-              integer? pos?) "value of :trie-threshold must be positive integer" trie-threshold)
+              integer? pos?) "value of :tidy-threshold must be positive integer" tidy-threshold)
   (let [[with-uri no-uri] (split-routes-having-uri routes uri-key)]
-    (if (> (count with-uri) trie-threshold)
-      (-> (triefy with-uri trie-threshold uri-key)
+    (if (> (count with-uri) tidy-threshold)
+      (-> (tidyfy with-uri tidy-threshold uri-key)
         vec
         (into no-uri))
       routes)))

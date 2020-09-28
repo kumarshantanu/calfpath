@@ -11,12 +11,14 @@
 
 ## [WIP] 0.8.0-alpha3 / 2020-October-??
 
+* [BREAKING since 0.8.0-alpha1] Rename w.r.t. `calfpath.route/compile-routes`
+  - Rename kwarg `:trie?` to `:tidy?`
+  - Rename kwarg `:trie-threshold` to `:tidy-threshold`
+  - Rename fn `calfpath.route/routes->wildcard-trie` to `routes->wildcard-tidy`
 * Performance tweaks
   - Update Reitit benchmark parameters
   - Use macros for better inlining
   - Use `VolatileInt` as a mutable container for index
-  - [Todo] Optimized matcher for trie-fied routes
-    - Constant time dispatch for string tokens
 
 
 ## 0.8.0-alpha2 / 2020-September-25

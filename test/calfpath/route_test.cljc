@@ -174,7 +174,7 @@ Available URI templates:
    {:uri "/hello/1234/"  }])
 
 
-(def trie-routes
+(def tidy-routes
   [{:uri "/album/:lid/artist/:rid/" :method :get}
    {:uri "/hello/1234/"                         }
    {:uri "/info/:token/"            :method :get}
@@ -197,16 +197,16 @@ Available URI templates:
 
 
 (deftest test-easy-routes
-  (is (= trie-routes
+  (is (= tidy-routes
         (deep-dissoc
           (r/easy-routes easy-routes :uri :method)
           :handler))))
 
 
-(deftest test-routes->wildcard-trie
-  (is (= trie-routes
+(deftest test-routes->wildcard-tidy
+  (is (= tidy-routes
         (-> flat-routes
-          (r/update-routes r/routes->wildcard-trie {:trie-threshold 2})))))
+          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2})))))
 
 
 (def indexable-routes

@@ -486,15 +486,15 @@
       routes)))
 
 
-(defn routes->wildcard-trie
-  "Given a bunch of routes, segment them by prefix URI-tokens into a trie-like structure for faster match."
-  ([routes {:keys [trie-threshold uri-key]
-            :or {trie-threshold 1  ; agressive by default
+(defn routes->wildcard-tidy
+  "Given a bunch of routes, segment them by prefix URI-tokens into a branched structure for faster match."
+  ([routes {:keys [tidy-threshold uri-key]
+            :or {tidy-threshold 1  ; agressive by default
                  uri-key :uri}
             :as options}]
-    (i/triefy-all routes trie-threshold uri-key))
+    (i/tidyfy-all routes tidy-threshold uri-key))
   ([routes]
-    (routes->wildcard-trie routes {})))
+    (routes->wildcard-tidy routes {})))
 
 
 ;; ----- route middleware -----
@@ -571,8 +571,8 @@
   | Kwarg           | Type  | Description                                                                            |
   |-----------------|-------|----------------------------------------------------------------------------------------|
   |`:easy?`         |boolean|allow easy defnition of routes that translate into regular routes                       |
-  |`:trie?`         |boolean|optimize routes by automatically reorganizing routes as tries                           |
-  |`:trie-threshold`|integer|similar routes more than this number will be grouped together                           |
+  |`:tidy?`         |boolean|optimize URI routes by automatically reorganizing routes                                |
+  |`:tidy-threshold`|integer|similar routes more than this number will be grouped together                           |
   |`:uri?`          |boolean|true if URI templates should be converted to matchers                                   |
   |`:uri-key`       |non-nil|the key to be used to look up the URI template in a spec                                |
   |`:params-key`    |non-nil|the key to put URI params under in the request map                                      |
@@ -588,7 +588,7 @@
 
   See: [[dispatch]], [[make-dispatcher]] (Clojure/JVM only), [[make-index]]"
   ([route-specs {:keys [easy?
-                        trie?           trie-threshold
+                        tidy?           tidy-threshold
                         uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
                         params-key
                         method?         method-key fallback-405?
@@ -596,7 +596,7 @@
                         lift-uri?
                         ring-handler? ring-handler-key]
                  :or {easy?           true
-                      trie?           true   trie-threshold 1
+                      tidy?           true   tidy-threshold 1
                       uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
                       params-key      :path-params
                       full-uri-key    :full-uri
@@ -609,7 +609,7 @@
                                              specs))]
       (-> route-specs
         (when-> easy?                       easy-routes uri-key method-key)
-        (when-> trie?                       update-routes routes->wildcard-trie {:trie-threshold trie-threshold
+        (when-> tidy?                       update-routes routes->wildcard-tidy {:tidy-threshold tidy-threshold
                                                                                  :uri-key uri-key})
         (when-> (and uri? method?
                   lift-uri?)                update-each-route lift-key-middleware [uri-key] [method-key])
