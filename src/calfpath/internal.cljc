@@ -83,43 +83,24 @@
 (def ^:const uri-match-end-index :calfpath/uri-match-end-index)
 
 
-(defmacro get-uri-match-end-index
-  [request]
-  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
-  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
-  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
-  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
-  (let [vsym (gensym)]
-    `(if-some [~vsym (get ~request uri-match-end-index)]
-       ~(if (:ns &env)
-          ;; CLJS
-          `(deref ~vsym)
-          ;; CLJ
-          `(VolatileInt/deref ~vsym))
-       0)))
+(defn get-uri-match-end-index
+  ^long [request]
+  (if-some [vol (get request uri-match-end-index)]
+    #?(:cljs (deref vol)
+        :clj (VolatileInt/deref vol))
+    0))
 
 
-(defmacro assoc-uri-match-end-index
-  [request end-index]
-  ;; In CLJS `defmacro` is called by ClojureJVM, hence reader conditionals always choose :clj -
-  ;; so we discover the environment using a hack (:ns &env), which returns truthy for CLJS.
-  ;; Reference: https://groups.google.com/forum/#!topic/clojure/DvIxYnO1QLQ
-  ;; Reference: https://dev.clojure.org/jira/browse/CLJ-1750
-  (let [vsym (gensym)]
-    `(let [request# ~request]
-       (if-some [~vsym (get request# uri-match-end-index)]
-         (do
-           ~(if (:ns &env)
-              ;; CLJS
-              `(vreset! ~vsym ~end-index)
-              ;; CLJ
-              `(VolatileInt/reset ~vsym ~end-index))
-           request#)
-         (dassoc request# uri-match-end-index ~(if (:ns &env)
-                                                 ;; CLJS
-                                                 `(volatile! ~end-index)
-                                                 ;; CLJ
-                                                 `(VolatileInt/create ~end-index)))))))
+(defn assoc-uri-match-end-index
+  [request ^long end-index]
+  (if-let [vol (get request uri-match-end-index)]
+    (do
+      #?(:cljs (vreset! vol end-index)
+         :clj (VolatileInt/reset vol end-index))
+      request)
+    (dassoc request uri-match-end-index #?(:cljs (volatile! end-index)
+                                            :clj (VolatileInt/create end-index)))))
+
 
 (def valid-method-keys #{:get :head :options :patch :put :post :delete})
 
