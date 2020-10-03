@@ -13,7 +13,7 @@
 
 * [Todo] Change internal `spec` references to route
 * Pass options in recursive `calfpath.route/make-dispatcher` call
-* [Todo] More tests
+* [Todo] Fix issue where (tidy) wildcard do not match
 
 
 ## 0.8.0-alpha3 / 2020-Setember-29

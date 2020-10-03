@@ -209,6 +209,29 @@ Available URI templates:
           (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2})))))
 
 
+(def tidy-easy-routes2
+  [{["/user" :post] (constantly {:status 200 :body "new-user"})}
+   {"/user/:id" [{:get (constantly {:status 200 :body "user-get"})}
+                 {:put (constantly {:status 200 :body "user-put"})}]}])
+
+
+(deftest test-tidy-routes2
+  (let [handler1 (-> tidy-easy-routes2
+                   r/compile-routes ; :tidy? true by default
+                   r/make-dispatcher)
+        handler2 (-> tidy-easy-routes2
+                  (r/compile-routes {:tidy? false})
+                  r/make-dispatcher)]
+    (is (= {:status 200
+            :body "new-user"}
+          (handler1 {:uri "/user" :request-method :post})
+          (handler2 {:uri "/user" :request-method :post})))
+    (is (= {:status 200
+            :body "user-get"}
+          (handler1 {:uri "/user/12" :request-method :get})
+          (handler2 {:uri "/user/12" :request-method :get})))))
+
+
 (def indexable-routes
   [{:uri "/info/:token"             :method :get :handler identity :id :info}
    {:uri "/album/:lid/artist/:rid/" :method :get :handler identity :id :album}
