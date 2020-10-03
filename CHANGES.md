@@ -10,6 +10,12 @@
 * [TODO] Return numeric direction (lower/higher) indicator in URI matching
 
 
+## [WIP] 0.8.0 / 2020-October-??
+
+- [Todo] Pass options in recursive `calfpath.route/make-dispatcher` call
+- [Todo] More tests
+
+
 ## 0.8.0-alpha3 / 2020-Setember-29
 
 * [BREAKING since 0.8.0-alpha1] Rename w.r.t. `calfpath.route/compile-routes`
