@@ -8,6 +8,7 @@
 
 
 (ns calfpath.route
+  "Data driven routes functionality in Calfpath."
   #?(:cljs (:require-macros calfpath.route))
   (:require
     [clojure.set :as set]
@@ -96,14 +97,14 @@
                          method-key :method}
                     :as options}]
             (let [routes (->> routes
-                           (map (fn [spec]
-                                  (when-not (:matcher spec)
-                                    (i/expected ":matcher key to be present" spec))
-                                  (condp #(contains? %2 %1) spec
-                                    :handler spec
-                                    :nested  (assoc spec :handler (make-dispatcher (:nested spec) options))
+                           (map (fn [each-route]
+                                  (when-not (:matcher each-route)
+                                    (i/expected ":matcher key to be present" each-route))
+                                  (condp #(contains? %2 %1) each-route
+                                    :handler each-route
+                                    :nested  (assoc each-route :handler (make-dispatcher (:nested each-route) options))
                                     (i/expected ":nested or :handler key to be present in route"
-                                      spec))))
+                                      each-route))))
                            vec)
                   routes-sym   (gensym "routes-")
                   dispatch-sym (gensym "dispatch-")
@@ -202,14 +203,14 @@
   [routes f & args]
   (when-not (coll? routes)
     (i/expected "routes to be a collection" routes))
-  (doseq [spec routes]
-    (when-not (map? spec)
-      (i/expected "route spec to be a map" spec)))
+  (doseq [each-route routes]
+    (when-not (map? each-route)
+      (i/expected "route to be a map" each-route)))
   (as-> routes $
-    (mapv (fn [spec]
-            (if (contains? spec :nested)
-              (apply update spec :nested update-routes f args)
-              spec))
+    (mapv (fn [each-route]
+            (if (contains? each-route :nested)
+              (apply update each-route :nested update-routes f args)
+              each-route))
       $)
     (apply f $ args)))
 
@@ -242,14 +243,14 @@
   [routes f & args]
   (when-not (coll? routes)
     (i/expected "routes to be a collection" routes))
-  (doseq [spec routes]
-    (when-not (map? spec)
-      (i/expected "route spec to be a map" spec)))
-  (mapv (fn [spec]
-          (let [spec (if (contains? spec :nested)
-                       (apply update spec :nested update-each-route f args)
-                       spec)]
-            (apply f spec args)))
+  (doseq [each-route routes]
+    (when-not (map? each-route)
+      (i/expected "route to be a map" each-route)))
+  (mapv (fn [each-route]
+          (let [each-route (if (contains? each-route :nested)
+                             (apply update each-route :nested update-each-route f args)
+                             each-route)]
+            (apply f each-route args)))
     routes))
 
 
@@ -258,8 +259,8 @@
   [routes parent-route f & args]
   (when-not (coll? routes)
     (i/expected "routes to be a collection" routes))
-  (doseq [spec routes]
-    (i/expected map? "route spec to be a map" spec))
+  (doseq [each-route routes]
+    (i/expected map? "route to be a map" each-route))
   (mapv (fn [each-route]
           (let [walked-route (apply f each-route parent-route args)]
             (if (contains? walked-route :nested)
@@ -272,58 +273,58 @@
   "Given a key and factory fn (accepts route and other args, returns new route), create a route updater fn that applies
   f to the route only when it does not contain the key."
   [k f]
-  (fn [spec & args]
-    (when-not (map? spec)
-      (i/expected "route spec to be a map" spec))
-    (if (contains? spec k)
-      spec
-      (apply f spec args))))
+  (fn [route & args]
+    (when-not (map? route)
+      (i/expected "route to be a map" route))
+    (if (contains? route k)
+      route
+      (apply f route args))))
 
 
 (defn make-updater
   "Given a key and updater fn (accepts route and other args, returns new route), create a route updater fn that applies
   f to the route only when it contains the key."
   [k f]
-  (fn [spec & args]
-    (when-not (map? spec)
-      (i/expected "route spec to be a map" spec))
-    (if (contains? spec k)
-      (apply f spec args)
-      spec)))
+  (fn [route & args]
+    (when-not (map? route)
+      (i/expected "route to be a map" route))
+    (if (contains? route k)
+      (apply f route args)
+      route)))
 
 
 (defn update-in-each-route
   "Given a bunch of routes, update every route (recursively) containing specified attribute with the given wrapper. The
   wrapper fn f is invoked with the old attribute value, and the returned value is updated into the route."
-  [specs reference-key f]
+  [routes reference-key f]
   (->> #(update % reference-key f)
     (make-updater reference-key)
-    (update-each-route specs)))
+    (update-each-route routes)))
 
 
 ;; ----- ensure matcher in routes -----
 
 
-(def ^{:arglists '([route-spec matchex])} ensure-matchex
-  "Given a route spec not containing the :matchex key, assoc specified matchex into the spec. If the route spec already
-  contains :matchex then leave it intact."
+(def ^{:arglists '([route matchex])} ensure-matchex
+  "Given a route not containing the `:matchex` key, assoc specified matchex into the route. If the route already
+  contains `:matchex` then leave it intact."
   (make-ensurer :matchex
-    (fn [spec matchex]
-      (assoc spec :matchex matchex))))
+    (fn [route matchex]
+      (assoc route :matchex matchex))))
 
 
-(def ^{:arglists '([route-spec uri-finder params-key])} make-uri-matcher
-  "Given a route spec not containing the :matcher key and containing URI-pattern string as value (found by uri-finder),
-  create a URI matcher and add it under the :matcher key. If the route spec already contains the :matcher key or if it
-  does not contain URI-pattern then the route spec is left intact. When adding matcher also add matchex unless the
-  :matchex key already exists."
+(def ^{:arglists '([route uri-finder params-key])} make-uri-matcher
+  "Given a route not containing the `:matcher` key and containing URI-pattern string as value (found by uri-finder),
+  create a URI matcher and add it under the `:matcher` key. If the route already contains the `:matcher` key or if it
+  does not contain URI-pattern then the route is left intact. When adding matcher also add matchex unless the
+  `:matchex` key already exists."
   (make-ensurer :matcher
-    (fn [spec uri-finder params-key]
-      (i/expected map? "route spec to be a map" spec)
-      (if-some [uri-pattern (uri-finder spec)]  ; assoc matcher only if URI matcher is intended
+    (fn [route uri-finder params-key]
+      (i/expected map? "route to be a map" route)
+      (if-some [uri-pattern (uri-finder route)]  ; assoc matcher only if URI matcher is intended
         (do
           (when-not (string? uri-pattern)
-            (i/expected "URI pattern to be a string" spec))
+            (i/expected "URI pattern to be a string" route))
           (let [params-sym    (-> (gensym "uri-params-")
                                 (vary-meta assoc :tag "java.util.Map"))
                 end-index-sym (gensym "end-index-")
@@ -331,7 +332,7 @@
                 uri-str-token (first uri-template)
                 uri-string?   (and (= 1 (count uri-template))
                                 (string? uri-str-token))]
-            (-> spec
+            (-> route
               (assoc :matcher (if uri-string?
                                 ;; static string
                                 (if partial?
@@ -423,26 +424,26 @@
                                          (let [~params-sym (aget match-result# 0)]
                                            (i/assoc-path-params
                                              ~request ~params-key ~params-sym)))))))))))
-        spec))))
+        route))))
 
 
-(def ^{:arglists '([route-spec method-finder])} make-method-matcher
-  "Given a route spec not containing the :matcher key and containing HTTP-method keyword (or keyword set) as value
-  (found by method-finder), create a method matcher and add it under the :matcher key. If the route spec already
-  contains the :matcher key or if it does not contain HTTP-method keyword/set then the route spec is left intact. When
-  adding matcher also add matchex unless the :matchex key already exists."
+(def ^{:arglists '([route method-finder])} make-method-matcher
+  "Given a route not containing the `:matcher` key and containing HTTP-method keyword (or keyword set) as value
+  (found by method-finder), create a method matcher and add it under the `:matcher` key. If the route already
+  contains the `:matcher` key or if it does not contain HTTP-method keyword/set then the route is left intact. When
+  adding matcher also add matchex unless the `:matchex` key already exists."
   (make-ensurer :matcher
-    (fn [spec method-finder]
-      (when-not (map? spec)
-        (i/expected "route spec to be a map" spec))
-      (if-some [method (method-finder spec)]  ; assoc matcher only if method matcher is intended
+    (fn [route method-finder]
+      (when-not (map? route)
+        (i/expected "route to be a map" route))
+      (if-some [method (method-finder route)]  ; assoc matcher only if method matcher is intended
         (do
           (when-not (or (keyword? method)
                       (and (set? method)
                         (every? keyword? method)))
-            (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" spec))
+            (i/expected "HTTP method key to be retrievable as a keyword or keyword-set value" route))
           (cond
-            (keyword? method) (-> spec
+            (keyword? method) (-> route
                                 ;; Clojure (not CLJS) keywords are interned; compare identity (faster), not equality
                                 (assoc :matcher (fn method-matcher [request]
                                                   (when (#?(:cljs = :clj identical?)
@@ -452,14 +453,14 @@
                                                   `(when (#?(:cljs = :clj identical?)
                                                            (:request-method ~request) ~method)
                                                      ~request))))
-            (set? method)     (-> spec
+            (set? method)     (-> route
                                 (assoc :matcher (fn multiple-method-matcher [request]
                                                   (when (method (:request-method request))
                                                     request)))
                                 (ensure-matchex (fn [request]
                                                   `(when (~method (:request-method ~request))
                                                      ~request))))))
-        spec))))
+        route))))
 
 
 ;; ----- routes (bulk) middleware -----
@@ -530,70 +531,70 @@
 
 
 (defn assoc-kv-middleware
-  "Given a route spec, if the route contains the main key then ensure that it also has the associated key/value pairs."
-  [spec main-key-finder assoc-map]
-  (if (main-key-finder spec)
+  "Given a route, if the route contains the main key then ensure that it also has the associated key/value pairs."
+  [route main-key-finder assoc-map]
+  (if (main-key-finder route)
     (reduce-kv (fn [m k v] (if (contains? m k)
                              m
                              (assoc m k v)))
-      spec assoc-map)
-    spec))
+      route assoc-map)
+    route))
 
 
 (defn assoc-route-to-request-middleware
-  "Given a route spec, decorate the handler such that the request has the spec under specified key (:route by default)
+  "Given a route, decorate the handler such that the request has the route under specified key (`:route` by default)
   at runtime."
-  ([spec spec-key]
-    (if (contains? spec :handler)
-      (update spec :handler
+  ([route route-key]
+    (if (contains? route :handler)
+      (update route :handler
         (fn middleware [f]
           (fn
-            ([request] (f (assoc request spec-key spec)))
-            ([request respond raise] (f (assoc request spec-key spec) respond raise)))))
-      spec))
-  ([spec]
-    (assoc-route-to-request-middleware spec :route)))
+            ([request] (f (assoc request route-key route)))
+            ([request respond raise] (f (assoc request route-key route) respond raise)))))
+      route))
+  ([route]
+    (assoc-route-to-request-middleware route :route)))
 
 
 (defn lift-key-middleware
-  "Given a route spec, lift keys and one or more conflict keys, if the spec contains both any of the lift-keys and any
-  of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested spec."
-  [spec lift-keys conflict-keys]
+  "Given a route, lift keys and one or more conflict keys, if the route contains both any of the lift-keys and any
+  of the conflict-keys then extract the lift keys such that all other attributes are moved into a nested route."
+  [route lift-keys conflict-keys]
   (if (and
-        (some #(contains? spec %) lift-keys)
-        (some #(contains? spec %) conflict-keys))
-    (-> spec
+        (some #(contains? route %) lift-keys)
+        (some #(contains? route %) conflict-keys))
+    (-> route
       (select-keys lift-keys)
-      (assoc :nested [(apply dissoc spec lift-keys)]))
-    spec))
+      (assoc :nested [(apply dissoc route lift-keys)]))
+    route))
 
 
 (defn trailing-slash-middleware
-  "Given a route spec, URI key and action (keyword :add or :remove) edit the URI to have or not have a trailing slash
+  "Given a route, URI key and action (keyword `:add` or `:remove`) edit the URI to have or not have a trailing slash
   if the route has a URI pattern. Leave the route unchanged if it has no URI pattern."
-  [spec uri-key action]
+  [route uri-key action]
   (i/expected keyword? "URI key to be a keyword" uri-key)
   (i/expected #{:add :remove} "action to be :add or :remove" action)
-  (if (contains? spec uri-key)
-    (update spec uri-key (fn [uri]
-                           (i/expected string? "URI to be a string" uri)
-                           (if (string/ends-with? uri "*")  ; candidate for partial match?
-                             uri                    ; do not change partial-match URIs
-                             (let [trailing? (string/ends-with? uri "/")
-                                   uri-length (count uri)]
-                               (if (#?(:cljs = :clj identical?) action :add)
-                                 (if trailing? uri (str uri "/"))           ; add trailing slash if missing
-                                 (if (and trailing? (> uri-length 1))
-                                   (subs uri 0 (unchecked-dec uri-length))  ; remove trailing slash if present
-                                   uri))))))
-    spec))
+  (if (contains? route uri-key)
+    (update route uri-key (fn [uri]
+                            (i/expected string? "URI to be a string" uri)
+                            (if (string/ends-with? uri "*")  ; candidate for partial match?
+                              uri                    ; do not change partial-match URIs
+                              (let [trailing? (string/ends-with? uri "/")
+                                    uri-length (count uri)]
+                                (if (#?(:cljs = :clj identical?) action :add)
+                                  (if trailing? uri (str uri "/"))           ; add trailing slash if missing
+                                  (if (and trailing? (> uri-length 1))
+                                    (subs uri 0 (unchecked-dec uri-length))  ; remove trailing slash if present
+                                    uri))))))
+    route))
 
 
 ;; ----- helper fns -----
 
 
 (defn compile-routes
-  "Given a collection of route specs, supplement them with required entries and finally return a routes collection.
+  "Given a collection of routes, supplement them with required entries and finally return a routes collection.
 
   ### Options
 
@@ -603,7 +604,7 @@
   |`:tidy?`         |boolean|optimize URI routes by automatically reorganizing routes                                |
   |`:tidy-threshold`|integer|similar routes more than this number will be grouped together                           |
   |`:uri?`          |boolean|true if URI templates should be converted to matchers                                   |
-  |`:uri-key`       |non-nil|the key to be used to look up the URI template in a spec                                |
+  |`:uri-key`       |non-nil|the key to be used to look up the URI template in a route                               |
   |`:params-key`    |non-nil|the key to put URI params under in the request map                                      |
   |`:trailing-slash`|keyword|Trailing-slash action to perform on URIs - :add or :remove - nil (default) has no effect|
   |`:fallback-400?` |boolean|whether to add a fallback route to respond with HTTP status 400 for unmatched URIs      |
@@ -611,32 +612,32 @@
   |`:full-uri-key`  |non-nil|the key to be used to populate full-uri for reporting HTTP 400 (see :show-uris-400?)    |
   |`:uri-prefix-400`|string?|the URI prefix to use when showing URI templates in HTTP 400 (see :show-uris-400?)      |
   |`:method?`       |boolean|true if HTTP methods should be converted to matchers                                    |
-  |`:method-key`    |non-nil|the key to be used to look up the method key/set in a spec                              |
+  |`:method-key`    |non-nil|the key to be used to look up the method key/set in a route                             |
   |`:fallback-405?` |boolean|whether to add a fallback route to respond with HTTP status 405 for unmatched methods   |
-  |`:lift-uri?`     |boolean|whether lift URI attributes from mixed specs and move the rest into nested specs        |
+  |`:lift-uri?`     |boolean|whether lift URI attributes from mixed routes and move the rest into nested routes      |
 
   See: [[dispatch]], [[make-dispatcher]] (Clojure/JVM only), [[make-index]]"
-  ([route-specs {:keys [easy?
-                        tidy?           tidy-threshold
-                        uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
-                        params-key
-                        method?         method-key fallback-405?
-                        trailing-slash
-                        lift-uri?
-                        ring-handler? ring-handler-key]
-                 :or {easy?           true
-                      tidy?           true   tidy-threshold 1
-                      uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
-                      params-key      :path-params
-                      full-uri-key    :full-uri
-                      method?         true   method-key  :method  fallback-405? true
-                      lift-uri?       true
-                      trailing-slash  false}
-                 :as options}]
-    (let [when-> (fn [specs test f & args] (if test
-                                             (apply f specs args)
-                                             specs))]
-      (-> route-specs
+  ([routes {:keys [easy?
+                   tidy?           tidy-threshold
+                   uri?            uri-key    fallback-400? show-uris-400? full-uri-key uri-prefix-400
+                   params-key
+                   method?         method-key fallback-405?
+                   trailing-slash
+                   lift-uri?
+                   ring-handler? ring-handler-key]
+            :or {easy?           true
+                 tidy?           true   tidy-threshold 1
+                 uri?            true   uri-key     :uri     fallback-400? true  show-uris-400? true
+                 params-key      :path-params
+                 full-uri-key    :full-uri
+                 method?         true   method-key  :method  fallback-405? true
+                 lift-uri?       true
+                 trailing-slash  false}
+            :as options}]
+    (let [when-> (fn [all-routes test f & args] (if test
+                                                  (apply f all-routes args)
+                                                  all-routes))]
+      (-> routes
         (when-> easy?                       easy-routes uri-key method-key)
         (when-> tidy?                       update-routes routes->wildcard-tidy {:tidy-threshold tidy-threshold
                                                                                  :uri-key uri-key})
@@ -657,8 +658,8 @@
                                                                                           :uri-prefix uri-prefix-400})
         (when-> method? update-each-route make-method-matcher method-key)
         (when-> uri?    update-each-route make-uri-matcher    uri-key params-key))))
-  ([route-specs]
-    (compile-routes route-specs {})))
+  ([routes]
+    (compile-routes routes {})))
 
 
 ;; ----- reverse routing (Ring request generation) -----

@@ -11,7 +11,6 @@
 
 ## [WIP] 0.8.0 / 2020-October-??
 
-* [Todo] Change internal `spec` references to route
 * Pass options in recursive `calfpath.route/make-dispatcher` call
 * Fix issue where (tidy) wildcard did not prefix path-param token with `/`
 
