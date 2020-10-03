@@ -9,7 +9,7 @@
 * [TODO] Return numeric direction (lower/higher) indicator in URI matching
 
 
-## [WIP] 0.8.0 / 2020-October-??
+## 0.8.0-alpha4 / 2020-October-04
 
 * Pass options in recursive `calfpath.route/make-dispatcher` call
 * Fix issue where (tidy) wildcard did not prefix path-param token with `/`
