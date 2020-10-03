@@ -101,7 +101,7 @@
                                     (i/expected ":matcher key to be present" spec))
                                   (condp #(contains? %2 %1) spec
                                     :handler spec
-                                    :nested  (assoc spec :handler (make-dispatcher (:nested spec)))
+                                    :nested  (assoc spec :handler (make-dispatcher (:nested spec) options))
                                     (i/expected ":nested or :handler key to be present in route"
                                       spec))))
                            vec)

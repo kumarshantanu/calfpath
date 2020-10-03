@@ -5,15 +5,15 @@
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
 * [TODO - BREAKING CHANGE] Consider `clojure.walk` as routes navigation tool
-* [TODO] Change internal `spec` references to route
 * [TODO] Include [quickstart] complete server examples using Ring and Machhiato
 * [TODO] Return numeric direction (lower/higher) indicator in URI matching
 
 
 ## [WIP] 0.8.0 / 2020-October-??
 
-- [Todo] Pass options in recursive `calfpath.route/make-dispatcher` call
-- [Todo] More tests
+* [Todo] Change internal `spec` references to route
+* Pass options in recursive `calfpath.route/make-dispatcher` call
+* [Todo] More tests
 
 
 ## 0.8.0-alpha3 / 2020-Setember-29
