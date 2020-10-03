@@ -143,7 +143,7 @@ Available URI templates:
             (partial-routes-helper (r/make-dispatcher final-partial-routes) partial-400))))
 
 
-(def er-handler (handler [:path-params :uri]))
+(def er-handler (handler [:path-params :uri :method]))
 
 
 (def easy-routes
@@ -188,6 +188,24 @@ Available URI templates:
                                {:uri ""         }]}])
 
 
+(def easy-routes2
+  [{["/user" :post] er-handler}
+   {"/user/:id" [{:get er-handler}
+                 {:put er-handler}]}])
+
+
+(def flat-routes2
+  [{:uri "/user" :method :post}
+   {:uri "/user/:id" :nested [{:method :get}
+                              {:method :put}]}])
+
+
+(def tidy-routes2
+  [{:uri "/user*" :nested [{:uri "/:id" :nested [{:method :get}
+                                                 {:method :put}]}
+                           {:uri "" :method :post}]}])
+
+
 (defn deep-dissoc [data k]
   (walk/prewalk (fn [node]
                   (if (map? node)
@@ -200,36 +218,26 @@ Available URI templates:
   (is (= tidy-routes
         (deep-dissoc
           (r/easy-routes easy-routes :uri :method)
+          :handler)))
+  (is (= flat-routes2
+        (deep-dissoc
+          (r/easy-routes easy-routes2 :uri :method)
           :handler))))
 
 
 (deftest test-routes->wildcard-tidy
   (is (= tidy-routes
         (-> flat-routes
-          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2})))))
+          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2}))))
+  (is (= tidy-routes2
+        (-> flat-routes2
+          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 1})))))
 
 
 (def tidy-easy-routes2
   [{["/user" :post] (constantly {:status 200 :body "new-user"})}
    {"/user/:id" [{:get (constantly {:status 200 :body "user-get"})}
                  {:put (constantly {:status 200 :body "user-put"})}]}])
-
-
-(deftest test-tidy-routes2
-  (let [handler1 (-> tidy-easy-routes2
-                   r/compile-routes ; :tidy? true by default
-                   r/make-dispatcher)
-        handler2 (-> tidy-easy-routes2
-                  (r/compile-routes {:tidy? false})
-                  r/make-dispatcher)]
-    (is (= {:status 200
-            :body "new-user"}
-          (handler1 {:uri "/user" :request-method :post})
-          (handler2 {:uri "/user" :request-method :post})))
-    (is (= {:status 200
-            :body "user-get"}
-          (handler1 {:uri "/user/12" :request-method :get})
-          (handler2 {:uri "/user/12" :request-method :get})))))
 
 
 (def indexable-routes

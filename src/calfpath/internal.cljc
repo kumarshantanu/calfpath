@@ -321,7 +321,10 @@
                   (str "*"))
         :nested (as-> token-vectors $
                   (mapv (fn [route tokens]
-                          (assoc route uri-key (string/join "/" tokens))) routes-with-uri $)
+                          (->> (string/join "/" tokens)
+                            (str (when (keyword? (first tokens)) "/"))
+                            (assoc route uri-key)))
+                    routes-with-uri $)
                   (tidyfy-all $ tidy-threshold uri-key))}]
       ;; we need to find URI-prefix groups now
       (let [[first-tokens
