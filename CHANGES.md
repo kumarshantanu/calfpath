@@ -9,6 +9,13 @@
 * [TODO] Return numeric direction (lower/higher) indicator in URI matching
 
 
+## [WIP] 0.8.0 / 2020-October-??
+
+- [Todo] Do not finalize FULL-MATCH (in request) in a partial-match request
+  - because we don't know if it's a full match; it's determined by a future token
+- [Todo] Reformat docstring for _cljdoc_
+
+
 ## 0.8.0-alpha4 / 2020-October-04
 
 * Pass options in recursive `calfpath.route/make-dispatcher` call

@@ -20,7 +20,7 @@ routing and reverse-routing.
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.8.0-alpha4"]` (requires Clojure 1.8 or later)
+Leiningen dependency: `[calfpath "0.8.0-SNAPSHOT"]` (requires Clojure 1.8 or later)
 
 Require namespace:
 ```clojure
@@ -84,7 +84,7 @@ extend and re-purpose. See an example below (where route-handler has the same ar
    {["/orders/:order-id/confirm/" :post] confirm-order}
    {"/health/"  health-status}
    {"/static/*" (-> (fn [_] {:status 400 :body "No such file"})      ; static files serving example
-                  ;; the following requires [ring/ring.core "version"] dependency in your project
+                  ;; the following requires [ring/ring-core "version"] dependency in your project
                   (ring.middleware.resource/wrap-resource "public")  ; render files from classpath
                   (ring.middleware.file/wrap-file "/var/www/public") ; render files from filesystem
                   (ring.middleware.content-type/wrap-content-type)
