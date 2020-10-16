@@ -43,4 +43,5 @@
                     :jvm-opts ^:replace ["-server" "-Xms2048m" "-Xmx2048m"]}}
   :aliases {"clj-test"  ["with-profile" "c08:c09:c10" "test"]
             "cljs-test" ["with-profile" "cljs,s09:cljs,s10" "doo" "node" "once"]
+            "stest"     ["with-profile" "cljs,s10" "doo" "node" "once"]  ; test with latest CLJS
             "perf-test" ["with-profile" "c10,perf" "test"]})
