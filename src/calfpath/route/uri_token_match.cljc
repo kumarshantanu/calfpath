@@ -42,6 +42,8 @@
 
 
 (defn parse-uri-template
+  "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
+  and keyword tokens, e.g. [['user' :id 'profile' :descriptor ''] false]. The marker char is ':'."
   [uri-pattern]
   (let [pattern-length  (count uri-pattern)
         [path partial?] (if (and (> pattern-length 1)
@@ -241,21 +243,21 @@
 ;; ----- matcher/matchex support -----
 
 
-(defn match-static-uri-partial [request uri-template params-key]
+(defn match-static-uri-partial [request static-tokens params-key]
   (when-some [rem-tokens #?(:cljs (-> (get-calfpath-context request)
                                     -get-uri-tokens
-                                    (static-uri-partial-match uri-template))
+                                    (static-uri-partial-match static-tokens))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
-                                    (.staticUriPartialMatch uri-template)))]
+                                    (.staticUriPartialMatch static-tokens)))]
     (partial-match-update-request request rem-tokens params-key)))
 
 
-(defn match-static-uri-full [request uri-template params-key]
+(defn match-static-uri-full [request static-tokens params-key]
   (when-some [rem-tokens #?(:cljs (-> (get-calfpath-context request)
                                     -get-uri-tokens
-                                    (static-uri-full-match uri-template))
+                                    (static-uri-full-match static-tokens))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
-                                    (.staticUriFullMatch uri-template)))]
+                                    (.staticUriFullMatch static-tokens)))]
     (full-match-update-request request rem-tokens params-key)))
 
 
@@ -285,8 +287,10 @@
 (def route-matcher
   (reify t/IRouteMatcher
     (-parse-uri-template        [_ uri-pattern] (parse-uri-template uri-pattern))
+    (-get-static-uri-template   [_ uri-pattern-tokens] (when (every? string? uri-pattern-tokens)
+                                                         uri-pattern-tokens))
     (-initialize-request        [_ request params-key] (prepare-request request params-key))
-    (-static-uri-partial-match  [_ req uri-template params-key] (match-static-uri-partial  req uri-template params-key))
-    (-static-uri-full-match     [_ req uri-template params-key] (match-static-uri-full     req uri-template params-key))
-    (-dynamic-uri-partial-match [_ req uri-template params-key] (match-dynamic-uri-partial req uri-template params-key))
-    (-dynamic-uri-full-match    [_ req uri-template params-key] (match-dynamic-uri-full    req uri-template params-key))))
+    (-static-uri-partial-match  [_ req static-tokens params-key] (match-static-uri-partial  req static-tokens params-key))
+    (-static-uri-full-match     [_ req static-tokens params-key] (match-static-uri-full     req static-tokens params-key))
+    (-dynamic-uri-partial-match [_ req uri-template  params-key] (match-dynamic-uri-partial req uri-template  params-key))
+    (-dynamic-uri-full-match    [_ req uri-template  params-key] (match-dynamic-uri-full    req uri-template  params-key))))

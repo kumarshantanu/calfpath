@@ -21,18 +21,22 @@
   (t/-parse-uri-template router uri-pattern))
 
 
+(defn d-get-static-uri-template [uri-pattern-tokens]
+  (t/-get-static-uri-template router uri-pattern-tokens))
+
+
 (defn d-initialize-request [request params-key]
   (t/-initialize-request router request params-key))
 
 
 (defn d-static-uri-partial-match
-  [request uri-template params-key]
-  (t/-static-uri-partial-match  router request uri-template params-key))
+  [request static-tokens params-key]
+  (t/-static-uri-partial-match  router request static-tokens params-key))
 
 
 (defn d-static-uri-full-match
-  [request uri-template params-key]
-  (t/-static-uri-full-match     router request uri-template params-key))
+  [request static-tokens params-key]
+  (t/-static-uri-full-match     router request static-tokens params-key))
 
 
 (defn d-dynamic-uri-partial-match

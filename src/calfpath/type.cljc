@@ -12,9 +12,10 @@
 
 
 (defprotocol IRouteMatcher
-  (-parse-uri-template        [this uri])
+  (-parse-uri-template        [this uri-template])
+  (-get-static-uri-template   [this uri-pattern-tokens] "Return URI token(s) if static URI template, nil otherwise")
   (-initialize-request        [this request params-key])
-  (-static-uri-partial-match  [this request uri-template params-key])
-  (-static-uri-full-match     [this request uri-template params-key])
-  (-dynamic-uri-partial-match [this request uri-template params-key])
-  (-dynamic-uri-full-match    [this request uri-template params-key]))
+  (-static-uri-partial-match  [this request static-tokens params-key])
+  (-static-uri-full-match     [this request static-tokens params-key])
+  (-dynamic-uri-partial-match [this request uri-template  params-key])
+  (-dynamic-uri-full-match    [this request uri-template  params-key]))
