@@ -42,8 +42,8 @@
 
 
 (defn parse-uri-template
-  "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
-  and keyword tokens, e.g. [['user' :id 'profile' :descriptor ''] false]. The marker char is ':'."
+  "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector [tokens partial?] of
+  string and keyword tokens, e.g. [['user' :id 'profile' :descriptor ''] false]. The marker char is ':'."
   [uri-pattern]
   (let [pattern-length  (count uri-pattern)
         [path partial?] (if (and (> pattern-length 1)
