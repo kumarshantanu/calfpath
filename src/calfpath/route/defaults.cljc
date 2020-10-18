@@ -11,10 +11,11 @@
   "Internal namespace for data-driven route defaults."
   (:require
     [calfpath.type :as t]
+    [calfpath.route.uri-index-match :as uim]
     [calfpath.route.uri-token-match :as utm]))
 
 
-(def router utm/route-matcher)
+(def router uim/route-matcher)
 
 
 (defn d-parse-uri-template [uri-pattern]
