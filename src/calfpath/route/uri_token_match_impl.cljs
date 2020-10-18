@@ -35,6 +35,29 @@
 ;; ----- URI matching -----
 
 
+(def FULL-URI-MATCH-TOKENS [])
+
+
+(defn partial-match
+  ([^IndexContext context uri-tokens]
+    (set! (.-uri-tokens context) uri-tokens)
+    (set! (.-uri-token-count context) (count uri-tokens))
+    uri-tokens)
+  ([^IndexContext context uri-tokens path-params]
+    (set! (.-path-params context) (conj (.-path-params context) path-params))
+    (set! (.-uri-tokens context) uri-tokens)
+    (set! (.-uri-token-count context) (count uri-tokens))
+    uri-tokens))
+
+
+(defn full-match
+  ([^IndexContext context]             (partial-match context FULL-URI-MATCH-TOKENS))
+  ([^IndexContext context path-params] (partial-match context FULL-URI-MATCH-TOKENS path-params)))
+
+
+;; ~~~ match fns ~~~
+
+
 (defn dynamic-uri-partial-match
   "(Partial) Match URI tokens (vector) against URI-pattern tokens. Optimized for dynamic routes.
   Return (vector of) remaining URI tokens on match, interpreted as follows:
@@ -59,12 +82,12 @@
                   path-params
                   (assoc! path-params each-pattern-token each-uri-token))
                 (unchecked-inc token-index)))
-            (let [tokens-remaining (if (> (.-uri-token-count context) pattern-token-count)
-                                     (subvec (.-uri-tokens context) pattern-token-count (.-uri-token-count context))
-                                     [])]
-              ;; mutate path-params on success
-              (set! (.-path-params context) (conj (.-path-params context) (persistent! path-params)))
-              tokens-remaining)))))))
+            (if (> (.-uri-token-count context) pattern-token-count)
+              (partial-match context
+                (subvec (.-uri-tokens context) pattern-token-count (.-uri-token-count context))
+                (persistent! path-params))
+              (full-match context
+                (persistent! path-params)))))))))
 
 
 (defn dynamic-uri-full-match
@@ -90,10 +113,7 @@
                   path-params
                   (assoc! path-params each-pattern-token each-uri-token))
                 (unchecked-inc token-index)))
-            (do
-              ;; mutate path-params on success
-              (set! (.-path-params context) (conj (.-path-params context) (persistent! path-params)))
-              [])))))))
+            (full-match context (persistent! path-params))))))))
 
 
 (defn static-uri-partial-match
@@ -114,8 +134,8 @@
                   (get static-tokens i))
             (recur (unchecked-inc i)))
           (if (> (.-uri-token-count context) static-token-count)
-            (subvec (.-uri-tokens context) static-token-count (.-uri-token-count context))
-            []))))))
+            (partial-match context (subvec (.-uri-tokens context) static-token-count (.-uri-token-count context)))
+            (full-match context)))))))
 
 
 (defn static-uri-full-match
@@ -134,4 +154,4 @@
           (when (= (get (.-uri-tokens context) i)
                   (get static-tokens i))
             (recur (unchecked-inc i)))
-          [])))))
+          FULL-URI-MATCH-TOKENS)))))

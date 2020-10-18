@@ -26,11 +26,6 @@ public class UriTokenContext {
     public int uriTokenCount;
     public Map<Object, String> paramsMap;
 
-    public void setUriTokens(List<String> uriTokens) {
-        this.uriTokens = uriTokens;
-        this.uriTokenCount = uriTokens.size();
-    }
-
     public UriTokenContext(List<String> uriTokens, Map<Object, String> paramsMap) {
         this.uriTokens = uriTokens;
         this.uriTokenCount = uriTokens.size();
@@ -71,6 +66,32 @@ public class UriTokenContext {
     @SuppressWarnings("unchecked")
     public static final List<String> FULL_MATCH_TOKENS = Collections.EMPTY_LIST;
 
+    private List<String> partialMatch(List<String> resultTokens) {
+        this.uriTokens = resultTokens;
+        this.uriTokenCount = resultTokens.size();
+        return resultTokens;
+    }
+
+    private List<String> partialMatch(List<String> resultTokens, Map<Object, String> pathParams) {
+        this.uriTokens = resultTokens;
+        this.uriTokenCount = resultTokens.size();
+        this.paramsMap.putAll(pathParams);
+        return resultTokens;
+    }
+
+    private List<String> fullMatch(Map<Object, String> pathParams) {
+        this.paramsMap.putAll(pathParams);
+        this.uriTokens = FULL_MATCH_TOKENS;
+        this.uriTokenCount = 0;
+        return FULL_MATCH_TOKENS;
+    }
+
+    private List<String> fullMatch() {
+        this.uriTokens = FULL_MATCH_TOKENS;
+        this.uriTokenCount = 0;
+        return FULL_MATCH_TOKENS;
+    }
+
     // ----- match methods -----
 
     /**
@@ -103,11 +124,10 @@ public class UriTokenContext {
                 pathParams.put(eachPatternToken, eachURIToken);
             }
         }
-        paramsMap.putAll(pathParams); // mutate pathParams only on a successful match
         if (uriTokenCount > patternTokenCount) {
-            return uriTokens.subList(patternTokenCount, uriTokenCount); // partial match
+            return partialMatch(uriTokens.subList(patternTokenCount, uriTokenCount), pathParams); // partial match
         } else {
-            return FULL_MATCH_TOKENS; // full match
+            return fullMatch(pathParams); // full match
         }
     }
 
@@ -168,9 +188,9 @@ public class UriTokenContext {
             }
         }
         if (uriTokenCount > patternTokenCount) {
-            return uriTokens.subList(patternTokenCount, uriTokenCount); // partial match
+            return partialMatch(uriTokens.subList(patternTokenCount, uriTokenCount)); // partial match
         } else {
-            return FULL_MATCH_TOKENS; // full match
+            return fullMatch(); // full match
         }
     }
 

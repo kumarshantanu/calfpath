@@ -88,14 +88,11 @@
                    (.assoc path-params-key      path-params)))))))
 
 
-(defn update-uri-tokens
-  [request uri-tokens path-params-key]
+(defn update-path-params
+  [request path-params-key]
   #?(:cljs (let [context (get-calfpath-context request)]
-             (cljs/update-uri-tokens context uri-tokens)
              (assoc request path-params-key (cljs/get-path-params context)))
-      :clj (let [^UriTokenContext context (get-calfpath-context request)]
-             (.setUriTokens context uri-tokens)
-             request)))
+      :clj request))
 
 
 ;; ----- matcher/matchex support -----
@@ -106,7 +103,8 @@
                                     (cljs/static-uri-partial-match static-tokens))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
                                     (.staticUriPartialMatch static-tokens)))]
-    (update-uri-tokens request rem-tokens params-key)))
+    #?(:cljs (update-path-params request params-key)
+        :clj request)))
 
 
 (defn match-static-uri-full [request static-tokens params-key]
@@ -114,7 +112,8 @@
                                     (cljs/static-uri-full-match static-tokens))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
                                     (.staticUriFullMatch static-tokens)))]
-    (update-uri-tokens request rem-tokens params-key)))
+    #?(:cljs (update-path-params request params-key)
+        :clj request)))
 
 
 (defn match-dynamic-uri-partial [request uri-template params-key]
@@ -122,7 +121,8 @@
                                     (cljs/dynamic-uri-partial-match uri-template))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
                                     (.dynamicUriPartialMatch uri-template)))]
-    (update-uri-tokens request rem-tokens params-key)))
+    #?(:cljs (update-path-params request params-key)
+        :clj request)))
 
 
 (defn match-dynamic-uri-full [request uri-template params-key]
@@ -130,7 +130,8 @@
                                     (cljs/dynamic-uri-full-match uri-template))
                              :clj (-> ^UriTokenContext (get-calfpath-context request)
                                     (.dynamicUriFullMatch uri-template)))]
-    (update-uri-tokens request rem-tokens params-key)))
+    #?(:cljs (update-path-params request params-key)
+        :clj request)))
 
 
 ;; ----- IRouteMatcher -----
