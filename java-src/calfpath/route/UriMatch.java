@@ -34,7 +34,7 @@ public class UriMatch {
             return NO_URI_MATCH_INDEX;
         }
         final Map<Object, String> pathParams = new HashMap<Object, String>();
-        StringBuilder BUFFER = null;
+        StringBuilder sb = null;
         int uriIndex = beginIndex;
         OUTER:
         for (final Object token: patternTokens) {
@@ -54,22 +54,21 @@ public class UriMatch {
                     return NO_URI_MATCH_INDEX;
                 }
             } else {
-                if (BUFFER == null) {
-                    BUFFER = new StringBuilder();
-                } else {
-                    BUFFER.setLength(0);  // reset buffer before use
+                if (sb == null) {
+                    sb = new StringBuilder();
                 }
+                sb.setLength(0);  // reset buffer before use
                 for (int j = uriIndex; j < uriLength; j++) {
                     final char ch = uri.charAt(j);
                     if (ch == '/') {
-                        pathParams.put(token, BUFFER.toString());
+                        pathParams.put(token, sb.toString());
                         uriIndex = j;
                         continue OUTER;
                     } else {
-                        BUFFER.append(ch);
+                        sb = sb.append(ch);
                     }
                 }
-                pathParams.put(token, BUFFER.toString());
+                pathParams.put(token, sb.toString());
                 uriIndex = uriLength;  // control reaching this point means URI template ending in ":param*"
             }
         }
