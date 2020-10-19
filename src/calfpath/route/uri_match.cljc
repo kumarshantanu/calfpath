@@ -152,7 +152,8 @@
         begin-index (uri-begin-index-key request 0)
         final-index #?(:cljs (static-uri-partial-match*      uri begin-index static-token)
                         :clj (UriMatch/staticUriPartialMatch uri begin-index static-token))]
-    (when (pos? final-index)
+    (when #?(:cljs (pos? final-index)
+              :clj (UriMatch/isPos final-index))
       #?(:cljs (assoc request uri-begin-index-key final-index)
           :clj (.assoc ^Associative request uri-begin-index-key final-index)))))
 
@@ -162,7 +163,8 @@
         begin-index (uri-begin-index-key request 0)
         final-index #?(:cljs (static-uri-full-match*      uri begin-index static-token)
                         :clj (UriMatch/staticUriFullMatch uri begin-index static-token))]
-    (when (pos? final-index)
+    (when #?(:cljs (pos? final-index)
+              :clj (UriMatch/isPos final-index))
       request)))
 
 
@@ -170,15 +172,16 @@
   (let [^String uri (:uri request)
         begin-index (uri-begin-index-key request 0)
         has-params? (contains? request params-key)
-        path-params #?(:cljs (volatile! (if (true? has-params?) (get request params-key) {}))
-                        :clj (if (true? has-params?) (get request params-key) (HashMap.)))
+        path-params #?(:cljs (volatile! (if has-params? (get request params-key) {}))
+                        :clj (if has-params? (get request params-key) (HashMap.)))
         final-index #?(:cljs (dynamic-uri-partial-match*      uri begin-index path-params uri-template)
                         :clj (UriMatch/dynamicUriPartialMatch uri begin-index path-params uri-template))]
-    (when (pos? final-index)
+    (when #?(:cljs (pos? final-index)
+              :clj (UriMatch/isPos final-index))
       #?(:cljs (-> request
                  (assoc uri-begin-index-key final-index)
                  (assoc params-key          @path-params))
-          :clj (if (true? has-params?)
+          :clj (if has-params?
                  (-> ^Associative request
                    (.assoc uri-begin-index-key final-index))
                  (-> ^Associative request
@@ -190,12 +193,13 @@
   (let [uri (:uri request)
         begin-index (uri-begin-index-key request 0)
         has-params? (contains? request params-key)
-        path-params #?(:cljs (volatile! (if (true? has-params?) (get request params-key) {}))
-                        :clj (if (true? has-params?) (get request params-key) (HashMap.)))
+        path-params #?(:cljs (volatile! (if has-params? (get request params-key) {}))
+                        :clj (if has-params? (get request params-key) (HashMap.)))
         final-index #?(:cljs (dynamic-uri-full-match*      uri begin-index path-params uri-template)
                         :clj (UriMatch/dynamicUriFullMatch uri begin-index path-params uri-template))]
-    (when (pos? final-index)
+    (when #?(:cljs (pos? final-index)
+              :clj (UriMatch/isPos final-index))
       #?(:cljs (assoc request params-key @path-params)
-          :clj (if (true? has-params?)
+          :clj (if has-params?
                  request
                  (.assoc ^Associative request params-key path-params))))))

@@ -21,6 +21,10 @@ public class UriMatch {
 
     public static final int NO_URI_MATCH_INDEX = -2;
 
+    public static boolean isPos(long n) {
+        return n > 0;
+    }
+
     // ----- match methods -----
 
     public static int dynamicUriMatch(String uri, int beginIndex, Map<Object, String> paramsMap, List<?> patternTokens,
