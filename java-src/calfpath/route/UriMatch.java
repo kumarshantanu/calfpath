@@ -19,20 +19,7 @@ import java.util.Map;
  */
 public class UriMatch {
 
-    public static final int FULL_URI_MATCH_INDEX = -1;
     public static final int NO_URI_MATCH_INDEX = -2;
-    public static final int LO_URI_MATCH_INDEX = -3;
-    public static final int HI_URI_MATCH_INDEX = -4;
-
-    private static int partialUriMatch(Map<Object, String> paramsMap, Map<Object, String> pathParams, int uriIndex) {
-        paramsMap.putAll(pathParams);
-        return uriIndex;
-    }
-
-    private static int fullUriMatch(Map<Object, String> paramsMap, Map<Object, String> pathParams) {
-        paramsMap.putAll(pathParams);
-        return FULL_URI_MATCH_INDEX;
-    }
 
     // ----- match methods -----
 
@@ -48,7 +35,11 @@ public class UriMatch {
         OUTER:
         for (final Object token: patternTokens) {
             if (uriIndex >= uriLength) {
-                return attemptPartialMatch? partialUriMatch(paramsMap, pathParams, uriLength): NO_URI_MATCH_INDEX;
+                if (attemptPartialMatch) {
+                    paramsMap.putAll(pathParams);
+                    return /* full match */ uriLength;
+                }
+                return NO_URI_MATCH_INDEX;
             }
             if (token instanceof String) {
                 final String tokenStr = (String) token;
@@ -79,9 +70,14 @@ public class UriMatch {
             }
         }
         if (uriIndex < uriLength) {  // 'tokens finished but URI still in progress' implies partial or no match
-            return attemptPartialMatch? partialUriMatch(paramsMap, pathParams, uriIndex): NO_URI_MATCH_INDEX;
+            if (attemptPartialMatch) {
+                paramsMap.putAll(pathParams);
+                return /* full match */ uriIndex;
+            }
+            return NO_URI_MATCH_INDEX;
         }
-        return fullUriMatch(paramsMap, pathParams);
+        paramsMap.putAll(pathParams);
+        return /* full match */ uriLength;
     }
 
     public static int dynamicUriPartialMatch(String uri, int beginIndex, Map<Object, String> paramsMap, List<?> patternTokens) {
@@ -97,7 +93,7 @@ public class UriMatch {
         if (uri.startsWith(token, beginIndex)) {
             final int tokenLength = token.length();
             return (uriLength - beginIndex) == tokenLength?
-                    FULL_URI_MATCH_INDEX: /* partial match */ (beginIndex + tokenLength);
+                    /* full match */ uriLength: /* partial match */ (beginIndex + tokenLength);
         }
         return NO_URI_MATCH_INDEX;
     }
@@ -105,10 +101,10 @@ public class UriMatch {
     public static int staticUriFullMatch(String uri, int beginIndex, String token) {
         final int uriLength = uri.length();
         if (beginIndex == 0) {
-            return uri.equals(token)? FULL_URI_MATCH_INDEX: NO_URI_MATCH_INDEX;
+            return uri.equals(token)? /* full match */ uriLength: NO_URI_MATCH_INDEX;
         }
         return (uri.startsWith(token, beginIndex) && (uriLength - beginIndex == token.length()))?
-                FULL_URI_MATCH_INDEX: NO_URI_MATCH_INDEX;
+                /* full match */ uriLength: NO_URI_MATCH_INDEX;
     }
 
 }

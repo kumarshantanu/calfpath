@@ -17,22 +17,7 @@
             [calfpath.route UriMatch])))
 
 
-(def ^:const FULL-URI-MATCH-INDEX "URI matches fully"  -1)
 (def ^:const NO-URI-MATCH-INDEX   "URI does not match" -2)
-(def ^:const LO-URI-MATCH-INDEX   "URI is lower"       -3)
-(def ^:const HI-URI-MATCH-INDEX   "URI is higher"      -4)
-
-
-(defn partial-uri-match
-  [params-map path-params uri-index]
-  (vswap! params-map conj path-params)
-  uri-index)
-
-
-(defn full-uri-match
-  [params-map path-params]
-  (vswap! params-map conj path-params)
-  FULL-URI-MATCH-INDEX)
 
 
 ;; ~~~ match fns ~~~
@@ -49,7 +34,9 @@
         (if next-tokens
           (if (>= uri-index uri-length)
             (if partial?
-              (partial-uri-match params-map (persistent! path-params) uri-length)
+              (do
+                (vswap! params-map conj (persistent! path-params))
+                #_full-match uri-length)
               NO-URI-MATCH-INDEX)
             (let [token (first next-tokens)]
               (if (string? token)
@@ -71,9 +58,13 @@
                   (recur ui pp (next next-tokens))))))
           (if (< uri-index uri-length)
             (if partial?
-              (partial-uri-match params-map (persistent! path-params) uri-index)
+              (do
+                (vswap! params-map conj (persistent! path-params))
+                #_partial-match uri-index)
               NO-URI-MATCH-INDEX)
-            (full-uri-match params-map (persistent! path-params))))))))
+            (do
+              (vswap! params-map conj (persistent! path-params))
+              #_full-match uri-length)))))))
 
 
 (defn dynamic-uri-partial-match*
@@ -93,7 +84,7 @@
     (if (string/starts-with? rem-uri static-token)
       (let [token-length (count static-token)]
         (if (= rem-len token-length)
-          FULL-URI-MATCH-INDEX
+          #_full-match    (unchecked-add begin-index rem-len)
           #_partial-match (unchecked-add begin-index token-length)))
       NO-URI-MATCH-INDEX)))
 
@@ -102,12 +93,12 @@
   [uri ^long begin-index static-token]
   (if (= 0 begin-index)
     (if (= static-token uri)
-      FULL-URI-MATCH-INDEX
+      (count uri)  ; full match
       NO-URI-MATCH-INDEX)
     (let [rem-uri (subs uri begin-index)
           rem-len (count rem-uri)]
       (if (= rem-uri static-token)
-        FULL-URI-MATCH-INDEX
+        (unchecked-add begin-index rem-len)  ; full match
         NO-URI-MATCH-INDEX))))
 
 
@@ -161,11 +152,8 @@
         begin-index (uri-begin-index-key request 0)
         final-index #?(:cljs (static-uri-partial-match*      uri begin-index static-token)
                         :clj (UriMatch/staticUriPartialMatch uri begin-index static-token))]
-    (when (not= NO-URI-MATCH-INDEX final-index)
-      (assoc request uri-begin-index-key (if (= final-index FULL-URI-MATCH-INDEX)
-                                           #?(:cljs (count uri)
-                                               :clj (.length uri))
-                                           final-index)))))
+    (when (pos? final-index)
+      (assoc request uri-begin-index-key final-index))))
 
 
 (defn static-uri-full-match [request static-token params-key]
@@ -173,7 +161,7 @@
         begin-index (uri-begin-index-key request 0)
         final-index #?(:cljs (static-uri-full-match*      uri begin-index static-token)
                         :clj (UriMatch/staticUriFullMatch uri begin-index static-token))]
-    (when (not= NO-URI-MATCH-INDEX final-index)
+    (when (pos? final-index)
       request)))
 
 
@@ -185,21 +173,16 @@
                         :clj (if (true? has-params?) (get request params-key) (HashMap.)))
         final-index #?(:cljs (dynamic-uri-partial-match*      uri begin-index path-params uri-template)
                         :clj (UriMatch/dynamicUriPartialMatch uri begin-index path-params uri-template))]
-    (when (not= NO-URI-MATCH-INDEX final-index)
+    (when (pos? final-index)
       #?(:cljs (-> request
-                 (assoc uri-begin-index-key (if (= final-index FULL-URI-MATCH-INDEX)
-                                              (count uri)
-                                              final-index))
+                 (assoc uri-begin-index-key final-index)
                  (assoc params-key          @path-params))
-          :clj (let [begin-index (if (= final-index FULL-URI-MATCH-INDEX)
-                                   (.length uri)
-                                   final-index)]
-                 (if (true? has-params?)
-                   (-> ^Associative request
-                     (.assoc uri-begin-index-key begin-index))
-                   (-> ^Associative request
-                     (.assoc uri-begin-index-key begin-index)
-                     (.assoc params-key          path-params))))))))
+          :clj (if (true? has-params?)
+                 (-> ^Associative request
+                   (.assoc uri-begin-index-key final-index))
+                 (-> ^Associative request
+                   (.assoc uri-begin-index-key final-index)
+                   (.assoc params-key          path-params)))))))
 
 
 (defn dynamic-uri-full-match [request uri-template params-key]
@@ -210,7 +193,7 @@
                         :clj (if (true? has-params?) (get request params-key) (HashMap.)))
         final-index #?(:cljs (dynamic-uri-full-match*      uri begin-index path-params uri-template)
                         :clj (UriMatch/dynamicUriFullMatch uri begin-index path-params uri-template))]
-    (when (not= NO-URI-MATCH-INDEX final-index)
+    (when (pos? final-index)
       #?(:cljs (assoc request params-key @path-params)
           :clj (if (true? has-params?)
                  request
