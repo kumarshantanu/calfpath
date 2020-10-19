@@ -153,7 +153,8 @@
         final-index #?(:cljs (static-uri-partial-match*      uri begin-index static-token)
                         :clj (UriMatch/staticUriPartialMatch uri begin-index static-token))]
     (when (pos? final-index)
-      (assoc request uri-begin-index-key final-index))))
+      #?(:cljs (assoc request uri-begin-index-key final-index)
+          :clj (.assoc ^Associative request uri-begin-index-key final-index)))))
 
 
 (defn static-uri-full-match [request static-token params-key]
