@@ -11,7 +11,7 @@ package calfpath;
 
 public class VolatileInt {
 
-    public volatile int value = 0;
+    public /*volatile*/ int value = 0;
 
     public static VolatileInt create(int init) {
         return new VolatileInt(init);
