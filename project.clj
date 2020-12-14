@@ -8,7 +8,7 @@
                 *unchecked-math* :warn-on-boxed}
   :pedantic? :warn
   :java-source-paths ["java-src"]
-  :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
+  :javac-options ["-target" "1.7" "-source" "1.7" "-Xlint:-options"]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :cljs {:plugins   [[lein-cljsbuild "1.1.7"]
                                 [lein-doo "0.1.10"]]

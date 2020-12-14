@@ -7,12 +7,13 @@
 * [TODO - BREAKING CHANGE] Consider `clojure.walk` as routes navigation tool
 * [TODO] Include [quickstart] complete server examples using Ring and Machhiato
 * [TODO] Return numeric direction (lower/higher) indicator in URI matching
+* [Todo] Do not finalize FULL-MATCH (in request) in a partial-match request
+  - because we don't know if it's a full match; it's determined by a future token
 
 
 ## [WIP] 0.8.0 / 2020-October-??
 
-- [Todo] Do not finalize FULL-MATCH (in request) in a partial-match request
-  - because we don't know if it's a full match; it's determined by a future token
+- [BREAKING CHANGE] Drop support for Java 6 (JDK 1.6)
 - [Todo] Reformat docstring for _cljdoc_
 
 
