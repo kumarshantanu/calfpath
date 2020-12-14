@@ -8,6 +8,7 @@
 
 
 (ns calfpath.core
+  "Routing macros in Calfpath."
   #?(:cljs (:require-macros calfpath.core))
   (:require
     [clojure.string :as str]

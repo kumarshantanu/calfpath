@@ -8,6 +8,7 @@
 
 
 (ns calfpath.internal
+  "Internal implementation details."
   #?(:cljs (:require-macros calfpath.internal))
   (:require
     [clojure.set :as set]
