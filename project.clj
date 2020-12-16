@@ -25,7 +25,7 @@
                     :hooks      [leiningen.cljsbuild]}
              :c08 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :c09 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :c10 {:dependencies [[org.clojure/clojure "1.10.1"]]}
+             :c10 {:dependencies [[org.clojure/clojure "1.10.2-RC1"]]}
              :dln {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :s09 {:dependencies [[org.clojure/clojure "1.9.0"]
                                   [org.clojure/clojurescript "1.9.946"]]}
