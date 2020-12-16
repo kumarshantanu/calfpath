@@ -105,8 +105,6 @@ See [documentation page](doc/intro.md) for concepts, examples and more features.
 
 ## Development
 
-You need JDK 1.7 or higher during development.
-
 Running tests:
 
 ```shell
