@@ -11,12 +11,11 @@
   - because we don't know if it's a full match; it's determined by a future token
 
 
-## [WIP] 0.8.0 / 2020-December-??
+## 0.8.0 / 2020-December-17
 
-* [BREAKING CHANGE] Drop support for Java 6 (JDK 1.6)
-  - Java 15 compiler (does not support emitting 1.6 class files anymore) compatibility
-* [BREAKING CHANGE] Drop support for Clojure 1.7
-  - Use string utility fns introduced in Clojure 1.8 for CLJS
+* [BREAKING CHANGE] Drop support
+  - Java 6 (JDK 1.6) - for compatibility with Java 15 compiler (cannot emit 1.6 class files)
+  - Clojure 1.7 - to use string utility fns introduced in Clojure 1.8 for CLJS
 * [BREAKING CHANGE] Rename `calfpath.route/assoc-spec-to-request` to `assoc-route-to-request`
 * ClojureScript compatibility
   - Excluding `calfpath.route/make-dispatcher` and matchex optimization (JVM only)
