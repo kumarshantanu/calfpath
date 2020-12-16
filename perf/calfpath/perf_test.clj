@@ -120,17 +120,20 @@
     (reitit/router
       [["/user/:id/profile/:type/" {:get (fn [{{:keys [id type]} :path-params}] (h11 id type))
                                     :put (fn [{{:keys [id type]} :path-params}] (h12 id type))
-                                    :handler (fn [_] (h1x))}]
-       ["/user/:id/permissions/" {:get (fn [{{:keys [id]} :path-params}] (h21 id))
-                                  :put (fn [{{:keys [id]} :path-params}] (h22 id))
-                                  :handler (fn [_] (h2x))}]
+                                    :handler (constantly (h1x))}]
+       ["/user/:id/permissions/"   {:get (fn [{{:keys [id]} :path-params}] (h21 id))
+                                    :put (fn [{{:keys [id]} :path-params}] (h22 id))
+                                    :handler (constantly (h2x))}]
        ["/company/:cid/dept/:did/" {:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))
-                                    :handler (fn [_] (h3x))}]
-       ["/this/is/a/static/route" {:put (fn [_] (h40))
-                                   :handler (fn [_] (h4x))}]])
-    (fn [_] (hxx))
-    ;; benchmark settings
-    {:inject-match? false, :inject-router? false}))
+                                    :handler (constantly (h3x))}]
+       ["/this/is/a/static/route"  {:put (fn [_] (h40))
+                                    :handler (constantly (h4x))}]])
+    (constantly (hxx))
+    ;; as per https://github.com/kumarshantanu/calfpath/pull/12 comments
+    {:inject-match? false
+     :inject-router? false
+     :reitit.trie/parameters reitit.trie/record-parameters}))
+
 
 (defmacro cond-let
   [& clauses]
@@ -183,16 +186,16 @@
 
 
 (def calfpath-routes
-  [{:uri "/user/:id/profile/:type/" :nested [{:method :get :handler (fn [{:keys [id type]}] (h11 id type))}
-                                             {:method :put :handler (fn [{:keys [id type]}] (h12 id type))}
-                                             {:matcher identity :handler (fn [_] (h1x))}]}
-   {:uri "/user/:id/permissions/"   :nested [{:method :get :handler (fn [{:keys [id] :as request}] (h21 id))}
-                                             {:method :put :handler (fn [{:keys [id] :as request}] (h22 id))}
+  [{"/user/:id/profile/:type/" [{:get (fn [{{:keys [id type]} :path-params}] (h11 id type))}
+                                {:put (fn [{{:keys [id type]} :path-params}] (h12 id type))}
+                                {:matcher identity :handler (fn [_] (h1x))}]}
+   {:uri "/user/:id/permissions/"   :nested [{:method :get :handler (fn [{{:keys [id]} :path-params}] (h21 id))}
+                                             {:method :put :handler (fn [{{:keys [id]} :path-params}] (h22 id))}
                                              {:matcher identity :handler (fn [_] (h2x))}]}
-   {:uri "/company/:cid/dept/:did/" :nested [{:method :put :handler (fn [{:keys [cid did] :as request}] (h30 {}))}
-                                             {:matcher identity :handler (fn [_] (h3x))}]}
-   {:uri "/this/is/a/static/route"  :nested [{:method :put :handler (fn [request] (h40))}
-                                             {:matcher identity :handler (fn [_] (h4x))}]}
+   {"/company/:cid/dept/:did/" [{:put (fn [{{:keys [cid did]} :path-params}] (h30 cid did))}
+                                {:matcher identity :handler (fn [_] (h3x))}]}
+   {"/this/is/a/static/route"  [{:put (fn [request] (h40))}
+                                {:matcher identity :handler (fn [_] (h4x))}]}
    {:matcher identity :handler (fn [_] (hxx))}])
 
 
@@ -209,9 +212,9 @@
 
 (use-fixtures :once
   (c/make-bench-wrapper
-    ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-core-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
+    ["Ataraxy" "Bidi" "Compojure" "Clout" "Reitit" "CalfPath-macros" "CalfPath-route-walker" "CalfPath-route-unroll"]
     {:chart-title "Ataraxy/Bidi/Compojure/Clout/Reitit/CalfPath"
-     :chart-filename (format "bench-clj-%s.png" c/clojure-version-str)}))
+     :chart-filename (format "bench-small-routing-table-clj-%s.png" c/clojure-version-str)}))
 
 
 (defmacro test-compare-perf
@@ -226,14 +229,14 @@
   (testing "no URI match"
     (let [request {:request-method :get
                    :uri "/hello/joe/"}]
-      (test-compare-perf "no URI match"
+      (test-compare-perf (str "no URI match: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "no method match"
     (let [request {:request-method :post
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "no method match"
+      (test-compare-perf (str "no method match: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))
@@ -243,20 +246,20 @@
   (testing "static route match"
     (let [request {:request-method :put
                    :uri "/this/is/a/static/route"}]
-      (test-compare-perf "static URI match, 1 method"
+      (test-compare-perf (str "static URI match, 1 method: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request))))
   (testing "pattern route match"
     (let [request {:request-method :get
                    :uri "/user/1234/profile/compact/"}]
-      (test-compare-perf "pattern URI match, 2 methods"
+      (test-compare-perf (str "pattern URI match, 2 methods: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))
     (let [request {:request-method :get
                    :uri "/company/1234/dept/5678/"}]
-      (test-compare-perf "pattern URI match, 1 method"
+      (test-compare-perf (str "pattern URI match, 1 method: " (pr-str request))
         (handler-ataraxy request) (handler-bidi request) (handler-compojure request) (handler-clout request)
         (handler-reitit request)
         (handler-calfpath request) (handler-calfpath-route-walker request) (handler-calfpath-route-unroll request)))))

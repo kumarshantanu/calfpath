@@ -8,11 +8,11 @@
 
 
 (ns calfpath.core
+  "Routing macros in Calfpath."
+  #?(:cljs (:require-macros calfpath.core))
   (:require
     [clojure.string :as str]
-    [calfpath.internal :as i])
-  (:import
-    [calfpath MatchResult Util]))
+    [calfpath.internal :as i]))
 
 
 (defmacro ->uri
@@ -25,7 +25,8 @@
   (when-not (#{0 1} (rem (count clauses) 3))
     (i/expected "clauses in sets of 3 with an optional default expression" clauses))
   (doseq [[uri-template dav _] (partition 3 clauses)]
-    (i/expected string? "a uri-template string" (eval uri-template))
+    (i/expected string? "a uri-template string" #?(:cljs uri-template
+                                                    :clj (eval uri-template)))
     (when-not (and (vector? dav) (every? symbol? dav))
       (i/expected "destructuring argument vector with symbols" dav)))
   (let [response-400 {:status 400
@@ -36,12 +37,14 @@
         (if (= 1 (count clauses))
           (first clauses)
           (let [[uri-pattern dav expr] clauses
-                [uri-template partial?] (i/parse-uri-template \: (eval uri-pattern))]
-            `(if-let [^MatchResult match-result# (Util/matchURI (:uri ~request)
-                                                   (int (i/get-uri-match-end-index ~request))
-                                                   ~uri-template ~partial?)]
-               (let [{:keys ~dav :as ~params} (.getParams match-result#)
-                     ~request (i/assoc-uri-match-end-index ~request (.getEndIndex match-result#))]
+                [uri-template partial?] (i/parse-uri-template \: #?(:cljs uri-pattern
+                                                                     :clj (eval uri-pattern)))]
+            `(if-some [^"[Ljava.lang.Object;"
+                       match-result# (i/match-uri (:uri ~request)
+                                       (int (i/get-uri-match-end-index ~request))
+                                       ~uri-template ~partial?)]
+               (let [{:keys ~dav :as ~params} (aget match-result# 0)
+                     ~request (i/assoc-uri-match-end-index ~request (aget match-result# 1))]
                  ~expr)
                (->uri ~request ~@(drop 3 clauses))))))
       response-400)))

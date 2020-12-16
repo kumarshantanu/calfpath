@@ -8,11 +8,16 @@
 
 
 (ns calfpath.core-test
-  (:require [clojure.test :refer :all]
-            [calfpath.core :as c]))
+  (:require
+    #?(:cljs [goog.string :as gstring])
+    #?(:cljs [goog.string.format])
+    #?(:cljs [cljs.test    :refer-macros [deftest is testing]]
+        :clj [clojure.test :refer        [deftest is testing]])
+    #?(:cljs [calfpath.core :as c :include-macros true]
+        :clj [calfpath.core :as c])))
 
 
-(def user-profile-path "/user/:id/profile/:type/")
+#?(:cljs (def format gstring/format))
 
 
 (deftest test-->uri
@@ -34,7 +39,7 @@
                                                            :body (format "ID: %s, Type: %s" id type)}))))
       (is (= "ID: 1234, Type: compact"
             (:body (c/->uri request
-                     user-profile-path          [id type] {:status 200
+                     "/user/:id/profile/:type/" [id type] {:status 200
                                                            :body (format "ID: %s, Type: %s" id type)}))))))
   (testing "Two clauses (no match)"
     (let [request {:uri "/hello/1234/"}]

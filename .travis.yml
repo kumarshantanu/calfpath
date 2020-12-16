@@ -1,12 +1,10 @@
+dist: bionic
 language: clojure
 jdk:
-  - openjdk7
-  - oraclejdk8
-  - oraclejdk9
+  - openjdk8
   - openjdk10
   - openjdk11
 env:
-  - LEIN_PROFILE=c07
   - LEIN_PROFILE=c08
   - LEIN_PROFILE=c09
   - LEIN_PROFILE=c10
@@ -16,3 +14,6 @@ matrix:
   exclude:
   - jdk: openjdk7
     env: LEIN_PROFILE=c10
+cache:
+  directories:
+  - $HOME/.m2

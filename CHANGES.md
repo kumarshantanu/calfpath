@@ -4,12 +4,51 @@
 ## TODO
 
 * [TODO - BREAKING CHANGE] Rename the abstraction uri-template to path
-* [TODO] Route based URI-generation from URI pattern (in a route) and params map
-  - `:id` attribute (in route, later associated with `:handler`) based
-  - CLJS compatible (implies: JVM code must stay away in routes definition)
-  - Account for partial and nested URI templates
-* [Todo] Automatic prefix-segmentation using wildcard (performance)
-* [Todo] Add large routes (OpenSensors) to performance benchmarks
+* [TODO - BREAKING CHANGE] Consider `clojure.walk` as routes navigation tool
+* [TODO] Include [quickstart] complete server examples using Ring and Machhiato
+* [TODO] Return numeric direction (lower/higher) indicator in URI matching
+* [Todo] Do not finalize FULL-MATCH (in request) in a partial-match request
+  - because we don't know if it's a full match; it's determined by a future token
+
+
+## [WIP] 0.8.0 / 2020-December-??
+
+* [BREAKING CHANGE] Drop support for Java 6 (JDK 1.6)
+  - Java 15 compiler (does not support emitting 1.6 class files anymore) compatibility
+* [BREAKING CHANGE] Drop support for Clojure 1.7
+  - Use string utility fns introduced in Clojure 1.8 for CLJS
+* [BREAKING CHANGE] Rename `calfpath.route/assoc-spec-to-request` to `assoc-route-to-request`
+* ClojureScript compatibility
+  - Excluding `calfpath.route/make-dispatcher` and matchex optimization (JVM only)
+* Data-driven Routes
+  - [BREAKING CHANGE] Put URI params under `:path-params` key in request
+  - Support for easy route syntax
+  - Accept `options` argument in function `calfpath.route/make-dispatcher`
+  - Show URI patterns in sorted order on no URI match (HTTP 400)
+  - Fix issue where (tidy) wildcard did not prefix path-param token with `/`
+* Bidirectional routing - ID based Ring request generation (ns `calfpath.route`)
+  - `make-index`
+  - `realize-uri`
+  - `template->request`
+* Performance tweaks
+  - Automatic prefix-segregation using wildcard nested routing
+    - See options `:tidy?` and `:tidy-threshold` in `calfpath.route/compile-routes`
+  - Add large routes (OpenSensors) to performance benchmarks
+  - Drop `calfpath.MatchResult` in favour of 2-element array
+  - Faster match for static URI string (full/partial)
+  - Use mutable URI end-index for tracking URI match
+  - Use passthrough params-map from request to add new URI params
+  - Matchex
+    - Direct handler invocation for identity matcher
+    - Use `if-some`/`when-some` instead of `if-let`/`when-let` everywhere
+    - Use bulk methods matcher when all routes match methods
+* Documentation
+  - Dispatch macros
+  - Data driven routes
+    - Concepts
+    - Easy routes notation
+    - Applying middleware
+    - Bidirectional routing
 
 
 ## 0.7.2 / 2019-January-15
