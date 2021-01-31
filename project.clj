@@ -11,7 +11,7 @@
   :javac-options ["-target" "1.7" "-source" "1.7" "-Xlint:-options"]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :cljs {:plugins   [[lein-cljsbuild "1.1.7"]
-                                [lein-doo "0.1.10"]]
+                                [lein-doo "0.1.10" :exclusions [org.clojure/clojure]]]
                     :doo       {:build "test"}
                     :cljsbuild {:builds {:test {:source-paths ["src" "test" "test-doo"]
                                                 :compiler {:main          calfpath.runner
