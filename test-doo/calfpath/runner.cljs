@@ -11,7 +11,9 @@
   (:require
     [doo.runner :refer-macros [doo-tests]]
     [calfpath.core-test]
-    [calfpath.route-test]))
+    [calfpath.route-handler-test]
+    [calfpath.route-prepare-test]
+    [calfpath.route-reverse-test]))
 
 
 (enable-console-print!)
@@ -19,6 +21,8 @@
 (try
   (doo-tests
     'calfpath.core-test
-    'calfpath.route-test)
+    'calfpath.route-handler-test
+    'calfpath.route-prepare-test
+    'calfpath.route-reverse-test)
   (catch js/Error e
     (.log js/Console (.-stack e))))
