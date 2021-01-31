@@ -11,6 +11,16 @@
   - because we don't know if it's a full match; it's determined by a future token
 
 
+## [WIP] 0.8.1 / 2021-January-??
+
+- [Todo] Fix: Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
+  - Bug: Expects `:handler` to be present in route
+- [Todo] Fix: Include URI pattern wildcard suffix in `calfpath.route/make-index`
+  - Bug: URI wildcard suffix is stripped when indexing routes
+- [Todo] Fix: Group common URI pattern into sub-routes
+  - Bug: Common URI pattern in routes should be grouped together
+
+
 ## 0.8.0 / 2020-December-17
 
 * [BREAKING CHANGE] Drop support
