@@ -41,6 +41,7 @@
 
 (def easy-routes1
   [{["/album/:lid/artist/:rid/" :get] er-handler}
+   {["/album/:lid/artist/:rid/" :put] er-handler}
    {"/hello/1234/"                    er-handler}
    {["/info/:token/"            :get] er-handler}
    {"/user/:id*" [{"/auth" er-handler}
@@ -55,6 +56,7 @@
 
 (def flat-routes1  ; flat-routes are the NON-easy regular version of easy-routes
   [{:uri "/album/:lid/artist/:rid/" :method :get}
+   {:uri "/album/:lid/artist/:rid/" :method :put}
    {:uri "/hello/1234/"                         }
    {:uri "/info/:token/"            :method :get}
    {:uri "/user/:id*" :nested [{:uri "/auth"}
@@ -92,7 +94,8 @@
 
 
 (def tidy-routes1
-  [{:uri "/album/:lid/artist/:rid/" :method :get}
+  [{:uri "/album/:lid/artist/:rid/" :nested [{:method :get}
+                                             {:method :put}]}
    {:uri "/hello/1234/"                         }
    {:uri "/info/:token/"            :method :get}
    {:uri "/user/:id*" :nested [{:uri "/auth"    }

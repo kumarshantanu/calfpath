@@ -227,16 +227,36 @@
 ;; helpers for `routes -> wildcard tidy`
 
 
+(defn deduplicate-paths
+  [routes uri-key]
+  (let [[with-path without-path] (reduce (fn [[with without] each-route]
+                                           (if (contains? each-route uri-key)
+                                             [(conj with each-route) without]
+                                             [with (conj without each-route)]))
+                                   [[] []]
+                                   routes)]
+    (concat (->> with-path    ; de-duplicate common paths
+              (sort-by uri-key)
+              (partition-by uri-key)
+              (mapv (fn [coll]
+                      (if (= 1 (count coll))
+                        (first coll)
+                        {uri-key (get (first coll) uri-key)
+                        :nested (mapv #(dissoc % uri-key) coll)}))))
+      without-path)))
+
+
 (defn split-routes-having-uri
   "Given mixed routes (vector), split into those having distinct routes and those that don't."
   [routes uri-key]
-  (reduce (fn [[with-uri no-uri] each-route]
-            (if (and (contains? each-route uri-key)
-                  ;; wildcard already? then exclude
-                  (not (string/ends-with? ^String (get each-route uri-key) "*")))
-              [(conj with-uri each-route) no-uri]
-              [with-uri (conj no-uri each-route)]))
-    [[] []] routes))
+  (->> (deduplicate-paths routes uri-key)
+    (reduce (fn [[with-uri no-uri] each-route]
+              (if (and (contains? each-route uri-key)
+                    ;; wildcard already? then exclude
+                    (not (string/ends-with? ^String (get each-route uri-key) "*")))
+                [(conj with-uri each-route) no-uri]
+                [with-uri (conj no-uri each-route)]))
+      [[] []])))
 
 
 (defn tokenize-routes-uris

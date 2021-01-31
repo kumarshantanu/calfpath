@@ -17,7 +17,7 @@
   - Bug: Expects `:handler` to be present in route
 - [Todo] Fix: Include URI pattern wildcard suffix in `calfpath.route/make-index`
   - Bug: URI wildcard suffix is stripped when indexing routes
-- [Todo] Fix: Group common URI pattern into sub-routes
+- Fix: Group common URI pattern into sub-routes
   - Bug: Common URI pattern in routes should be grouped together
 
 
