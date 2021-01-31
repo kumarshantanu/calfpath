@@ -30,7 +30,7 @@
              :s09 {:dependencies [[org.clojure/clojure "1.9.0"]
                                   [org.clojure/clojurescript "1.9.946"]]}
              :s10 {:dependencies [[org.clojure/clojure "1.9.0"]
-                                  [org.clojure/clojurescript "1.10.773"]]}
+                                  [org.clojure/clojurescript "1.10.773" :exclusions [com.google.code.findbugs/jsr305]]]}
              :perf {:dependencies [[ataraxy   "0.4.2" :exclusions [[org.clojure/clojure]
                                                                    [ring/ring-core]]]
                                    [bidi      "2.1.6" :exclusions [ring/ring-core]]
