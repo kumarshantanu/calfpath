@@ -16,16 +16,30 @@
         :clj [calfpath.route :as r])))
 
 
-(defn handler
-  [ks]
-  (fn [request]
-    (select-keys request (conj ks :request-method))))
+;; ----- utility -----
+
+
+(defn handler [ks] (fn [request]
+                     (select-keys request (conj ks :request-method))))
 
 
 (def er-handler (handler [:path-params :uri :method]))
 
 
-(def easy-routes
+(defn deep-dissoc [data k] (walk/prewalk (fn [node]
+                                           (if (map? node)
+                                             (dissoc node k)
+                                             node))
+                             data))
+
+
+(defn remove-handler [routes] (deep-dissoc routes :handler))
+
+
+;; ----- easy-route tests -----
+
+
+(def easy-routes1
   [{["/album/:lid/artist/:rid/" :get] er-handler}
    {"/hello/1234/"                    er-handler}
    {["/info/:token/"            :get] er-handler}
@@ -39,32 +53,18 @@
                   {"" er-handler}]}])
 
 
-(def flat-routes
-  [{:uri "/info/:token/"            :method :get}
-   {:uri "/album/:lid/artist/:rid/" :method :get}
-   {:uri "/user/:id/profile/:type/" :nested [{:method :get   }
-                                             {:method :patch }
-                                             {:method :delete}]}
-   {:uri "/user/:id/permissions/"   :nested [{:method :get   }
-                                             {:method :post  }
-                                             {:method :put   }]}
-   {:uri "/user/:id/auth"}
-   {:uri "/user/:id"     }
-   {:uri "/hello/1234/"  }])
-
-
-(def tidy-routes
+(def flat-routes1  ; flat-routes are the NON-easy regular version of easy-routes
   [{:uri "/album/:lid/artist/:rid/" :method :get}
    {:uri "/hello/1234/"                         }
    {:uri "/info/:token/"            :method :get}
-   {:uri "/user/:id*" :nested [{:uri "/auth"    }
-                               {:uri "/permissions/"   :nested [{:method :get   }
-                                                                {:method :post  }
-                                                                {:method :put   }]}
-                               {:uri "/profile/:type/" :nested [{:method :get   }
-                                                                {:method :patch }
+   {:uri "/user/:id*" :nested [{:uri "/auth"}
+                               {:uri "/permissions/"   :nested [{:method :get }
+                                                                {:method :post}
+                                                                {:method :put }]}
+                               {:uri "/profile/:type/" :nested [{:method :get}
+                                                                {:method :patch}
                                                                 {:method :delete}]}
-                               {:uri ""         }]}])
+                               {:uri ""}]}])
 
 
 (def easy-routes2
@@ -79,41 +79,40 @@
                               {:method :put}]}])
 
 
+(deftest test-easy
+  (is (= flat-routes1 (-> easy-routes1
+                        (r/easy-routes :uri :method)
+                        remove-handler)))
+  (is (= flat-routes2 (-> easy-routes2
+                        (r/easy-routes :uri :method)
+                        remove-handler))))
+
+
+;; ----- tidy-route tests -----
+
+
+(def tidy-routes1
+  [{:uri "/album/:lid/artist/:rid/" :method :get}
+   {:uri "/hello/1234/"                         }
+   {:uri "/info/:token/"            :method :get}
+   {:uri "/user/:id*" :nested [{:uri "/auth"    }
+                               {:uri "/permissions/"   :nested [{:method :get   }
+                                                                {:method :post  }
+                                                                {:method :put   }]}
+                               {:uri "/profile/:type/" :nested [{:method :get   }
+                                                                {:method :patch }
+                                                                {:method :delete}]}
+                               {:uri ""         }]}])
+
+
 (def tidy-routes2
   [{:uri "/user*" :nested [{:uri "/:id" :nested [{:method :get}
                                                  {:method :put}]}
                            {:uri "" :method :post}]}])
 
 
-(defn deep-dissoc [data k]
-  (walk/prewalk (fn [node]
-                  (if (map? node)
-                    (dissoc node k)
-                    node))
-          data))
-
-
-(deftest test-easy-routes
-  (is (= tidy-routes
-        (deep-dissoc
-          (r/easy-routes easy-routes :uri :method)
-          :handler)))
-  (is (= flat-routes2
-        (deep-dissoc
-          (r/easy-routes easy-routes2 :uri :method)
-          :handler))))
-
-
 (deftest test-routes->wildcard-tidy
-  (is (= tidy-routes
-        (-> flat-routes
-          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2}))))
-  (is (= tidy-routes2
-        (-> flat-routes2
-          (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 1})))))
-
-
-(def tidy-easy-routes2
-  [{["/user" :post] (constantly {:status 200 :body "new-user"})}
-   {"/user/:id" [{:get (constantly {:status 200 :body "user-get"})}
-                 {:put (constantly {:status 200 :body "user-put"})}]}])
+  (is (= tidy-routes1 (-> flat-routes1
+                        (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 2}))))
+  (is (= tidy-routes2 (-> flat-routes2
+                        (r/update-routes r/routes->wildcard-tidy {:tidy-threshold 1})))))
