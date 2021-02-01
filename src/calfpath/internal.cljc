@@ -37,34 +37,42 @@
 
 
 (defn parse-uri-template
-  "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
-  and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']."
+  "Given a URI pattern string,
+  e.g. \"/user/:id/profile/:descriptor/\"
+    or \"/user/{id}/profile/{descriptor}/\"
+  parse it as a vector of alternating string/keyword tokens, e.g. `[\"/user/\" :id \"/profile/\" :descriptor \"/\"]`.
+  Last character `*` in the pattern string is considered partial URI pattern. Final return value is
+  `[pattern-tokens partial?]`"
   [^String pattern]
-  (let [[^String path partial?] (if (and (> (count pattern) 1)
-                                      (string/ends-with? pattern "*"))
+  (let [[^String path partial?] (if (string/ends-with? pattern "*")
                                   [(subs pattern 0 (dec (count pattern))) true]  ; chop off last char
                                   [pattern false])
-        n (count path)
-        separator \/]
-    (loop [i (int 0) ; current index in the URI string
-           j (int 0) ; start index of the current token (string or keyword)
-           s? true   ; string in progress? (false implies keyword in progress)
-           r []]
-      (if (>= i n)
-        [(conj r (let [t (subs path j i)]
-                   (if s?
-                     t
-                     (keyword t))))
-         partial?]
-        (let [^char ch  (get path i)
-              [jn s? r] (if s?
-                          (if (= \: ch)
-                            [(unchecked-inc i) false (conj r (subs path j i))]
-                            [j true r])
-                          (if (= separator ch)
-                            [i true  (conj r (keyword (subs path j i)))]
-                            [j false r]))]
-          (recur (unchecked-inc i) (int jn) s? r))))))
+        n (count path)]
+    (if (= "" path)
+      [[""] partial?]
+      (loop [i (int 0) ; current index in the URI string
+             j (int 0) ; start index of the current token (string or keyword)
+             s? true   ; string in progress? (false implies keyword in progress)
+             r []]
+        (if (>= i n)
+          [(if (>= j n)
+             r
+             (conj r (let [t (subs path j i)]
+                       (if s?
+                         t
+                         (keyword t)))))
+           partial?]
+          (let [^char ch  (get path i)
+                [jn s? r] (if s?
+                            (if (or (= \: ch)
+                                  (= \{ ch))
+                              [(unchecked-inc i) false (conj r (subs path j i))]
+                              [j true r])
+                            (cond
+                              (= \/ ch) [i                 true (conj r (keyword (subs path j i)))]
+                              (= \} ch) [(unchecked-inc i) true (conj r (keyword (subs path j i)))]
+                              :else     [j false r]))]
+            (recur (unchecked-inc i) (int jn) s? r)))))))
 
 
 (defn as-uri-template
