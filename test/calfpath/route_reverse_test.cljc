@@ -16,18 +16,18 @@
 
 
 (def indexable-routes
-  [{:uri "/info/:token"             :method :get :handler identity :id :info}
-   {:uri "/album/:lid/artist/:rid/" :method :get :handler identity :id :album}
+  [{:uri "/info/:token"             :method :get :id :info}
+   {:uri "/album/:lid/artist/:rid/" :method :get :id :album}
    {:uri "/user/:id*"
-    :nested [{:uri "/auth" :handler identity :id :auth-user}
-             {:uri "/permissions/"   :nested [{:method :get    :handler identity :id :read-perms}
-                                              {:method :post   :handler identity :id :save-perms}
-                                              {:method :put    :handler identity :id :update-perms}]}
-             {:uri "/profile/:type/" :nested [{:method :get    :handler identity :id :read-profile}
-                                              {:method :patch  :handler identity :id :patch-profile}
-                                              {:method :delete :handler identity :id :remove-profile}]}
+    :nested [{:uri "/auth" :id :auth-user}
+             {:uri "/permissions/"   :nested [{:method :get    :id :read-perms}
+                                              {:method :post   :id :save-perms}
+                                              {:method :put    :id :update-perms}]}
+             {:uri "/profile/:type/" :nested [{:method :get    :id :read-profile}
+                                              {:method :patch  :id :patch-profile}
+                                              {:method :delete :id :remove-profile}]}
              {:uri ""                :handler identity }]}
-   {:uri "/public/*" :method :get :handler identity :id :public-file}])
+   {:uri "/public/*" :method :get :id :public-file}])
 
 
 (deftest test-index-routes

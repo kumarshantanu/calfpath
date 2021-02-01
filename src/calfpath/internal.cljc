@@ -580,7 +580,7 @@
                               [false uri-prefix])]
               (cond-> context
                 (is-key? method-key) (update :method        (fn [_]    (get each-route method-key)))
-                (is-key? :handler)   (as-> $
+                (is-key? index-key)  (as-> $
                                        (update $ :index-map (fn [imap] (if-some [index-val (get each-route index-key)]
                                                                          (assoc imap index-val
                                                                            {:uri (as-> (strip-partial-marker uri-now) $

@@ -11,19 +11,17 @@
   - because we don't know if it's a full match; it's determined by a future token
 
 
-## [WIP] 0.8.1 / 2021-January-??
+## [WIP] 0.8.1 / 2021-February-??
 
 - Bugfix
-  - [Todo] Bugfix: Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
-    - Bug: Expects `:handler` to be present in route
+  - Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
+    - Bug: Expects `:handler` to be present in identifiable route
   - Include URI pattern wildcard suffix in `calfpath.route/make-index`
     - Bug: URI wildcard suffix is stripped when indexing routes
   - Group common URI pattern into sub-routes
     - Bug: Common URI pattern in routes should be grouped together
 - Enhancement
   - Support path params notation `:param` and `{param}`, e.g. `/foo/:param/bar` and `/foo/{param}/bar`
-- Deprecation
-  - [Todo] Deprecate calfpath.core functionality
 
 
 ## 0.8.0 / 2020-December-17
