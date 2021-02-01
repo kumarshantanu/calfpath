@@ -328,7 +328,7 @@
           (let [params-sym    (-> (gensym "uri-params-")
                                 (vary-meta assoc :tag "java.util.Map"))
                 end-index-sym (gensym "end-index-")
-                [uri-template partial?] (i/parse-uri-template i/default-separator uri-pattern)
+                [uri-template partial?] (i/parse-uri-template uri-pattern)
                 uri-str-token (first uri-template)
                 uri-string?   (and (= 1 (count uri-template))
                                 (string? uri-str-token))]

@@ -38,8 +38,8 @@
 
 (defn parse-uri-template
   "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
-  and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
-  [marker-char ^String pattern]
+  and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']."
+  [^String pattern]
   (let [[^String path partial?] (if (and (> (count pattern) 1)
                                       (string/ends-with? pattern "*"))
                                   [(subs pattern 0 (dec (count pattern))) true]  ; chop off last char
@@ -58,7 +58,7 @@
          partial?]
         (let [^char ch  (get path i)
               [jn s? r] (if s?
-                          (if (= ^char marker-char ch)
+                          (if (= \: ch)
                             [(unchecked-inc i) false (conj r (subs path j i))]
                             [j true r])
                           (if (= separator ch)
@@ -67,13 +67,10 @@
           (recur (unchecked-inc i) (int jn) s? r))))))
 
 
-(def ^:const default-separator \:)
-
-
 (defn as-uri-template
   [uri-pattern-or-template]
   (cond
-    (string? uri-pattern-or-template)      (parse-uri-template default-separator uri-pattern-or-template)
+    (string? uri-pattern-or-template)      (parse-uri-template uri-pattern-or-template)
     (and (vector? uri-pattern-or-template)
       (every? (some-fn string? keyword?)
         uri-pattern-or-template))          uri-pattern-or-template
@@ -579,7 +576,7 @@
                                        (update $ :index-map (fn [imap] (if-some [index-val (get each-route index-key)]
                                                                          (assoc imap index-val
                                                                            {:uri (as-> (strip-partial-marker uri-now) $
-                                                                                   (parse-uri-template \: $)
+                                                                                   (parse-uri-template $)
                                                                                    (first $)
                                                                                    (concat $ (when partial? [:*]))
                                                                                    (vec $))
