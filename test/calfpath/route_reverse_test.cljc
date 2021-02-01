@@ -26,7 +26,8 @@
              {:uri "/profile/:type/" :nested [{:method :get    :handler identity :id :read-profile}
                                               {:method :patch  :handler identity :id :patch-profile}
                                               {:method :delete :handler identity :id :remove-profile}]}
-             {:uri ""                :handler identity }]}])
+             {:uri ""                :handler identity }]}
+   {:uri "/public/*" :method :get :handler identity :id :public-file}])
 
 
 (deftest test-index-routes
@@ -39,12 +40,17 @@
             :update-perms   {:uri ["/user/" :id "/permissions/"]       :request-method :put}
             :read-profile   {:uri ["/user/" :id "/profile/" :type "/"] :request-method :get}
             :patch-profile  {:uri ["/user/" :id "/profile/" :type "/"] :request-method :patch}
-            :remove-profile {:uri ["/user/" :id "/profile/" :type "/"] :request-method :delete}}
+            :remove-profile {:uri ["/user/" :id "/profile/" :type "/"] :request-method :delete}
+            :public-file    {:uri ["/public/" :*]                      :request-method :get}}
           routing-index))
     (is (= {:uri "/album/10/artist/20/"
             :request-method :get}
           (-> (:album routing-index)
             (r/template->request {:uri-params {:lid 10 :rid 20}}))))
+    (is (= {:uri "/public/foo.html"
+            :request-method :get}
+          (-> (:public-file routing-index)
+            (r/template->request {:uri-params {:* "foo.html"}}))))
     (is (= {:uri "https://myapp.com/user/10/permissions/?q=beer&country=in"
             :request-method :post}
           (-> (:save-perms routing-index)

@@ -13,12 +13,15 @@
 
 ## [WIP] 0.8.1 / 2021-January-??
 
-- [Todo] Fix: Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
-  - Bug: Expects `:handler` to be present in route
-- [Todo] Fix: Include URI pattern wildcard suffix in `calfpath.route/make-index`
-  - Bug: URI wildcard suffix is stripped when indexing routes
-- Fix: Group common URI pattern into sub-routes
-  - Bug: Common URI pattern in routes should be grouped together
+- Bugfixes
+  - [Todo] Bugfix: Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
+    - Bug: Expects `:handler` to be present in route
+  - Include URI pattern wildcard suffix in `calfpath.route/make-index`
+    - Bug: URI wildcard suffix is stripped when indexing routes
+  - Group common URI pattern into sub-routes
+    - Bug: Common URI pattern in routes should be grouped together
+- Deprecation
+  - [Todo] Deprecate calfpath.core functionality
 
 
 ## 0.8.0 / 2020-December-17

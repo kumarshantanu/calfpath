@@ -565,19 +565,24 @@
   (reduce (fn [{:keys [uri-prefix] :as context} each-route]
             (expected map? "every route to be a map" each-route)
             (let [is-key? (fn [k] (contains? each-route k))
-                  uri-now (if (contains? each-route uri-key)
-                            (->> (get each-route uri-key)
-                              strip-partial-marker
-                              (str uri-prefix))
-                            uri-prefix)]
+                  [partial?
+                   uri-now] (if (contains? each-route uri-key)
+                              (let [uri-string (get each-route uri-key)]
+                                [(string/ends-with? uri-string "*")
+                                 (->> uri-string
+                                   strip-partial-marker
+                                   (str uri-prefix))])
+                              [false uri-prefix])]
               (cond-> context
                 (is-key? method-key) (update :method        (fn [_]    (get each-route method-key)))
                 (is-key? :handler)   (as-> $
                                        (update $ :index-map (fn [imap] (if-some [index-val (get each-route index-key)]
                                                                          (assoc imap index-val
-                                                                           {:uri (->> (strip-partial-marker uri-now)
-                                                                                   (parse-uri-template \:)
-                                                                                   first)
+                                                                           {:uri (as-> (strip-partial-marker uri-now) $
+                                                                                   (parse-uri-template \: $)
+                                                                                   (first $)
+                                                                                   (concat $ (when partial? [:*]))
+                                                                                   (vec $))
                                                                             :request-method (:method $)})
                                                                          imap))))
                 (is-key? :nested)    (as-> $
