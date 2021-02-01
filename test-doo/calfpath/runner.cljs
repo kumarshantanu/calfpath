@@ -11,6 +11,7 @@
   (:require
     [doo.runner :refer-macros [doo-tests]]
     [calfpath.core-test]
+    [calfpath.internal-test]
     [calfpath.route-handler-test]
     [calfpath.route-prepare-test]
     [calfpath.route-reverse-test]))
@@ -21,6 +22,7 @@
 (try
   (doo-tests
     'calfpath.core-test
+    'calfpath.internal-test
     'calfpath.route-handler-test
     'calfpath.route-prepare-test
     'calfpath.route-reverse-test)
