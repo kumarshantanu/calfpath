@@ -20,7 +20,7 @@ routing and reverse-routing.
 
 ## Usage
 
-Leiningen dependency: `[calfpath "0.8.0"]` (requires Clojure 1.8 or later, Java 7 or later)
+Leiningen dependency: `[calfpath "0.8.1-SNAPSHOT"]` (requires Clojure 1.8 or later, Java 7 or later)
 
 Require namespace:
 ```clojure
@@ -122,7 +122,7 @@ $ lein with-profile c08,perf test  # on specified Clojure version
 
 ## License
 
-Copyright © 2015-2020 Shantanu Kumar
+Copyright © 2015-2021 Shantanu Kumar
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

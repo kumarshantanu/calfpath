@@ -37,8 +37,8 @@
         (if (= 1 (count clauses))
           (first clauses)
           (let [[uri-pattern dav expr] clauses
-                [uri-template partial?] (i/parse-uri-template \: #?(:cljs uri-pattern
-                                                                     :clj (eval uri-pattern)))]
+                [uri-template partial?] (i/parse-uri-template #?(:cljs uri-pattern
+                                                                  :clj (eval uri-pattern)))]
             `(if-some [^"[Ljava.lang.Object;"
                        match-result# (i/match-uri (:uri ~request)
                                        (int (i/get-uri-match-end-index ~request))

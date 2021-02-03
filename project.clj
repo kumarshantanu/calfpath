@@ -1,4 +1,4 @@
-(defproject calfpath "0.8.0"
+(defproject calfpath "0.8.1-SNAPSHOT"
   :description "A la carte ring request matching"
   :url "https://github.com/kumarshantanu/calfpath"
   :license {:name "Eclipse Public License"
@@ -11,7 +11,7 @@
   :javac-options ["-target" "1.7" "-source" "1.7" "-Xlint:-options"]
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :cljs {:plugins   [[lein-cljsbuild "1.1.7"]
-                                [lein-doo "0.1.10"]]
+                                [lein-doo "0.1.10" :exclusions [org.clojure/clojure]]]
                     :doo       {:build "test"}
                     :cljsbuild {:builds {:test {:source-paths ["src" "test" "test-doo"]
                                                 :compiler {:main          calfpath.runner
@@ -25,12 +25,12 @@
                     :hooks      [leiningen.cljsbuild]}
              :c08 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :c09 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :c10 {:dependencies [[org.clojure/clojure "1.10.2-rc1"]]}
+             :c10 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :dln {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :s09 {:dependencies [[org.clojure/clojure "1.9.0"]
                                   [org.clojure/clojurescript "1.9.946"]]}
              :s10 {:dependencies [[org.clojure/clojure "1.9.0"]
-                                  [org.clojure/clojurescript "1.10.773"]]}
+                                  [org.clojure/clojurescript "1.10.773" :exclusions [com.google.code.findbugs/jsr305]]]}
              :perf {:dependencies [[ataraxy   "0.4.2" :exclusions [[org.clojure/clojure]
                                                                    [ring/ring-core]]]
                                    [bidi      "2.1.6" :exclusions [ring/ring-core]]

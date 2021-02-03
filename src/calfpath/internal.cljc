@@ -37,43 +37,48 @@
 
 
 (defn parse-uri-template
-  "Given a URI pattern string, e.g. '/user/:id/profile/:descriptor/' parse it and return a vector of alternating string
-  and keyword tokens, e.g. ['/user/' :id '/profile/' :descriptor '/']. The marker char is typically ':'."
-  [marker-char ^String pattern]
-  (let [[^String path partial?] (if (and (> (count pattern) 1)
-                                      (string/ends-with? pattern "*"))
+  "Given a URI pattern string,
+  e.g. \"/user/:id/profile/:descriptor/\"
+    or \"/user/{id}/profile/{descriptor}/\"
+  parse it as a vector of alternating string/keyword tokens, e.g. `[\"/user/\" :id \"/profile/\" :descriptor \"/\"]`.
+  Last character `*` in the pattern string is considered partial URI pattern. Final return value is
+  `[pattern-tokens partial?]`"
+  [^String pattern]
+  (let [[^String path partial?] (if (string/ends-with? pattern "*")
                                   [(subs pattern 0 (dec (count pattern))) true]  ; chop off last char
                                   [pattern false])
-        n (count path)
-        separator \/]
-    (loop [i (int 0) ; current index in the URI string
-           j (int 0) ; start index of the current token (string or keyword)
-           s? true   ; string in progress? (false implies keyword in progress)
-           r []]
-      (if (>= i n)
-        [(conj r (let [t (subs path j i)]
-                   (if s?
-                     t
-                     (keyword t))))
-         partial?]
-        (let [^char ch  (get path i)
-              [jn s? r] (if s?
-                          (if (= ^char marker-char ch)
-                            [(unchecked-inc i) false (conj r (subs path j i))]
-                            [j true r])
-                          (if (= separator ch)
-                            [i true  (conj r (keyword (subs path j i)))]
-                            [j false r]))]
-          (recur (unchecked-inc i) (int jn) s? r))))))
-
-
-(def ^:const default-separator \:)
+        n (count path)]
+    (if (= "" path)
+      [[""] partial?]
+      (loop [i (int 0) ; current index in the URI string
+             j (int 0) ; start index of the current token (string or keyword)
+             s? true   ; string in progress? (false implies keyword in progress)
+             r []]
+        (if (>= i n)
+          [(if (>= j n)
+             r
+             (conj r (let [t (subs path j i)]
+                       (if s?
+                         t
+                         (keyword t)))))
+           partial?]
+          (let [^char ch  (get path i)
+                [jn s? r] (if s?
+                            (if (or (= \: ch)
+                                  (= \{ ch))
+                              [(unchecked-inc i) false (conj r (subs path j i))]
+                              [j true r])
+                            (cond
+                              (= \/ ch) [i                 true (conj r (keyword (subs path j i)))]
+                              (= \} ch) [(unchecked-inc i) true (conj r (keyword (subs path j i)))]
+                              :else     [j false r]))]
+            (recur (unchecked-inc i) (int jn) s? r)))))))
 
 
 (defn as-uri-template
   [uri-pattern-or-template]
   (cond
-    (string? uri-pattern-or-template)      (parse-uri-template default-separator uri-pattern-or-template)
+    (string? uri-pattern-or-template)      (parse-uri-template uri-pattern-or-template)
     (and (vector? uri-pattern-or-template)
       (every? (some-fn string? keyword?)
         uri-pattern-or-template))          uri-pattern-or-template
@@ -227,16 +232,36 @@
 ;; helpers for `routes -> wildcard tidy`
 
 
+(defn deduplicate-paths
+  [routes uri-key]
+  (let [[with-path without-path] (reduce (fn [[with without] each-route]
+                                           (if (contains? each-route uri-key)
+                                             [(conj with each-route) without]
+                                             [with (conj without each-route)]))
+                                   [[] []]
+                                   routes)]
+    (concat (->> with-path    ; de-duplicate common paths
+              (sort-by uri-key)
+              (partition-by uri-key)
+              (mapv (fn [coll]
+                      (if (= 1 (count coll))
+                        (first coll)
+                        {uri-key (get (first coll) uri-key)
+                        :nested (mapv #(dissoc % uri-key) coll)}))))
+      without-path)))
+
+
 (defn split-routes-having-uri
   "Given mixed routes (vector), split into those having distinct routes and those that don't."
   [routes uri-key]
-  (reduce (fn [[with-uri no-uri] each-route]
-            (if (and (contains? each-route uri-key)
-                  ;; wildcard already? then exclude
-                  (not (string/ends-with? ^String (get each-route uri-key) "*")))
-              [(conj with-uri each-route) no-uri]
-              [with-uri (conj no-uri each-route)]))
-    [[] []] routes))
+  (->> (deduplicate-paths routes uri-key)
+    (reduce (fn [[with-uri no-uri] each-route]
+              (if (and (contains? each-route uri-key)
+                    ;; wildcard already? then exclude
+                    (not (string/ends-with? ^String (get each-route uri-key) "*")))
+                [(conj with-uri each-route) no-uri]
+                [with-uri (conj no-uri each-route)]))
+      [[] []])))
 
 
 (defn tokenize-routes-uris
@@ -545,19 +570,24 @@
   (reduce (fn [{:keys [uri-prefix] :as context} each-route]
             (expected map? "every route to be a map" each-route)
             (let [is-key? (fn [k] (contains? each-route k))
-                  uri-now (if (contains? each-route uri-key)
-                            (->> (get each-route uri-key)
-                              strip-partial-marker
-                              (str uri-prefix))
-                            uri-prefix)]
+                  [partial?
+                   uri-now] (if (contains? each-route uri-key)
+                              (let [uri-string (get each-route uri-key)]
+                                [(string/ends-with? uri-string "*")
+                                 (->> uri-string
+                                   strip-partial-marker
+                                   (str uri-prefix))])
+                              [false uri-prefix])]
               (cond-> context
                 (is-key? method-key) (update :method        (fn [_]    (get each-route method-key)))
-                (is-key? :handler)   (as-> $
+                (is-key? index-key)  (as-> $
                                        (update $ :index-map (fn [imap] (if-some [index-val (get each-route index-key)]
                                                                          (assoc imap index-val
-                                                                           {:uri (->> (strip-partial-marker uri-now)
-                                                                                   (parse-uri-template \:)
-                                                                                   first)
+                                                                           {:uri (as-> (strip-partial-marker uri-now) $
+                                                                                   (parse-uri-template $)
+                                                                                   (first $)
+                                                                                   (concat $ (when partial? [:*]))
+                                                                                   (vec $))
                                                                             :request-method (:method $)})
                                                                          imap))))
                 (is-key? :nested)    (as-> $
