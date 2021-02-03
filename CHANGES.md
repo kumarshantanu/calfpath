@@ -11,7 +11,7 @@
   - because we don't know if it's a full match; it's determined by a future token
 
 
-## [WIP] 0.8.1 / 2021-February-??
+## 0.8.1 / 2021-February-03
 
 - Bugfix
   - Expect only index-key (e.g. `:id`) in indexable route in `calfpath.route/make-index`
